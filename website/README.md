@@ -20,7 +20,7 @@ npm run build
 
 ## Deploy
 
-Deploy on Vercel with **Root Directory** set to `website`. Set `NEXT_PUBLIC_SITE_URL` to the production URL so social previews use absolute links.
+Live at https://lucid-disk.vercel.app (Vercel project `lucid-disk`). Deploy from this folder with `npx vercel deploy --prod`, or connect the repository with **Root Directory** set to `website`. Set `NEXT_PUBLIC_SITE_URL` to the production URL so social previews use absolute links.
 
 ## License
 

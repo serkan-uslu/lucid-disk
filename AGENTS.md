@@ -34,4 +34,6 @@ Tools/review_ui.sh -AppleLanguages '(en)'   # UI changes, on an idle desktop
 
 ## Releases
 
-Bump `APP_VERSION`/`APP_BUILD` in `build_app.sh`, merge to `main`, then tag `vX.Y.Z`. The Pro edition pins the core to these tags.
+Follow [docs/releasing.md](docs/releasing.md): bump `APP_VERSION`/`APP_BUILD` in `build_app.sh`, merge to `main`, build a signed candidate, then tag `vX.Y.Z` on that exact commit. Never sign with `--deep`, never replace a published asset. The Pro edition pins the core to these tags.
+
+Architecture and conventions: [docs/architecture.md](docs/architecture.md), [docs/development.md](docs/development.md), [docs/safety.md](docs/safety.md).

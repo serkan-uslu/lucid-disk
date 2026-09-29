@@ -1,0 +1,135 @@
+# Builds a signed, notarized, stapled DMG for one exact commit on main and keeps it
+# as a private artifact. It never tags or publishes; see publish-release.yml.
+# Secrets live in the "release" environment (docs/releasing.md).
+name: Signed release candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version without the v prefix, e.g. 1.0.0
+        required: true
+        type: string
+      commit_sha:
+        description: Full 40-character commit SHA already on main
+        required: true
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: signed-release-candidate
+  cancel-in-progress: false
+
+jobs:
+  candidate:
+    runs-on: macos-15
+    timeout-minutes: 90
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    env:
+      RELEASE_VERSION: ${{ inputs.version }}
+      RELEASE_SHA: ${{ inputs.commit_sha }}
+    steps:
+      - name: Check out exact source commit
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          fetch-depth: 0
+
+      - name: Verify source and version
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "commit_sha must be a full lowercase SHA" >&2; exit 1; }
+          [[ "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "version must be X.Y.Z" >&2; exit 1; }
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+          git fetch origin main --no-tags
+          git merge-base --is-ancestor "$RELEASE_SHA" origin/main
+          test -z "$(git status --porcelain=v1)"
+          grep -q "APP_VERSION=\"\${APP_VERSION:-$RELEASE_VERSION}\"" build_app.sh
+          if git ls-remote --exit-code --tags origin "refs/tags/v$RELEASE_VERSION" >/dev/null; then
+            echo "Tag v$RELEASE_VERSION already exists" >&2
+            exit 1
+          fi
+
+      - name: Test
+        run: swift test
+
+      - name: Require release credentials
+        env:
+          SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          NOTARY_APPLE_ID: ${{ secrets.APPLE_ID }}
+          NOTARY_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          NOTARY_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for name in SIGNING_IDENTITY P12_BASE64 P12_PASSWORD NOTARY_APPLE_ID NOTARY_TEAM_ID NOTARY_PASSWORD; do
+            test -n "$(printenv "$name" || true)" || { echo "Missing release secret: $name" >&2; exit 1; }
+          done
+          [[ "$SIGNING_IDENTITY" == "Developer ID Application:"* ]] || { echo "APPLE_SIGNING_IDENTITY must be Developer ID Application" >&2; exit 1; }
+
+      - name: Import Developer ID certificate
+        id: keychain
+        env:
+          P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
+          P12_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+        run: |
+          set -euo pipefail
+          CERTIFICATE="$RUNNER_TEMP/developer-id.p12"
+          KEYCHAIN="$RUNNER_TEMP/release.keychain-db"
+          KEYCHAIN_PASSWORD="$(openssl rand -hex 24)"
+          printf '%s' "$P12_BASE64" | /usr/bin/base64 -D > "$CERTIFICATE"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$CERTIFICATE" -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          rm -f "$CERTIFICATE"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" login.keychain-db
+          security find-identity -v -p codesigning "$KEYCHAIN" | grep -F "$SIGNING_IDENTITY"
+          echo "keychain=$KEYCHAIN" >> "$GITHUB_OUTPUT"
+
+      - name: Build, sign, notarize and staple
+        env:
+          CODE_SIGN_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        run: ./build_dmg.sh
+
+      - name: Verify final DMG and write evidence
+        run: |
+          set -euo pipefail
+          lipo "build/Lucid Disk.app/Contents/MacOS/LucidDisk" -verify_arch arm64 x86_64
+          scripts/verify-release.sh "$PWD/build/LucidDisk.dmg" "Lucid Disk.app"
+          scripts/create-release-evidence.sh "$RELEASE_VERSION"
+          mkdir -p candidate
+          cp build/LucidDisk.dmg build/SHA256SUMS.txt build/notarization.json build/release-evidence.json candidate/
+          cp build/notarization-log.json candidate/ 2>/dev/null || true
+          (cd candidate && shasum -a 256 -c SHA256SUMS.txt)
+
+      - name: Attest final DMG
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: candidate/LucidDisk.dmg
+
+      - name: Upload notarized candidate
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-candidate-${{ inputs.version }}
+          path: candidate/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Delete temporary keychain
+        if: always()
+        env:
+          KEYCHAIN: ${{ steps.keychain.outputs.keychain }}
+        run: |
+          if test -n "$KEYCHAIN" && test -f "$KEYCHAIN"; then security delete-keychain "$KEYCHAIN" || true; fi

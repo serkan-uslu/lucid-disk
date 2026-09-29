@@ -11,7 +11,7 @@ jobs:
   test:
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Check identity
         shell: bash
@@ -44,7 +44,7 @@ jobs:
       - name: Build Swift release
         run: swift build -c release
 
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
 
       - name: Test MCP server
         run: uv run --project mcp --with pytest pytest mcp/tests
@@ -52,14 +52,15 @@ jobs:
       - name: Check package
         shell: bash
         run: |
-          bash -n build_app.sh build_dmg.sh
+          bash -n build_app.sh build_dmg.sh scripts/verify-release.sh scripts/create-release-evidence.sh
           swift package describe
           ./build_dmg.sh
           lipo "build/Lucid Disk.app/Contents/MacOS/LucidDisk" -verify_arch arm64 x86_64
           test -f "build/Lucid Disk.app/Contents/Resources/LICENSE"
           test -f "build/Lucid Disk.app/Contents/Resources/en.lproj/Localizable.strings"
           test -f "build/Lucid Disk.app/Contents/Resources/tr.lproj/Localizable.strings"
-          hdiutil imageinfo "build/Lucid Disk.dmg" >/dev/null
+          hdiutil imageinfo build/LucidDisk.dmg >/dev/null
+          (cd build && shasum -a 256 -c SHA256SUMS.txt)
 
       - name: Build MCP distributions
         run: |

@@ -7,6 +7,7 @@
 <p align="center"><strong>See your disk. Keep your judgment.</strong></p>
 
 <p align="center">
+  <a href="https://lucid-disk.vercel.app">Website</a> ·
   <a href="https://github.com/serkan-uslu/lucid-disk/releases/latest/download/LucidDisk.dmg">Download for macOS</a> ·
   <a href="https://github.com/serkan-uslu/lucid-disk/releases/latest">Release notes</a> ·
   <a href="website/public/media/lucid-disk-promo.mp4">30-second tour</a>
@@ -20,7 +21,23 @@
 
 Lucid Disk is a free, open-source disk space analyzer for macOS. It maps storage as an interactive sunburst, explains what "System Data" really is, lets you ask AI what an unfamiliar folder is, and moves only the items you review to the macOS Trash.
 
-![Lucid Disk showing a folder as a sunburst map](website/public/shots/overview.webp)
+<p align="center">
+  <a href="website/public/media/lucid-disk-promo.mp4">
+    <img src="docs/media/tour.webp" width="860" alt="30-second tour of Lucid Disk: the disk map, review queue, Ask AI and the MCP server">
+  </a>
+  <br><sub>30-second tour — click for the full-quality video.</sub>
+</p>
+
+<table>
+  <tr>
+    <td width="50%"><img src="website/public/shots/overview.webp" alt="Sunburst disk map with a sorted file list"><br><b>Map</b> — every byte, at a glance.</td>
+    <td width="50%"><img src="website/public/shots/space.webp" alt="Space breakdown of used disk space"><br><b>Space breakdown</b> — what “System Data” really is.</td>
+  </tr>
+  <tr>
+    <td><img src="website/public/shots/batch.webp" alt="Several files selected and queued for review"><br><b>Review</b> — select several, confirm once, Trash only.</td>
+    <td><img src="website/public/shots/ai.webp" alt="AI provider settings"><br><b>Ask AI</b> — Apple on-device, Ollama or Claude.</td>
+  </tr>
+</table>
 
 ## Highlights
 
@@ -50,19 +67,7 @@ swift build -c release
 ./build_dmg.sh
 ```
 
-The scripts create a universal `arm64` + `x86_64` app and DMG under `build/`. Local builds are ad-hoc signed. To make a release build, provide a Developer ID identity already installed in the macOS keychain:
-
-```bash
-CODE_SIGN_IDENTITY="Developer ID Application: Example (TEAMID)" ./build_dmg.sh
-```
-
-Optional notarization uses an existing `notarytool` keychain profile; credentials never belong in the repository:
-
-```bash
-CODE_SIGN_IDENTITY="Developer ID Application: Example (TEAMID)" \
-NOTARYTOOL_PROFILE="lucid-disk-release" \
-./build_dmg.sh
-```
+The scripts create a universal `arm64` + `x86_64` app and `build/LucidDisk.dmg` with a SHA-256 checksum. Local builds are ad-hoc signed. Signed, notarized releases — from GitHub Actions or from a Mac with a Developer ID certificate — are described in [docs/releasing.md](docs/releasing.md).
 
 Scanning protected locations may require granting the built app Full Disk Access in System Settings.
 
@@ -121,6 +126,13 @@ This repository is the open-source Community edition. The app lives in the `Luci
 | `website/` | The landing page (Next.js); `npm install && npm run dev` |
 | `video/` | The 30-second promo video (Remotion); `npm install && npm run render` |
 | `Tools/` | Icon export and the desktop UI review harness (`LUCID_MARKETING=1` renders store screenshots) |
+
+## Documentation
+
+- [Architecture](docs/architecture.md) — modules, data flow, extension points
+- [Development](docs/development.md) — setup, tests, UI review, localization, conventions
+- [Safety model](docs/safety.md) — the invariants every change must keep
+- [Releasing](docs/releasing.md) — signing, notarization and GitHub Releases
 
 ## Project policies
 
