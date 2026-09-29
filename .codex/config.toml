@@ -1,0 +1,8 @@
+[mcp_servers.luciddisk]
+command = "uv"
+args = ["run", "--project", "mcp", "luciddisk-mcp"]
+cwd = ".."
+startup_timeout_sec = 30
+tool_timeout_sec = 120
+required = false
+default_tools_approval_mode = "prompt"

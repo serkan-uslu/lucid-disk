@@ -1,0 +1,12 @@
+.DS_Store
+.build/
+.swiftpm/
+build/
+graphify-out/
+.venv/
+mcp/.venv/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.env

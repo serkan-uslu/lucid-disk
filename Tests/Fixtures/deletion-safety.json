@@ -1,0 +1,19 @@
+[
+  {"path": "/", "home": "/Users/example", "risk": "protected"},
+  {"path": "/System/Library", "home": "/Users/example", "risk": "protected"},
+  {"path": "/Applications", "home": "/Users/example", "risk": "protected"},
+  {"path": "/Applications/App.app", "home": "/Users/example", "risk": "protected"},
+  {"path": "/Library", "home": "/Users/example", "risk": "protected"},
+  {"path": "/Library/Application Support", "home": "/Users/example", "risk": "protected"},
+  {"path": "/private", "home": "/Users/example", "risk": "protected"},
+  {"path": "/etc", "home": "/Users/example", "risk": "protected"},
+  {"path": "/opt", "home": "/Users/example", "risk": "protected"},
+  {"path": "/usr/local", "home": "/Users/example", "risk": "protected"},
+  {"path": "/Users", "home": "/Users/example", "risk": "protected"},
+  {"path": "/Users/example", "home": "/Users/example", "risk": "protected"},
+  {"path": "/Users/other/Documents", "home": "/Users/example", "risk": "sensitive"},
+  {"path": "/usr/local/bin/tool", "home": "/Users/example", "risk": "sensitive"},
+  {"path": "/Users/example/Library/Developer/Xcode/DerivedData/App", "home": "/Users/example", "risk": "rebuildable"},
+  {"path": "/Users/example/Downloads/archive.zip", "home": "/Users/example", "risk": "review"},
+  {"path": "/Users/example/Documents/notes.txt", "home": "/Users/example", "risk": "sensitive"}
+]
