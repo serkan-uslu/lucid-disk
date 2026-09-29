@@ -127,10 +127,13 @@ public enum DeletionSafety {
         // scan saw, so it never moves with a standard confirmation.
         if node.isDirectory, node.measurementAccuracy == .incomplete,
            assessment.actionPolicy == .standardConfirmation {
-            return sensitive(
+            // Unknown is not the same as sensitive: keep the path's risk, raise only the confirmation.
+            return DeletionAssessment(
+                risk: assessment.risk,
+                actionPolicy: .strongConfirmation,
                 summary: String(localized: "Some folders inside could not be read, so Lucid Disk cannot verify everything this would move."),
                 recommendation: String(localized: "Open it in Finder and check its contents, or grant Full Disk Access and scan again."),
-                rule: "sensitive.unverified-contents"
+                matchedRule: "review.unverified-contents"
             )
         }
         return assessment

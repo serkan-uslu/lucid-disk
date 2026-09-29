@@ -218,6 +218,10 @@ struct LocalFileInsightService {
             purpose = String(localized: "User-managed downloads, logs, or cached data")
         case "sensitive.user-data":
             purpose = String(localized: "Persistent personal or application data")
+        case "sensitive.contains-sensitive":
+            purpose = String(localized: "A folder that holds personal or persistent app data")
+        case "protected.user-library":
+            purpose = String(localized: "Your user Library")
         case "protected.system", "protected.root":
             purpose = String(localized: "Protected macOS system data")
         default:
@@ -248,7 +252,7 @@ struct LocalFileInsightService {
             whyItMatters: assessment.summary,
             evidence: evidence,
             verificationSteps: [assessment.recommendation, String(localized: "Preview the item and confirm its creating application before moving it to Trash.")],
-            confidence: assessment.matchedRule.contains("unknown") || assessment.matchedRule == "review.home" ? .low : .high,
+            confidence: ["review.unknown", "review.home", "review.unverified-contents"].contains(assessment.matchedRule) ? .low : .high,
             source: .localRules
         )
     }

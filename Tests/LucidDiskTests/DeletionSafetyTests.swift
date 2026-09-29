@@ -26,7 +26,8 @@ final class DeletionSafetyTests: XCTestCase {
         folder.measurementAccuracy = .incomplete
         let assessment = DeletionSafety.assess(node: folder)
         XCTAssertEqual(assessment.actionPolicy, .strongConfirmation)
-        XCTAssertEqual(assessment.matchedRule, "sensitive.unverified-contents")
+        XCTAssertEqual(assessment.matchedRule, "review.unverified-contents")
+        XCTAssertEqual(assessment.risk, .review, "Unreadable is unknown, not sensitive")
         withExtendedLifetime(root) {}
     }
 

@@ -6272,6 +6272,38 @@
           }
         }
       }
+    },
+    "A folder that holds personal or persistent app data": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A folder that holds personal or persistent app data"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kişisel veya kalıcı uygulama verisi barındıran bir klasör"
+          }
+        }
+      }
+    },
+    "Your user Library": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your user Library"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kullanıcı Kitaplığınız"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
