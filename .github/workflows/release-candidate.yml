@@ -111,7 +111,10 @@ jobs:
           scripts/create-release-evidence.sh "$RELEASE_VERSION"
           mkdir -p candidate
           cp build/LucidDisk.dmg build/SHA256SUMS.txt build/notarization.json build/release-evidence.json candidate/
-          cp build/notarization-log.json candidate/ 2>/dev/null || true
+          cp build/app-notarization.json candidate/
+          for log in notarization-log.json app-notarization-log.json; do
+            cp "build/$log" candidate/ 2>/dev/null || true
+          done
           (cd candidate && shasum -a 256 -c SHA256SUMS.txt)
 
       - name: Attest final DMG

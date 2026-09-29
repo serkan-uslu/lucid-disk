@@ -9,9 +9,10 @@ flowchart LR
     A[Commit on main] --> B[swift test]
     B --> C[Build universal app]
     C --> D[Sign app<br/>Developer ID · Hardened Runtime · timestamp]
-    D --> E[Create DMG · sign DMG]
-    E --> F[notarytool submit --wait]
-    F --> G[stapler staple]
+    D --> D2[Notarize + staple app]
+    D2 --> E[Create DMG · sign DMG]
+    E --> F[Notarize DMG]
+    F --> G[Staple DMG]
     G --> H[Gatekeeper + verify-release.sh]
     H --> I[SHA-256 + evidence + attestation]
     I --> J[Draft release]
@@ -19,7 +20,7 @@ flowchart LR
     K --> L[Publish as Latest]
 ```
 
-The app has a single executable and a code-free resource bundle, so it is signed once from the outside, never with `--deep`. The build fails if the signature contains `get-task-allow`. The checksum is taken after stapling, because stapling changes the bytes.
+The app has a single executable and a code-free resource bundle, so it is signed once from the outside, never with `--deep`. The build fails if the signature contains `get-task-allow`. Notarization runs twice: the app first, so the copy a user drags to Applications carries its own ticket and passes `syspolicy_check distribution` offline, then the final DMG. The checksum is taken after stapling, because stapling changes the bytes.
 
 ## Version
 
@@ -68,7 +69,8 @@ scripts/create-release-evidence.sh 1.0.0
 
 git tag -a v1.0.0 -m "Lucid Disk 1.0.0" && git push origin v1.0.0
 gh release create v1.0.0 build/LucidDisk.dmg build/SHA256SUMS.txt \
-  build/notarization.json build/notarization-log.json build/release-evidence.json \
+  build/notarization.json build/notarization-log.json \
+  build/app-notarization.json build/app-notarization-log.json build/release-evidence.json \
   --verify-tag --draft --title "Lucid Disk 1.0.0" --generate-notes
 # after acceptance:
 gh release edit v1.0.0 --draft=false --prerelease=false --latest
