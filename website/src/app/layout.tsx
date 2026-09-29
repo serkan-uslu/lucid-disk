@@ -7,11 +7,12 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://lucid-disk.vercel.app";
 const description =
-  "A free, open-source disk space analyzer for macOS. See where your space went, find out what System Data really is, ask AI what unfamiliar files are, and clean up only what you approve.";
+  "Find what's taking up space on your Mac, understand unfamiliar files and System Data, and move only what you review and confirm to the Trash.";
+const title = "Lucid Disk — Understand What’s Taking Up Space on Your Mac";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "Lucid Disk — See your disk. Keep your judgment.",
+  title,
   description,
   applicationName: "Lucid Disk",
   keywords: [
@@ -28,12 +29,12 @@ export const metadata: Metadata = {
     type: "website",
     url: siteUrl,
     siteName: "Lucid Disk",
-    title: "Lucid Disk — See your disk. Keep your judgment.",
+    title,
     description,
   },
   twitter: {
     card: "summary_large_image",
-    title: "Lucid Disk — See your disk. Keep your judgment.",
+    title,
     description,
   },
 };

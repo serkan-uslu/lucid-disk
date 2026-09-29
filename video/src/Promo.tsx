@@ -1,4 +1,5 @@
-import { AbsoluteFill, Sequence } from "remotion";
+import { Audio } from "@remotion/media";
+import { AbsoluteFill, interpolate, Sequence, staticFile } from "remotion";
 import { Background, SceneFade } from "./components";
 import { AIScene } from "./scenes/AIScene";
 import { Intro } from "./scenes/Intro";
@@ -23,6 +24,15 @@ export const Promo = () => {
   let from = 0;
   return (
     <AbsoluteFill>
+      <Audio
+        src={staticFile("audio/glassy-pulse.mp3")}
+        volume={(frame) =>
+          interpolate(frame, [0, 45, 840, PROMO_DURATION - 1], [0, 0.8, 0.8, 0], {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+          })
+        }
+      />
       <Background />
       {scenes.map(({ id, duration, Component }) => {
         const start = from;

@@ -13,7 +13,7 @@ npm run build
 
 ## Content sources
 
-- `public/media/lucid-disk-promo.mp4` and `promo-poster.jpg` come from `../video` (`npm run render`, then a web encode with `ffmpeg -crf 26 -movflags +faststart -an`).
+- `public/media/lucid-disk-promo.mp4` and `promo-poster.jpg` come from `../video` (`npm run render`, then a web encode that preserves the soundtrack: `ffmpeg -i out/lucid-disk-promo.mp4 -map 0:v:0 -map 0:a:0 -c:v libx264 -crf 26 -preset medium -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart out/lucid-disk-promo-web.mp4`).
 - `public/shots/*.webp` come from the app's review harness with sample data: `LUCID_MARKETING=1 Tools/review_ui.sh -AppleLanguages '(en)' -AppleLocale en_US`, then `cwebp -q 86`.
 - `public/brand/logo.webp` and `src/app/icon.png` are exports of `../Resources/AppIcon.png`.
 - The download button points to `releases/latest/download/LucidDisk.dmg`, which the release workflow publishes.

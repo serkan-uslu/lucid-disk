@@ -4,6 +4,7 @@ import styles from "./page.module.css";
 const github = "https://github.com/serkan-uslu/lucid-disk";
 const download = `${github}/releases/latest/download/LucidDisk.dmg`;
 const releases = `${github}/releases/latest`;
+const mcpDocs = `${github}/blob/main/mcp/README.md`;
 
 type Shot = { src: string; width: number; height: number; alt: string };
 
@@ -26,26 +27,20 @@ const shots = {
     height: 1248,
     alt: "Four files selected and added to the review queue with a Move All to Trash action",
   },
-  ai: {
-    src: "/shots/ai.webp",
+  inspector: {
+    src: "/shots/inspector.webp",
     width: 2000,
-    height: 2034,
-    alt: "AI settings with Apple on-device, Ollama, Claude API and rules-only providers",
-  },
-  mcp: {
-    src: "/shots/mcp.webp",
-    width: 2000,
-    height: 2036,
-    alt: "MCP settings listing five read-only tools and setup commands",
+    height: 1248,
+    alt: "An unfamiliar large file selected in Lucid Disk with its size, warning, review action and optional Ask AI control",
   },
 } satisfies Record<string, Shot>;
 
 const showcase = [
   {
     id: "map",
-    eyebrow: "Map",
-    title: "Every byte, at a glance.",
-    copy: "Scan your Mac or any drive and explore it as a live sunburst. Click into folders, jump back from the center, search the whole scan, and preview anything with Quick Look.",
+    eyebrow: "Find large files",
+    title: "See what is using the most space.",
+    copy: "Scan your Mac or any drive and explore the biggest folders first. Open a branch of the live map, search the whole scan, and preview a file with Quick Look before you act.",
     points: [
       "Allocated and logical sizes, hard links counted once",
       "Search every file in the scan, sort by size, name or date",
@@ -57,7 +52,7 @@ const showcase = [
     id: "system-data",
     eyebrow: "Space breakdown",
     title: "Finally: what is “System Data”?",
-    copy: "After scanning a whole disk, Lucid Disk explains the gap between what a scan can see and what macOS reports as used — straight from macOS, with parts that add up exactly.",
+    copy: "After a whole-disk scan, Lucid Disk breaks down the gap between visible files and the space macOS reports as used — including volumes, snapshots and estimates a normal scan cannot see.",
     points: [
       "Preboot, Recovery, swap and update volumes, named",
       "Spotlight index, snapshots and APFS metadata the scan cannot see",
@@ -68,34 +63,18 @@ const showcase = [
   {
     id: "review",
     eyebrow: "Review",
-    title: "You decide what goes.",
-    copy: "Nothing is removed automatically. Select several items, queue them, and move them to the Trash with one confirmation. Every item is checked again right before it moves.",
+    title: "Review every item before it moves.",
+    copy: "Lucid Disk never cleans up on its own. Add only the items you choose to the review queue, confirm them together, and get one last safety check before anything moves to the Trash.",
     points: [
       "Protected system locations are always blocked",
       "Sensitive data needs a stronger confirmation",
-      "Trash only — restore anything from Finder",
+      "Trash only — no permanent erase",
     ],
     shot: shots.batch,
   },
 ] as const;
 
-const providers = [
-  { name: "Apple on-device", note: "Default. Runs on your Mac.", tone: "private" },
-  { name: "Ollama", note: "Any local model you run.", tone: "private" },
-  { name: "Claude API", note: "Your key, opt-in only.", tone: "cloud" },
-  { name: "Rules only", note: "No model at all.", tone: "private" },
-] as const;
-
-const tools = [
-  [
-    "summarize_known_locations",
-    "Sizes of DerivedData, caches, logs, Downloads, Trash and more, with risk.",
-  ],
-  ["find_large_files", "The largest files below a folder, on one volume."],
-  ["inventory_directory", "A folder's children ranked by allocated size."],
-  ["assess_paths", "Size, accuracy and cleanup risk for up to 50 paths."],
-  ["create_cleanup_plan", "Groups paths by risk, with blockers and questions."],
-] as const;
+const providers = ["Apple on-device", "Ollama", "Claude API", "Rules only"] as const;
 
 const extras = [
   ["Universal", "Native Swift app for Apple silicon and Intel, macOS 14 or later."],
@@ -107,12 +86,12 @@ const extras = [
 ] as const;
 
 const principles = [
-  "No telemetry or analytics",
-  "Nothing leaves your Mac unless you choose a cloud AI",
+  "No accounts, telemetry or analytics",
+  "Scans and saved results stay on your Mac",
+  "Network AI receives metadata only after you ask",
   "AI explains; safety rules decide",
   "No automatic cleanup, no permanent delete",
   "Protected system paths stay blocked",
-  "MCP tools are read-only",
 ];
 
 const faq = [
@@ -122,15 +101,19 @@ const faq = [
   ],
   [
     "Can it delete my files by accident?",
-    "No. Lucid Disk never deletes anything on its own and never empties the Trash. Items move to the Trash only after you queue and confirm them, and each one is checked again just before it moves. Protected system locations are blocked.",
+    "Lucid Disk never acts on its own and never empties the Trash. Only items you add to the review queue and confirm can be moved, and each one is checked again immediately before the move. Protected system locations remain blocked.",
   ],
   [
     "Does the AI read my files?",
-    "No. Ask AI sends metadata only — name, path, size, type, dates and the matched safety rule — and only when you press the button. With Apple's on-device model or Ollama nothing leaves your Mac. The Claude API is used only if you add your own key and allow it.",
+    "No. Ask AI uses metadata such as name, path, size, type, dates and the matched safety rule — never file contents, and only after you press the button. Apple on-device and rules-only processing stay on your Mac. Ollama stays local when its server runs on this Mac; a remote Ollama server receives that metadata. Claude is opt-in and requires your own API key.",
+  ],
+  [
+    "Does Ollama keep everything on my Mac?",
+    "With the default local Ollama address, the selected item's metadata stays on this Mac. If you point Lucid Disk at Ollama on another machine, that server receives it. File contents are never read or sent.",
   ],
   [
     "What is the MCP server?",
-    "An optional companion that lets assistants like Claude Code, Claude Desktop or Codex look at your disk through five read-only tools. It cannot delete, move or change files. Settings → MCP shows the setup commands.",
+    "An optional companion that lets assistants such as Claude Code, Claude Desktop or Codex inspect disk metadata through read-only tools. It cannot delete, move or change files. Returned metadata can be processed by the model or service used by your MCP client.",
   ],
   [
     "Why does it ask for Full Disk Access?",
@@ -178,6 +161,34 @@ function Screenshot({ shot, priority = false }: { shot: Shot; priority?: boolean
   );
 }
 
+function ShowcaseSection({
+  item,
+  flip = false,
+  priority = false,
+}: {
+  item: (typeof showcase)[number];
+  flip?: boolean;
+  priority?: boolean;
+}) {
+  return (
+    <section className={`${styles.showcase} ${flip ? styles.flip : ""}`} id={item.id}>
+      <div className={styles.showcaseCopy}>
+        <p className={styles.eyebrow}>{item.eyebrow}</p>
+        <h2>{item.title}</h2>
+        <p className={styles.body}>{item.copy}</p>
+        <ul className={styles.points}>
+          {item.points.map((point) => (
+            <li key={point}>{point}</li>
+          ))}
+        </ul>
+      </div>
+      <div className={styles.showcaseMedia}>
+        <Screenshot shot={item.shot} priority={priority} />
+      </div>
+    </section>
+  );
+}
+
 export default function Home() {
   return (
     <main>
@@ -187,9 +198,8 @@ export default function Home() {
           <span>Lucid Disk</span>
         </a>
         <nav className={styles.nav} aria-label="Primary">
+          <a href="#demo">How it works</a>
           <a href="#map">Features</a>
-          <a href="#ai">AI</a>
-          <a href="#mcp">MCP</a>
           <a href="#privacy">Privacy</a>
           <a href="#faq">FAQ</a>
         </nav>
@@ -204,7 +214,7 @@ export default function Home() {
             <GitHubIcon />
           </a>
           <a className={styles.smallCta} href={download}>
-            Download
+            Download free
           </a>
         </div>
       </header>
@@ -212,37 +222,41 @@ export default function Home() {
       <section className={styles.hero} id="top">
         <div className={styles.heroGlow} aria-hidden="true" />
         <div className={styles.heroCopy}>
-          <a className={styles.pill} href={github} target="_blank" rel="noreferrer">
+          <span className={styles.pill}>
             <span className={styles.pillDot} /> Free &amp; open source for macOS
-          </a>
+          </span>
           <h1>
-            See your disk.
-            <br />
-            <span className={styles.gradientText}>Keep your judgment.</span>
+            Find what&apos;s taking up space on your Mac.
+            <span className={styles.gradientText}>
+              Understand it before you remove it.
+            </span>
           </h1>
           <p className={styles.lede}>
-            Lucid Disk maps your storage, explains what “System Data” really is, and
-            lets you ask AI what an unfamiliar folder is — then cleans up only what you
-            approve.
+            Explore large files and folders, make sense of macOS storage, and get
+            optional AI explanations for anything unfamiliar. Lucid Disk moves only what
+            you select and confirm to the Trash.
           </p>
           <div className={styles.heroActions}>
             <a className={styles.primary} href={download}>
-              <AppleIcon /> Download for Mac
+              <AppleIcon /> Download free for Mac
             </a>
-            <a
-              className={styles.secondary}
-              href={github}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <GitHubIcon /> View source
+            <a className={styles.secondary} href="#demo">
+              <span aria-hidden="true">▶</span> Watch the 30-second demo
             </a>
           </div>
           <p className={styles.meta}>
-            Free · macOS 14+ · Apple silicon &amp; Intel · Apache 2.0
+            Free · macOS 14+ · Apple silicon &amp; Intel · No account required
           </p>
+          <a
+            className={styles.sourceLink}
+            href={github}
+            target="_blank"
+            rel="noreferrer"
+          >
+            View the Apache 2.0 source on GitHub →
+          </a>
         </div>
-        <figure className={styles.videoFrame}>
+        <figure className={styles.videoFrame} id="demo">
           <video
             className={styles.video}
             src="/media/lucid-disk-promo.mp4"
@@ -251,128 +265,102 @@ export default function Home() {
             muted
             loop
             playsInline
+            controls
             preload="metadata"
             aria-label="30-second tour of Lucid Disk: the disk map, review queue, Ask AI and the MCP server"
           />
+          <figcaption className={styles.videoCaption}>
+            A 30-second tour of the disk map, explanations and review queue. Turn sound
+            on for Glassy Pulse.
+          </figcaption>
         </figure>
       </section>
 
       <section className={styles.strip} aria-label="Highlights">
-        <span>Sunburst disk map</span>
-        <span>System Data explained</span>
-        <span>AI on your terms</span>
-        <span>Read-only MCP</span>
-        <span>Trash-only cleanup</span>
+        <span>Find the space hogs</span>
+        <span>Explain System Data</span>
+        <span>Understand unfamiliar folders</span>
+        <span>Review before Trash</span>
+        <span>Free &amp; open source</span>
       </section>
 
-      {showcase.map((item, index) => (
-        <section
-          className={`${styles.showcase} ${index % 2 ? styles.flip : ""}`}
-          id={item.id}
-          key={item.id}
-        >
-          <div className={styles.showcaseCopy}>
-            <p className={styles.eyebrow}>{item.eyebrow}</p>
-            <h2>{item.title}</h2>
-            <p className={styles.body}>{item.copy}</p>
-            <ul className={styles.points}>
-              {item.points.map((point) => (
-                <li key={point}>{point}</li>
-              ))}
-            </ul>
-          </div>
-          <div className={styles.showcaseMedia}>
-            <Screenshot shot={item.shot} priority={index === 0} />
-          </div>
-        </section>
-      ))}
+      <ShowcaseSection item={showcase[0]} priority />
+      <ShowcaseSection item={showcase[1]} flip />
 
       <section className={styles.feature} id="ai">
         <div className={styles.featureHead}>
-          <p className={styles.eyebrow}>Lucid Insight</p>
+          <p className={styles.eyebrow}>Understand before you act</p>
           <h2>
-            AI that explains.{" "}
-            <span className={styles.gradientText}>Never decides.</span>
+            Know what a folder is.{" "}
+            <span className={styles.gradientText}>Then decide.</span>
           </h2>
           <p className={styles.body}>
-            Select a folder you don&apos;t recognize and press Ask AI. You choose the
-            model; the safety rules keep the final word. File contents are never read.
+            Select something unfamiliar to see its related app and fixed safety verdict,
+            then optionally ask AI for a probable-purpose explanation. File contents
+            stay unread, and deterministic safety rules — not AI — keep the final word.
           </p>
         </div>
-        <div className={styles.featureGrid}>
-          <div className={styles.providerList}>
-            {providers.map((provider) => (
-              <div className={styles.provider} key={provider.name}>
+        <div className={`${styles.featureGrid} ${styles.insightGrid}`}>
+          <div className={styles.insightStory}>
+            <ol className={styles.storySteps}>
+              <li>
+                <span>1</span>
                 <div>
-                  <strong>{provider.name}</strong>
-                  <span>{provider.note}</span>
+                  <strong>Spot something unfamiliar</strong>
+                  <p>Select a large folder or file from the map or list.</p>
                 </div>
-                <em
-                  className={
-                    provider.tone === "cloud" ? styles.badgeCloud : styles.badgePrivate
-                  }
-                >
-                  {provider.tone === "cloud" ? "Cloud · opt-in" : "Private"}
-                </em>
-              </div>
-            ))}
+              </li>
+              <li>
+                <span>2</span>
+                <div>
+                  <strong>Get the missing context</strong>
+                  <p>
+                    Ask for its probable purpose without reading the file&apos;s
+                    contents.
+                  </p>
+                </div>
+              </li>
+              <li>
+                <span>3</span>
+                <div>
+                  <strong>Make the call yourself</strong>
+                  <p>
+                    Review the fixed safety verdict before adding anything to the queue.
+                  </p>
+                </div>
+              </li>
+            </ol>
             <div className={styles.answer}>
               <span className={styles.answerLabel}>✦ Ask AI · DerivedData · 54 GB</span>
               <p>
-                Xcode&apos;s build products and index for projects you have opened.
-                Xcode recreates it on the next build.
+                Xcode&apos;s build products and indexes for projects you have opened.
+                Xcode recreates them the next time those projects build.
               </p>
               <span className={styles.answerFoot}>
-                Ollama · local · risk stays “Rebuildable”
+                Probable purpose explained · safety verdict stays “Rebuildable”
               </span>
+            </div>
+            <div className={styles.providerSupport}>
+              <span>Choose how explanations run:</span>
+              <div className={styles.providerChips}>
+                {providers.map((provider) => (
+                  <span key={provider}>{provider}</span>
+                ))}
+              </div>
+              <small>
+                Apple on-device requires macOS 26 with Apple Intelligence. Ollama
+                remains on this Mac only when its server runs locally. Network providers
+                receive metadata only after you press Ask AI.
+              </small>
             </div>
           </div>
           <div className={styles.featureMedia}>
-            <Screenshot shot={shots.ai} />
+            <Screenshot shot={shots.inspector} />
           </div>
         </div>
       </section>
 
-      <section className={styles.feature} id="mcp">
-        <div className={styles.featureHead}>
-          <p className={styles.eyebrow}>MCP server</p>
-          <h2>
-            Eyes for your assistant.{" "}
-            <span className={styles.gradientText}>No hands.</span>
-          </h2>
-          <p className={styles.body}>
-            An optional, read-only MCP server lets Claude Code, Claude Desktop or Codex
-            answer “what&apos;s eating my disk?” with real numbers and the same safety
-            rules as the app.
-          </p>
-        </div>
-        <div className={styles.featureGrid}>
-          <div className={styles.toolColumn}>
-            <pre className={styles.terminal}>
-              <code>
-                <span className={styles.prompt}>$</span> claude mcp add luciddisk -- \
-                {"\n"}
-                {"    "}uv run --project ./mcp luciddisk-mcp
-              </code>
-            </pre>
-            <ul className={styles.tools}>
-              {tools.map(([name, copy]) => (
-                <li key={name}>
-                  <code>{name}</code>
-                  <span>{copy}</span>
-                </li>
-              ))}
-            </ul>
-            <p className={styles.note}>
-              No delete, move or write tools — by design. Your assistant asks before
-              each call.
-            </p>
-          </div>
-          <div className={styles.featureMedia}>
-            <Screenshot shot={shots.mcp} />
-          </div>
-        </div>
-      </section>
+      <ShowcaseSection item={showcase[2]} flip />
 
       <section className={styles.extras} aria-label="More features">
         {extras.map(([title, copy]) => (
@@ -386,11 +374,12 @@ export default function Home() {
       <section className={styles.privacy} id="privacy">
         <div>
           <p className={styles.eyebrow}>Privacy &amp; safety</p>
-          <h2>The guardrails are the product.</h2>
+          <h2>Your disk stays yours.</h2>
           <p className={styles.body}>
-            Lucid Disk scans on your Mac and keeps its results there. Deterministic
-            safety rules decide what can be moved, whichever AI you pick — and every
-            item is re-checked right before it goes to the Trash.
+            Lucid Disk scans locally and keeps scan results on this Mac. Ask AI sends
+            selected-item metadata to a configured network provider only when you press
+            the button. Whichever provider you choose, deterministic safety rules decide
+            what can move to the Trash.
           </p>
           <a
             className={styles.textLink}
@@ -411,6 +400,41 @@ export default function Home() {
         </ul>
       </section>
 
+      <section className={styles.developer} id="mcp">
+        <div className={styles.developerCopy}>
+          <p className={styles.eyebrow}>For developers</p>
+          <h2>Connect your assistant to disk analysis.</h2>
+          <p className={styles.body}>
+            The optional MCP companion gives Claude Code, Claude Desktop or Codex
+            read-only disk context backed by the same path-based risk rules as the app.
+          </p>
+          <a
+            className={styles.secondary}
+            href={mcpDocs}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Developer setup &amp; tool reference →
+          </a>
+        </div>
+        <ul className={styles.developerPoints}>
+          <li>
+            <strong>Read-only by design</strong>
+            <span>No delete, move or write tools.</span>
+          </li>
+          <li>
+            <strong>Entirely optional</strong>
+            <span>You choose whether to install and enable the companion.</span>
+          </li>
+          <li>
+            <strong>A clear disclosure boundary</strong>
+            <span>
+              Returned metadata can be processed by your client&apos;s model or service.
+            </span>
+          </li>
+        </ul>
+      </section>
+
       <section className={styles.faq} id="faq">
         <p className={styles.eyebrow}>FAQ</p>
         <h2>Questions, answered.</h2>
@@ -426,24 +450,25 @@ export default function Home() {
 
       <section className={styles.cta}>
         <Image src="/brand/logo.webp" alt="" width={96} height={96} />
-        <h2>Make space without losing context.</h2>
-        <p className={styles.body}>Free, open source, and yours to inspect.</p>
+        <p className={styles.brandPromise}>See your disk. Keep your judgment.</p>
+        <h2>Make space with the context to decide.</h2>
+        <p className={styles.body}>Free, open source, and ready without an account.</p>
         <div className={styles.heroActions}>
           <a className={styles.primary} href={download}>
-            <AppleIcon /> Download for Mac
+            <AppleIcon /> Download free for Mac
           </a>
-          <a
-            className={styles.secondary}
-            href={github}
-            target="_blank"
-            rel="noreferrer"
-          >
-            <GitHubIcon /> Star on GitHub
+          <a className={styles.secondary} href="#demo">
+            <span aria-hidden="true">▶</span> Watch the demo
           </a>
         </div>
-        <a className={styles.textLink} href={releases} target="_blank" rel="noreferrer">
-          Release notes and checksums →
-        </a>
+        <div className={styles.supportLinks}>
+          <a href={github} target="_blank" rel="noreferrer">
+            View source
+          </a>
+          <a href={releases} target="_blank" rel="noreferrer">
+            Release notes and checksums
+          </a>
+        </div>
       </section>
 
       <footer className={styles.footer}>

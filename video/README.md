@@ -19,4 +19,4 @@ npm run render      # out/lucid-disk-promo.mp4
 npm run studio      # live preview and timeline
 ```
 
-Scene lengths live in `src/Promo.tsx`; colors and fonts (Geist, same as the website) in `src/theme.ts`. The video has no audio; add music or a voice-over in your editor. Numbers shown (54.2 GB, 1,284,311 files) are illustrative.
+Scene lengths and the music fade live in `src/Promo.tsx`; colors and fonts (Geist, same as the website) in `src/theme.ts`. The soundtrack is `public/audio/glassy-pulse.mp3`. Numbers shown (54.2 GB, 1,284,311 files) are illustrative.
