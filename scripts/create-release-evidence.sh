@@ -29,10 +29,15 @@ def run(*args):
 def ok(*args):
     return subprocess.run(args, capture_output=True).returncode == 0
 
-notary = {}
-if os.path.exists("build/notarization.json"):
-    with open("build/notarization.json") as f:
-        notary = json.load(f)
+def load(path):
+    if os.path.exists(path):
+        with open(path) as f:
+            return json.load(f)
+    return {}
+
+notary = load("build/notarization.json")
+app_notary = load("build/app-notarization.json")
+app = "build/Lucid Disk.app"
 
 evidence = {
     "version": version,
@@ -42,7 +47,7 @@ evidence = {
         "name": os.path.basename(dmg),
         "bytes": os.path.getsize(dmg),
         "sha256": hashlib.sha256(open(dmg, "rb").read()).hexdigest(),
-        "architectures": run("lipo", "-archs", "build/Lucid Disk.app/Contents/MacOS/LucidDisk"),
+        "architectures": run("lipo", "-archs", f"{app}/Contents/MacOS/LucidDisk"),
     },
     "distribution": {
         "signingAuthority": authority or None,
@@ -50,6 +55,9 @@ evidence = {
         "notarizationStatus": notary.get("status"),
         "notarizationSubmissionId": notary.get("id"),
         "staplerValidated": ok("xcrun", "stapler", "validate", dmg),
+        "appNotarizationStatus": app_notary.get("status"),
+        "appNotarizationSubmissionId": app_notary.get("id"),
+        "appStaplerValidated": ok("xcrun", "stapler", "validate", app),
         "gatekeeperAccepted": ok("spctl", "--assess", "--type", "open", "--context", "context:primary-signature", dmg),
     },
     "build": {

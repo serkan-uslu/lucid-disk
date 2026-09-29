@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Builds build/LucidDisk.dmg. With a Developer ID identity it also signs the DMG;
-# with notarization credentials it notarizes, staples, assesses with Gatekeeper,
-# and writes the final checksum. See docs/releasing.md.
+# with notarization credentials it notarizes and staples twice: first the app (so
+# the copy in /Applications carries its own ticket), then the final DMG. It then
+# assesses with Gatekeeper and writes the final checksum. See docs/releasing.md.
 #
 #   CODE_SIGN_IDENTITY   "Developer ID Application: Name (TEAMID)"   (default: ad-hoc)
 #   NOTARYTOOL_PROFILE   keychain profile from `xcrun notarytool store-credentials`
@@ -28,9 +29,49 @@ retry() {
 }
 STAGING="build/dmg-staging"
 # Start clean so an old DMG, log or checksum can never be mistaken for this build.
-rm -f "$DMG" build/SHA256SUMS.txt build/notarization.json build/notarization-log.json
+rm -f "$DMG" build/SHA256SUMS.txt build/notarization.json build/notarization-log.json \
+    build/app-notarization.json build/app-notarization-log.json
+
+notary_args=()
+if [[ -n "${NOTARYTOOL_PROFILE:-}" ]]; then
+    notary_args=(--keychain-profile "$NOTARYTOOL_PROFILE")
+elif [[ -n "${APPLE_ID:-}" && -n "${APPLE_TEAM_ID:-}" && -n "${APPLE_APP_SPECIFIC_PASSWORD:-}" ]]; then
+    notary_args=(--apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD")
+fi
+if [[ ${#notary_args[@]} -gt 0 && "$SIGN_IDENTITY" == "-" ]]; then
+    echo "Notarization requires a Developer ID CODE_SIGN_IDENTITY." >&2
+    exit 1
+fi
+
+# notarize FILE PREFIX: submits FILE, keeps build/PREFIX.json and its log, and
+# fails unless Apple accepted it.
+notarize() {
+    local file="$1" prefix="$2" submit_status submission_id
+    set +e
+    xcrun notarytool submit "$file" "${notary_args[@]}" --wait --output-format json > "build/$prefix.json"
+    submit_status=$?
+    set -e
+    submission_id="$(plutil -extract id raw -o - "build/$prefix.json" 2>/dev/null || true)"
+    if [[ -n "$submission_id" ]]; then
+        # Keep the log even when Apple accepts: it can contain warnings.
+        xcrun notarytool log "$submission_id" "${notary_args[@]}" "build/$prefix-log.json" || true
+    fi
+    test "$submit_status" -eq 0
+    test "$(plutil -extract status raw -o - "build/$prefix.json")" = "Accepted"
+}
 
 ./build_app.sh
+
+if [[ ${#notary_args[@]} -gt 0 ]]; then
+    APP_ZIP="build/LucidDisk-app-notarization.zip"
+    rm -f "$APP_ZIP"
+    ditto -c -k --keepParent "build/${APP_NAME}.app" "$APP_ZIP"
+    notarize "$APP_ZIP" app-notarization
+    rm -f "$APP_ZIP"
+    xcrun stapler staple "build/${APP_NAME}.app"
+    xcrun stapler validate "build/${APP_NAME}.app"
+    codesign --verify --deep --strict --verbose=2 "build/${APP_NAME}.app"
+fi
 
 rm -rf "$STAGING"
 mkdir -p "$STAGING"
@@ -46,30 +87,8 @@ if [[ "$SIGN_IDENTITY" != "-" ]]; then
     codesign --verify --verbose=2 "$DMG"
 fi
 
-notary_args=()
-if [[ -n "${NOTARYTOOL_PROFILE:-}" ]]; then
-    notary_args=(--keychain-profile "$NOTARYTOOL_PROFILE")
-elif [[ -n "${APPLE_ID:-}" && -n "${APPLE_TEAM_ID:-}" && -n "${APPLE_APP_SPECIFIC_PASSWORD:-}" ]]; then
-    notary_args=(--apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_SPECIFIC_PASSWORD")
-fi
-
 if [[ ${#notary_args[@]} -gt 0 ]]; then
-    if [[ "$SIGN_IDENTITY" == "-" ]]; then
-        echo "Notarization requires a Developer ID CODE_SIGN_IDENTITY." >&2
-        exit 1
-    fi
-    set +e
-    xcrun notarytool submit "$DMG" "${notary_args[@]}" --wait --output-format json > build/notarization.json
-    submit_status=$?
-    set -e
-    submission_id="$(plutil -extract id raw -o - build/notarization.json 2>/dev/null || true)"
-    if [[ -n "$submission_id" ]]; then
-        # Keep the log even when Apple accepts: it can contain warnings.
-        xcrun notarytool log "$submission_id" "${notary_args[@]}" build/notarization-log.json || true
-    fi
-    test "$submit_status" -eq 0
-    test "$(plutil -extract status raw -o - build/notarization.json)" = "Accepted"
-
+    notarize "$DMG" notarization
     xcrun stapler staple "$DMG"
     xcrun stapler validate "$DMG"
     codesign --verify --verbose=2 "$DMG"

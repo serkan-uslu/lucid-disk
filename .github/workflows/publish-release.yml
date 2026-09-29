@@ -48,6 +48,8 @@ jobs:
           test "$(jq -r .version candidate/release-evidence.json)" = "$VERSION"
           test "$(jq -r .distribution.notarizationStatus candidate/release-evidence.json)" = "Accepted"
           test "$(jq -r .distribution.staplerValidated candidate/release-evidence.json)" = "true"
+          test "$(jq -r .distribution.appNotarizationStatus candidate/release-evidence.json)" = "Accepted"
+          test "$(jq -r .distribution.appStaplerValidated candidate/release-evidence.json)" = "true"
           git merge-base --is-ancestor "$SHA" origin/main
           git tag -a "v$VERSION" "$SHA" -m "Lucid Disk $VERSION"
           git push origin "v$VERSION"
@@ -55,7 +57,9 @@ jobs:
       - name: Create draft release
         run: |
           set -euo pipefail
-          files=(candidate/LucidDisk.dmg candidate/SHA256SUMS.txt candidate/notarization.json candidate/release-evidence.json)
-          test -f candidate/notarization-log.json && files+=(candidate/notarization-log.json)
+          files=(candidate/LucidDisk.dmg candidate/SHA256SUMS.txt candidate/notarization.json candidate/app-notarization.json candidate/release-evidence.json)
+          for log in candidate/notarization-log.json candidate/app-notarization-log.json; do
+            if [ -f "$log" ]; then files+=("$log"); fi
+          done
           gh release create "v$VERSION" "${files[@]}" --verify-tag --draft \
             --title "Lucid Disk $VERSION" --generate-notes

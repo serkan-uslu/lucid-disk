@@ -64,8 +64,16 @@ codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 codesign --display --verbose=4 "$APP_PATH" 2>&1
 
 echo "== App entitlements =="
-codesign --display --entitlements - --xml "$APP_PATH" 2>&1 |
-  plutil -convert xml1 -o - -
+ENTITLEMENTS="$(codesign --display --entitlements - --xml "$APP_PATH" 2>/dev/null)"
+if [ -z "$ENTITLEMENTS" ]; then
+  echo "(none)"
+else
+  printf '%s' "$ENTITLEMENTS" | plutil -convert xml1 -o - -
+  if printf '%s' "$ENTITLEMENTS" | grep -q "get-task-allow"; then
+    echo "Release app must not contain get-task-allow." >&2
+    exit 1
+  fi
+fi
 
 echo "== App Gatekeeper assessment =="
 if command -v syspolicy_check >/dev/null 2>&1; then
