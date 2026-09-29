@@ -1,8 +1,26 @@
-# Lucid Disk
+<p align="center">
+  <img src="Resources/AppIcon.png" width="128" height="128" alt="Lucid Disk icon">
+</p>
 
-Lucid Disk is an open-source macOS disk analyzer and manual cleaner. It maps storage as an interactive sunburst, explains unfamiliar items before you act, and moves only explicitly reviewed items to the macOS Trash.
+<h1 align="center">Lucid Disk</h1>
 
-The project is licensed under the [Apache License 2.0](LICENSE).
+<p align="center"><strong>See your disk. Keep your judgment.</strong></p>
+
+<p align="center">
+  <a href="https://github.com/serkan-uslu/lucid-disk/releases/latest/download/LucidDisk.dmg">Download for macOS</a> ·
+  <a href="https://github.com/serkan-uslu/lucid-disk/releases/latest">Release notes</a> ·
+  <a href="website/public/media/lucid-disk-promo.mp4">30-second tour</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/serkan-uslu/lucid-disk/actions/workflows/ci.yml"><img src="https://github.com/serkan-uslu/lucid-disk/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/macOS-14%2B-0d1822" alt="macOS 14+">
+  <img src="https://img.shields.io/badge/license-Apache%202.0-0d1822" alt="Apache 2.0">
+</p>
+
+Lucid Disk is a free, open-source disk space analyzer for macOS. It maps storage as an interactive sunburst, explains what "System Data" really is, lets you ask AI what an unfamiliar folder is, and moves only the items you review to the macOS Trash.
+
+![Lucid Disk showing a folder as a sunburst map](website/public/shots/overview.webp)
 
 ## Highlights
 
@@ -93,6 +111,16 @@ The server never deletes or moves files. Its client may send paths and derived m
 ## Editions and architecture
 
 This repository is the open-source Community edition. The app lives in the `LucidDiskCore` library; `Sources/LucidDisk` is a thin `@main` app on top of it. Other editions, such as a planned paid Pro app, depend on the library and add features through documented extension points — see [EDITIONS.md](EDITIONS.md) for the architecture and the promises the Community edition keeps.
+
+## Repository layout
+
+| Path | What it is |
+|---|---|
+| `Sources/LucidDiskCore`, `Sources/LucidDisk` | The macOS app (Swift, SwiftUI, AppKit) |
+| `mcp/` | The optional read-only MCP server (Python) |
+| `website/` | The landing page (Next.js); `npm install && npm run dev` |
+| `video/` | The 30-second promo video (Remotion); `npm install && npm run render` |
+| `Tools/` | Icon export and the desktop UI review harness (`LUCID_MARKETING=1` renders store screenshots) |
 
 ## Project policies
 

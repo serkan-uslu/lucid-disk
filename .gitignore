@@ -10,3 +10,9 @@ mcp/.venv/
 .pytest_cache/
 .ruff_cache/
 .env
+
+# JavaScript projects (website/, video/, license tooling)
+node_modules/
+.next/
+.vercel/
+.wrangler/

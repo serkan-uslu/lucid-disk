@@ -24,6 +24,10 @@ final class ReviewDelegate: NSObject, NSApplicationDelegate {
     var failures: [String] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if ProcessInfo.processInfo.environment["LUCID_MARKETING"] != nil {
+            marketingShots()
+            return
+        }
         let root = fixture()
         model.rootNode = root
         model.focusedNode = root
@@ -383,7 +387,9 @@ final class ReviewDelegate: NSObject, NSApplicationDelegate {
     func capture(_ name: String, in target: NSWindow? = nil) {
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-        process.arguments = ["-x", "-l", String((target ?? window!).windowNumber), output + "/\(name).png"]
+        // Marketing shots omit the window shadow so the app fills the frame.
+        let shadow = ProcessInfo.processInfo.environment["LUCID_MARKETING"] != nil ? ["-o"] : []
+        process.arguments = ["-x"] + shadow + ["-l", String((target ?? window!).windowNumber), output + "/\(name).png"]
         do {
             try process.run(); process.waitUntilExit()
             if process.terminationStatus != 0 { failures.append("Screenshot failed: \(name)") }
@@ -391,8 +397,118 @@ final class ReviewDelegate: NSObject, NSApplicationDelegate {
         catch { failures.append("Capture \(name): \(error)") }
     }
 
-    func fixture() -> FileNode {
-        let root = FileNode(name: "Creative Studio", path: "/Users/demo/Creative Studio", isDirectory: true)
+    /// Clean, reproducible screenshots for the website and store listings: sample disks only.
+    func marketingShots() {
+        let root = fixture(path: "/Volumes/Studio SSD/Creative Studio")
+        let sample = [
+            ScanVolume(url: URL(fileURLWithPath: "/"), name: "Macintosh HD", totalBytes: 994_000_000_000,
+                       availableBytes: 312_000_000_000, isInternal: true, isRemovable: false),
+            ScanVolume(url: URL(fileURLWithPath: "/Volumes/Studio SSD"), name: "Studio SSD", totalBytes: 2_000_000_000_000,
+                       availableBytes: 820_000_000_000, isInternal: false, isRemovable: true)
+        ]
+        model.showSampleVolumes(sample)
+        model.rootNode = root
+        model.focusedNode = root
+        window = NSWindow(contentRect: NSRect(x: 80, y: 80, width: 1440, height: 900),
+                          styleMask: [.titled, .closable, .resizable, .miniaturizable], backing: .buffered, defer: false)
+        window.title = "Lucid Disk"
+        window.contentView = NSHostingView(rootView: ContentView(viewModel: model)
+            .preferredColorScheme(.dark).tint(Theme.accent))
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        Task {
+            do {
+                try FileManager.default.createDirectory(atPath: output, withIntermediateDirectories: true)
+                try await pause(); try await pause()
+                model.showSampleSpaceBreakdown(sampleBreakdown(scanned: root.size))
+                try await pause()
+                capture("site-overview")
+
+                let library = root.children[1]
+                model.focus(on: library)
+                try await pause()
+                model.selectedNode = library.children[0]
+                try await pause(); try await pause()
+                capture("site-inspector")
+
+                model.select(Array(library.children.prefix(4)), primary: library.children[3])
+                model.addToReview(Array(library.children.prefix(4)))
+                try await pause(); try await pause()
+                capture("site-batch")
+                model.clearReviewQueue()
+                model.select([], primary: nil)
+                model.focus(on: root)
+
+                if let breakdown = model.spaceBreakdown {
+                    let sheet = NSWindow(contentRect: NSRect(x: 200, y: 160, width: 640, height: 600),
+                                         styleMask: [.titled, .closable], backing: .buffered, defer: false)
+                    sheet.isReleasedWhenClosed = false
+                    sheet.contentView = NSHostingView(rootView: SpaceBreakdownView(breakdown: breakdown) {}
+                        .preferredColorScheme(.dark).tint(Theme.accent))
+                    sheet.makeKeyAndOrderFront(nil)
+                    try await pause(); try await pause()
+                    capture("site-space", in: sheet)
+                    sheet.close()
+                }
+                let settings = InsightSettings.shared
+                let previous = settings.provider
+                let panes: [(String, InsightProviderKind?, AnyView)] = [
+                    ("site-ai", .claude, AnyView(InsightSettingsPane())),
+                    ("site-mcp", nil, AnyView(MCPSettingsPane()))
+                ]
+                for (name, provider, content) in panes {
+                    if let provider { settings.provider = provider }
+                    let paneWindow = NSWindow(contentRect: NSRect(x: 180, y: 140, width: 660, height: 640),
+                                              styleMask: [.titled, .closable], backing: .buffered, defer: false)
+                    paneWindow.isReleasedWhenClosed = false
+                    paneWindow.title = "Settings"
+                    paneWindow.contentView = NSHostingView(rootView: content.frame(width: 660, height: 640)
+                        .preferredColorScheme(.dark).tint(Theme.accent))
+                    paneWindow.makeKeyAndOrderFront(nil)
+                    try await pause(); try await pause()
+                    capture(name, in: paneWindow)
+                    paneWindow.close()
+                }
+                window.makeKeyAndOrderFront(nil)
+                settings.provider = previous
+                model.rootNode = nil
+                model.focusedNode = nil
+                try await pause()
+                capture("site-welcome")
+                print("LUCID_MARKETING DONE")
+            } catch {
+                print("LUCID_MARKETING FAILED: \(error)")
+            }
+            fflush(stdout)
+            exit(0)
+        }
+    }
+
+    func sampleBreakdown(scanned: Int64) -> SpaceBreakdown {
+        let used: Int64 = 682_000_000_000
+        let volumes: [(String, String, Int64, String)] = [
+            ("volume-vm", String(localized: "Virtual memory"), 6_400_000_000,
+             String(localized: "Swap files and the sleep image. macOS manages this volume and shrinks it as memory pressure falls.")),
+            ("volume-preboot", String(localized: "Startup support (Preboot)"), 9_800_000_000,
+             String(localized: "Files macOS needs to start up, including cryptexes for system updates. Managed by macOS.")),
+            ("volume-recovery", String(localized: "macOS Recovery"), 2_600_000_000,
+             String(localized: "The recovery system used to repair or reinstall macOS. Managed by macOS."))
+        ]
+        let scannedBytes: Int64 = 598_000_000_000
+        var items = [SpaceBreakdown.Item(id: "scanned", kind: .scanned, title: String(localized: "Scanned by Lucid Disk"),
+                                         bytes: scannedBytes, detail: String(localized: "Everything the scan could open and measure."))]
+        items += volumes.map { SpaceBreakdown.Item(id: $0.0, kind: .otherVolume, title: $0.1, bytes: $0.2, detail: $0.3) }
+        let remainder = used - scannedBytes - volumes.reduce(0) { $0 + $1.2 }
+        items.append(SpaceBreakdown.Item(id: "not-visible", kind: .notVisible, title: String(localized: "Used, but not visible to the scan"),
+                                         bytes: remainder,
+                                         detail: String(localized: "System files kept outside the folders a scan can reach: the Spotlight index, document versions, file-system event logs and APFS metadata.")))
+        return SpaceBreakdown(volumeName: "Macintosh HD", capacityBytes: 994_000_000_000, usedBytes: used,
+                              freeBytes: 994_000_000_000 - used, scannedBytes: scannedBytes, items: items,
+                              purgeableBytes: 14_200_000_000, localSnapshotCount: 2, unreadableFolderCount: 0)
+    }
+
+    func fixture(path: String = "/Users/demo/Creative Studio") -> FileNode {
+        let root = FileNode(name: "Creative Studio", path: path, isDirectory: true)
         for (index, name) in ["Video projects", "Design library", "Downloads", "Development", "Photography", "Documents"].enumerated() {
             let folder = FileNode(name: name, path: root.path + "/" + name, isDirectory: true, size: Int64(6 - index) * 1_500_000_000)
             folder.parent = root

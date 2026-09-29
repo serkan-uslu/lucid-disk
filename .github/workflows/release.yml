@@ -79,16 +79,24 @@ jobs:
           xcrun stapler validate "build/Lucid Disk.dmg"
           spctl --assess --type open --context context:primary-signature --verbose=2 "build/Lucid Disk.dmg"
 
+      # A stable asset name keeps https://github.com/<repo>/releases/latest/download/LucidDisk.dmg working.
+      - name: Prepare release assets
+        run: |
+          cp "build/Lucid Disk.dmg" build/LucidDisk.dmg
+          (cd build && shasum -a 256 LucidDisk.dmg > LucidDisk.dmg.sha256)
+
       - uses: actions/upload-artifact@v4
         with:
           name: lucid-disk-dmg
-          path: build/Lucid Disk.dmg
+          path: |
+            build/LucidDisk.dmg
+            build/LucidDisk.dmg.sha256
 
       - name: Publish tagged release
         if: startsWith(github.ref, 'refs/tags/')
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" "build/Lucid Disk.dmg" --generate-notes
+        run: gh release create "$GITHUB_REF_NAME" build/LucidDisk.dmg build/LucidDisk.dmg.sha256 --generate-notes
 
       - name: Remove temporary keychain
         if: always()
