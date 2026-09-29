@@ -6176,6 +6176,134 @@
           }
         }
       }
+    },
+    "Some folders inside could not be read, so Lucid Disk cannot verify everything this would move.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some folders inside could not be read, so Lucid Disk cannot verify everything this would move."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İçindeki bazı klasörler okunamadı; Lucid Disk taşınacak her şeyi doğrulayamıyor."
+          }
+        }
+      }
+    },
+    "Open it in Finder and check its contents, or grant Full Disk Access and scan again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open it in Finder and check its contents, or grant Full Disk Access and scan again."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finder’da açıp içeriğini kontrol edin ya da Tam Disk Erişimi verip yeniden tarayın."
+          }
+        }
+      }
+    },
+    "This is your user Library: app data, settings, mail, messages and keychains.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is your user Library: app data, settings, mail, messages and keychains."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu, kullanıcı Kitaplığınız: uygulama verileri, ayarlar, e-postalar, mesajlar ve anahtar zincirleri."
+          }
+        }
+      }
+    },
+    "This folder contains a location with personal or persistent app data.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This folder contains a location with personal or persistent app data."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu klasör, kişisel veya kalıcı uygulama verisi bulunan bir konumu içeriyor."
+          }
+        }
+      }
+    },
+    "Open it and move only the items you have verified, or confirm a backup first.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open it and move only the items you have verified, or confirm a backup first."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klasörü açıp yalnızca doğruladığınız öğeleri taşıyın ya da önce yedeğinizi doğrulayın."
+          }
+        }
+      }
+    },
+    "Estimate from metadata": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimate from metadata"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Üst veriden tahmin"
+          }
+        }
+      }
+    },
+    "A folder that holds personal or persistent app data": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A folder that holds personal or persistent app data"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kişisel veya kalıcı uygulama verisi barındıran bir klasör"
+          }
+        }
+      }
+    },
+    "Your user Library": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your user Library"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kullanıcı Kitaplığınız"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

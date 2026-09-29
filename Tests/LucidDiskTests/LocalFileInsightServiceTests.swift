@@ -123,6 +123,8 @@ final class LocalFileInsightServiceTests: XCTestCase {
         let result = await service.insight(for: node, assessment: assessment)
 
         XCTAssertEqual(result.source, .localModel)
+        XCTAssertEqual(result.confidence, .modelEstimate,
+                       "A matched safety rule must not make a model's guess look certain")
         XCTAssertEqual(result.whyItMatters, assessment.summary)
         XCTAssertEqual(result.verificationSteps.first, assessment.recommendation)
         XCTAssertEqual(assessment.actionPolicy, .blocked)

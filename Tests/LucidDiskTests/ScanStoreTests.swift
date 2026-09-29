@@ -163,6 +163,37 @@ final class ScanStoreTests: XCTestCase {
         XCTAssertEqual(store.list().first?.rootPath, folder.path)
     }
 
+    func testSaveStartedBeforeDeleteAllDoesNotRecreateAFile() throws {
+        let store = ScanStore(directory: directory)
+        let generation = store.generation
+        store.deleteAll()
+        XCTAssertThrowsError(try store.save(sampleResult(), generation: generation))
+        XCTAssertTrue(store.list().isEmpty)
+        XCTAssertNoThrow(try store.save(sampleResult(), generation: store.generation))
+        XCTAssertEqual(store.list().count, 1)
+    }
+
+    @MainActor
+    func testNewScanWinsOverASavedScanStillLoading() async throws {
+        let store = ScanStore(directory: directory)
+        let info = try store.save(sampleResult())
+        let folder = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".lucid-race-" + UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+
+        let vm = ScanViewModel(scanStore: store)
+        vm.openSavedScan(info)
+        XCTAssertTrue(vm.isOpeningSavedScan)
+        vm.startScan(path: folder.path)
+        XCTAssertFalse(vm.isOpeningSavedScan, "Starting a scan abandons the pending saved-scan load")
+        for _ in 0..<200 where vm.isScanning { try await Task.sleep(for: .milliseconds(5)) }
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(vm.rootNode?.path, folder.path)
+        XCTAssertFalse(vm.isShowingSavedScan, "A late saved-scan load must not replace the fresh scan")
+        XCTAssertFalse(vm.isOpeningSavedScan)
+    }
+
     func testLargeTreeEncodesCompactly() throws {
         let root = FileNode(name: "big", path: "/tmp/big", isDirectory: true)
         for index in 0..<50_000 {

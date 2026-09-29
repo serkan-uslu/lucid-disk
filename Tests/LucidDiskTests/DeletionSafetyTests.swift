@@ -2,6 +2,35 @@ import XCTest
 @testable import LucidDiskCore
 
 final class DeletionSafetyTests: XCTestCase {
+    func testUserLibraryIsBlockedAndItsContainersNeedStrongConfirmation() {
+        let home = "/Users/example"
+        XCTAssertEqual(DeletionSafety.assess(path: home + "/Library", homePath: home).actionPolicy, .blocked)
+        // Each of these contains Xcode Archives, simulator data or other sensitive locations.
+        for path in ["/Library/Developer", "/Library/Developer/Xcode", "/Library/Developer/CoreSimulator"] {
+            let assessment = DeletionSafety.assess(path: home + path, homePath: home)
+            XCTAssertEqual(assessment.actionPolicy, .strongConfirmation, path)
+            XCTAssertEqual(assessment.matchedRule, "sensitive.contains-sensitive", path)
+        }
+        // A folder that contains only rebuildable data keeps its own rule.
+        XCTAssertEqual(DeletionSafety.assess(path: home + "/Library/Developer/Xcode/DerivedData", homePath: home).matchedRule,
+                       "rebuildable.xcode-derived-data")
+    }
+
+    func testFolderWithUnreadableContentsNeedsStrongConfirmation() {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        let root = FileNode(name: "Projects", path: home + "/Projects", isDirectory: true)
+        let folder = FileNode(name: "old", path: root.path + "/old", isDirectory: true)
+        folder.parent = root
+        XCTAssertEqual(DeletionSafety.assess(node: folder).actionPolicy, .standardConfirmation)
+
+        folder.measurementAccuracy = .incomplete
+        let assessment = DeletionSafety.assess(node: folder)
+        XCTAssertEqual(assessment.actionPolicy, .strongConfirmation)
+        XCTAssertEqual(assessment.matchedRule, "review.unverified-contents")
+        XCTAssertEqual(assessment.risk, .review, "Unreadable is unknown, not sensitive")
+        withExtendedLifetime(root) {}
+    }
+
     private let home = "/Users/example"
 
     func testSystemPathIsProtected() {

@@ -8,12 +8,16 @@ enum InsightConfidence: String {
     case high
     case medium
     case low
+    /// A model's guess from metadata. Matching a safety rule says where an item
+    /// is, not what it is for, so model text never inherits the rule's confidence.
+    case modelEstimate
 
     var title: String {
         switch self {
         case .high: String(localized: "High confidence")
         case .medium: String(localized: "Medium confidence")
         case .low: String(localized: "Low confidence")
+        case .modelEstimate: String(localized: "Estimate from metadata")
         }
     }
 }
@@ -165,7 +169,7 @@ struct LocalFileInsightService {
             whyItMatters: fallback.whyItMatters,
             evidence: fallback.evidence,
             verificationSteps: fallback.verificationSteps,
-            confidence: fallback.confidence,
+            confidence: .modelEstimate,
             source: source,
             modelName: modelName
         )
@@ -214,6 +218,10 @@ struct LocalFileInsightService {
             purpose = String(localized: "User-managed downloads, logs, or cached data")
         case "sensitive.user-data":
             purpose = String(localized: "Persistent personal or application data")
+        case "sensitive.contains-sensitive":
+            purpose = String(localized: "A folder that holds personal or persistent app data")
+        case "protected.user-library":
+            purpose = String(localized: "Your user Library")
         case "protected.system", "protected.root":
             purpose = String(localized: "Protected macOS system data")
         default:
@@ -244,7 +252,7 @@ struct LocalFileInsightService {
             whyItMatters: assessment.summary,
             evidence: evidence,
             verificationSteps: [assessment.recommendation, String(localized: "Preview the item and confirm its creating application before moving it to Trash.")],
-            confidence: assessment.matchedRule.contains("unknown") || assessment.matchedRule == "review.home" ? .low : .high,
+            confidence: ["review.unknown", "review.home", "review.unverified-contents"].contains(assessment.matchedRule) ? .low : .high,
             source: .localRules
         )
     }

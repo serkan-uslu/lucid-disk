@@ -115,6 +115,18 @@ final class DiskScannerTests: XCTestCase {
         XCTAssertFalse(result.warnings.isEmpty)
     }
 
+    /// A scan of `/` stops at other devices. It still reaches user data because macOS
+    /// reports the sealed System volume and its Data volume (joined by firmlinks) as
+    /// one device. `SpaceAnalyzer` relies on the same fact to count both as scanned.
+    func testStartupVolumeGroupIsOneDeviceSoAScanOfRootReachesHome() throws {
+        let root = try XCTUnwrap(FileIdentity.read(atPath: "/"))
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        for path in [home, "/Users", "/Applications", "/private/var"] {
+            let identity = try XCTUnwrap(FileIdentity.read(atPath: path), path)
+            XCTAssertTrue(DiskScanner.isOnRootVolume(rootDevice: root.device, childDevice: identity.device), path)
+        }
+    }
+
     func testMountBoundaryDecisionUsesDeviceIdentity() {
         XCTAssertTrue(DiskScanner.isOnRootVolume(rootDevice: 7, childDevice: 7))
         XCTAssertFalse(DiskScanner.isOnRootVolume(rootDevice: 7, childDevice: 8))

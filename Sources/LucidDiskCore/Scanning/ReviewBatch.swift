@@ -102,10 +102,23 @@ extension ScanViewModel {
             return
         }
         let topLevel = Self.topLevelItems(reviewQueue)
+        let topLevelIDs = Set(topLevel.map(\.id))
+        var assessments: [UUID: DeletionAssessment] = [:]
+        for node in topLevel {
+            assessments[node.id] = DeletionSafety.assess(node: node)
+        }
+        // A queued item inside a queued folder moves with that folder, so the
+        // folder's confirmation must be at least as strict as the item's.
+        for node in reviewQueue where !topLevelIDs.contains(node.id) {
+            var ancestor = node.parent
+            while let current = ancestor, !topLevelIDs.contains(current.id) { ancestor = current.parent }
+            guard let owner = ancestor, let current = assessments[owner.id] else { continue }
+            assessments[owner.id] = DeletionSafety.stricter(current, DeletionSafety.assess(node: node))
+        }
         var items: [PendingBatchDeletion.Item] = []
         var protected = 0
         for node in topLevel {
-            let assessment = DeletionSafety.assess(node: node)
+            guard let assessment = assessments[node.id] else { continue }
             if assessment.allowsTrash {
                 items.append(.init(node: node, assessment: assessment))
             } else {

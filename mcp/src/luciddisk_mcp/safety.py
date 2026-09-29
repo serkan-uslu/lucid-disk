@@ -67,6 +67,11 @@ def is_within(path: str, root: str) -> bool:
     return path == root or path.startswith(root if root.endswith("/") else root + "/")
 
 
+def is_strict_ancestor(path: str, other: str) -> bool:
+    path, other = _fold(path), _fold(other)
+    return other.startswith(path if path.endswith("/") else path + "/")
+
+
 def _classification(
     risk: RiskLevel,
     matched_rule: str,
@@ -110,6 +115,14 @@ def classify_path(path: str, home_path: str | None = None) -> SafetyClassificati
             RiskLevel.PROTECTED,
             "protected.system",
             "This location is part of a protected or machine-wide macOS area.",
+            PROTECTED_RECOMMENDATION,
+        )
+
+    if is_same(normalized, f"{home}/Library"):
+        return _classification(
+            RiskLevel.PROTECTED,
+            "protected.user-library",
+            "This is your user Library: app data, settings, mail, messages and keychains.",
             PROTECTED_RECOMMENDATION,
         )
 
@@ -178,6 +191,10 @@ def classify_path(path: str, home_path: str | None = None) -> SafetyClassificati
         f"{home}/Library/Mail",
         f"{home}/Library/Messages",
         f"{home}/Library/Mobile Documents",
+        f"{home}/Library/Containers",
+        f"{home}/Library/Group Containers",
+        f"{home}/Library/Keychains",
+        f"{home}/Library/Preferences",
         f"{home}/.ssh",
         f"{home}/.gnupg",
     )
@@ -203,6 +220,21 @@ def classify_path(path: str, home_path: str | None = None) -> SafetyClassificati
             "sensitive.other-user",
             "This location can contain another user's data.",
             "Do not move it to the Trash without the account owner's approval and a verified backup.",
+        )
+
+    # A folder that contains a sensitive location is at least as sensitive:
+    # moving ~/Library/Developer also moves Xcode Archives inside it.
+    sensitive_roots = sensitive_user_roots + (
+        f"{home}/Library/Developer/Xcode/Archives",
+        f"{home}/Library/Developer/Xcode/UserData",
+        f"{home}/Library/Developer/CoreSimulator/Devices",
+    )
+    if any(is_strict_ancestor(normalized, root) for root in sensitive_roots):
+        return _classification(
+            RiskLevel.SENSITIVE,
+            "sensitive.contains-sensitive",
+            "This folder contains a location with personal or persistent app data.",
+            "Open it and move only the items you have verified, or confirm a backup first.",
         )
 
     if is_within(normalized, home):

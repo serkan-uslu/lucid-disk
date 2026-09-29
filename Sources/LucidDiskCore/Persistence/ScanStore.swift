@@ -46,6 +46,13 @@ public final class ScanStore: @unchecked Sendable {
 
     private let lock = NSLock()
     private var _retention = 1
+    /// Serializes writes and deletions so they reach the disk in the order they were made.
+    private let ioLock = NSLock()
+    private var _generation = 0
+
+    /// Changes every time all saved scans are deleted. A save that started
+    /// before that passes the old value and is dropped instead of recreating a file.
+    public var generation: Int { ioLock.withLock { _generation } }
     private let fileManager = FileManager.default
 
     public init(directory: URL? = nil) {
@@ -78,7 +85,7 @@ public final class ScanStore: @unchecked Sendable {
     }
 
     public func delete(_ info: SavedScanInfo) {
-        remove(info)
+        ioLock.withLock { remove(info) }
         notifyChange()
     }
 
@@ -92,7 +99,10 @@ public final class ScanStore: @unchecked Sendable {
     }
 
     public func deleteAll() {
-        list().forEach(remove)
+        ioLock.withLock {
+            _generation += 1
+            list().forEach(remove)
+        }
         notifyChange()
     }
 
@@ -102,8 +112,10 @@ public final class ScanStore: @unchecked Sendable {
         return urls.reduce(0) { $0 + Int64((try? $1.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0) }
     }
 
+    /// Pass `generation` read when the scan finished; the save is skipped if
+    /// every saved scan was deleted in the meantime.
     @discardableResult
-    func save(_ result: ScanResult, scannedAt: Date = Date()) throws -> SavedScanInfo {
+    func save(_ result: ScanResult, scannedAt: Date = Date(), generation expected: Int? = nil) throws -> SavedScanInfo {
         try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
         var excluded = URLResourceValues()
         excluded.isExcludedFromBackup = true
@@ -125,10 +137,17 @@ public final class ScanStore: @unchecked Sendable {
             warnings: result.warnings.map { .init(path: $0.path, message: $0.message) },
             formatVersion: Int(ScanArchive.version)
         )
-        // Write the tree first so an index entry never points at a missing blob.
-        try ScanArchive.encode(root: result.root).write(to: blobURL(info.id), options: .atomic)
-        try JSONEncoder().encode(info).write(to: infoURL(info.id), options: .atomic)
-        prune(rootPath: info.rootPath)
+        let archive = try ScanArchive.encode(root: result.root)
+        let index = try JSONEncoder().encode(info)
+        let saved = try ioLock.withLock { () throws -> Bool in
+            if let expected, expected != _generation { return false }
+            // Write the tree first so an index entry never points at a missing blob.
+            try archive.write(to: blobURL(info.id), options: .atomic)
+            try index.write(to: infoURL(info.id), options: .atomic)
+            prune(rootPath: info.rootPath)
+            return true
+        }
+        guard saved else { throw ScanStoreError.clearedDuringSave }
         notifyChange()
         return info
     }
@@ -140,6 +159,11 @@ public final class ScanStore: @unchecked Sendable {
 
     private func blobURL(_ id: UUID) -> URL { directory.appendingPathComponent("\(id.uuidString).ldscan") }
     private func infoURL(_ id: UUID) -> URL { directory.appendingPathComponent("\(id.uuidString).json") }
+}
+
+enum ScanStoreError: Error {
+    /// Every saved scan was deleted while this one was being written.
+    case clearedDuringSave
 }
 
 extension SavedScan {

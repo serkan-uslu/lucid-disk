@@ -122,7 +122,26 @@ public enum DeletionSafety {
             )
         }
 
-        return assess(path: node.path, homePath: homePath)
+        let assessment = assess(path: node.path, homePath: homePath)
+        // A folder whose contents could not all be read may hold more than the
+        // scan saw, so it never moves with a standard confirmation.
+        if node.isDirectory, node.measurementAccuracy == .incomplete,
+           assessment.actionPolicy == .standardConfirmation {
+            // Unknown is not the same as sensitive: keep the path's risk, raise only the confirmation.
+            return DeletionAssessment(
+                risk: assessment.risk,
+                actionPolicy: .strongConfirmation,
+                summary: String(localized: "Some folders inside could not be read, so Lucid Disk cannot verify everything this would move."),
+                recommendation: String(localized: "Open it in Finder and check its contents, or grant Full Disk Access and scan again."),
+                matchedRule: "review.unverified-contents"
+            )
+        }
+        return assessment
+    }
+
+    /// The stricter of two verdicts. Used when one move covers several assessed items.
+    static func stricter(_ lhs: DeletionAssessment, _ rhs: DeletionAssessment) -> DeletionAssessment {
+        safer(lhs, rhs)
     }
 
     /// Classifies both the user-visible path and its symlink-resolved path,
@@ -188,6 +207,13 @@ public enum DeletionSafety {
             return protected(
                 summary: String(localized: "This location is part of a protected or machine-wide macOS area."),
                 rule: "protected.system"
+            )
+        }
+
+        if isSame(path, home + "/Library") {
+            return protected(
+                summary: String(localized: "This is your user Library: app data, settings, mail, messages and keychains."),
+                rule: "protected.user-library"
             )
         }
 
@@ -264,6 +290,10 @@ public enum DeletionSafety {
             home + "/Library/Mail",
             home + "/Library/Messages",
             home + "/Library/Mobile Documents",
+            home + "/Library/Containers",
+            home + "/Library/Group Containers",
+            home + "/Library/Keychains",
+            home + "/Library/Preferences",
             home + "/.ssh",
             home + "/.gnupg"
         ]
@@ -289,6 +319,17 @@ public enum DeletionSafety {
                 summary: String(localized: "This location can contain another user's data."),
                 recommendation: String(localized: "Do not move it to the Trash without the account owner's approval and a verified backup."),
                 rule: "sensitive.other-user"
+            )
+        }
+
+        // A folder that contains a sensitive location is at least as sensitive:
+        // moving ~/Library/Developer also moves Xcode Archives inside it.
+        let sensitiveRoots = sensitiveUserRoots + [xcodeArchives, xcodeUserData, simulatorDevices]
+        if sensitiveRoots.contains(where: { isStrictAncestor(path, of: $0) }) {
+            return sensitive(
+                summary: String(localized: "This folder contains a location with personal or persistent app data."),
+                recommendation: String(localized: "Open it and move only the items you have verified, or confirm a backup first."),
+                rule: "sensitive.contains-sensitive"
             )
         }
 
@@ -342,6 +383,12 @@ public enum DeletionSafety {
 
     private static func isSame(_ path: String, _ other: String) -> Bool {
         path.lowercased() == other.lowercased()
+    }
+
+    private static func isStrictAncestor(_ path: String, of other: String) -> Bool {
+        let path = path.lowercased()
+        let other = other.lowercased()
+        return other.hasPrefix(path.hasSuffix("/") ? path : path + "/")
     }
 
     private static func isWithin(_ path: String, root: String) -> Bool {
