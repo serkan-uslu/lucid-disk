@@ -45,8 +45,12 @@ final class BatchReviewTests: XCTestCase {
     func testBatchQueueSkipsProtectedGroupsAndDuplicates() {
         let vm = ScanViewModel()
         let t = tree()
+        // `parent` is weak: keep the parent alive, or the node would count as a
+        // scan root and be blocked by the wrong rule.
+        let systemRoot = FileNode(name: "System", path: "/System", isDirectory: true)
         let system = FileNode(name: "Library", path: "/System/Library", isDirectory: true)
-        system.parent = FileNode(name: "System", path: "/System", isDirectory: true)
+        system.parent = systemRoot
+        XCTAssertEqual(DeletionSafety.assess(node: system).matchedRule, "protected.system")
         let group = FileNode(name: "Other", path: t.root.path, isDirectory: false, size: 1)
         group.isAggregate = true
 
@@ -56,11 +60,32 @@ final class BatchReviewTests: XCTestCase {
         XCTAssertEqual(second.added, 1)
         XCTAssertEqual(second.alreadyQueued, 1)
         XCTAssertEqual(vm.reviewQueue.count, 2)
+        withExtendedLifetime(systemRoot) {}
 
         vm.removeFromReview([t.file])
         XCTAssertEqual(vm.reviewQueue.map(\.id), [t.folder.id])
         vm.clearReviewQueue()
         XCTAssertTrue(vm.reviewQueue.isEmpty)
+    }
+
+    func testQueuedFolderTakesTheStricterPolicyOfQueuedItemsInside() {
+        let t = tree()
+        // A subfolder that could not be read completely needs a strong confirmation.
+        let locked = FileNode(name: "locked", path: t.folder.path + "/locked", isDirectory: true)
+        locked.parent = t.folder
+        locked.measurementAccuracy = .incomplete
+        XCTAssertEqual(DeletionSafety.assess(node: t.folder).actionPolicy, .standardConfirmation)
+        XCTAssertEqual(DeletionSafety.assess(node: locked).actionPolicy, .strongConfirmation)
+
+        let vm = ScanViewModel()
+        vm.reviewQueue = [t.folder, locked]
+        vm.requestBatchDeletion()
+        let pending = try? XCTUnwrap(vm.pendingBatchDeletion)
+        XCTAssertEqual(pending?.items.map(\.node.id), [t.folder.id])
+        XCTAssertEqual(pending?.excludedNested, 1)
+        XCTAssertEqual(pending?.requiresStrongConfirmation, true,
+                       "Moving the folder moves the child, so its stronger confirmation carries over")
+        withExtendedLifetime(t.root) {}
     }
 
     func testNestedQueueItemsMoveWithTheirFolder() {

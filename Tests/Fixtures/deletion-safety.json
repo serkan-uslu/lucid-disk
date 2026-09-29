@@ -29,5 +29,17 @@
   {"path": "/Users/example/documents/notes.txt", "home": "/Users/example", "risk": "sensitive", "rule": "sensitive.user-data"},
   {"path": "/Users/example/.ssh/id_ed25519", "home": "/Users/example", "risk": "sensitive", "rule": "sensitive.user-data"},
   {"path": "/Users/example/tmp/notes.txt", "home": "/Users/example", "risk": "review", "rule": "review.home"},
-  {"path": "/Volumes/Backup/photos", "home": "/Users/example", "risk": "review", "rule": "review.unknown"}
+  {"path": "/Volumes/Backup/photos", "home": "/Users/example", "risk": "review", "rule": "review.unknown"},
+  {"path": "/Users/example/Library", "home": "/Users/example", "risk": "protected", "rule": "protected.user-library"},
+  {"path": "/Users/example/library", "home": "/Users/example", "risk": "protected", "rule": "protected.user-library"},
+  {"path": "/Users/example/Library/Developer", "home": "/Users/example", "risk": "sensitive", "rule": "sensitive.contains-sensitive"},
+  {"path": "/Users/example/Library/Developer/Xcode", "home": "/Users/example", "risk": "sensitive", "rule": "sensitive.contains-sensitive"},
+  {"path": "/Users/example/LIBRARY/developer/xcode", "home": "/Users/example", "risk": "sensitive", "rule": "sensitive.contains-sensitive"},
+  {"path": "/Users/example/Library/Developer/CoreSimulator", "home": "/Users/example", "risk": "sensitive", "rule": "sensitive.contains-sensitive"},
+  {"path": "/Users/example/Library/Keychains", "home": "/Users/example", "risk": "sensitive", "rule": "sensitive.user-data"},
+  {"path": "/Users/example/Library/Containers/com.example.app", "home": "/Users/example", "risk": "sensitive", "rule": "sensitive.user-data"},
+  {"path": "/Users/example/Library/Group Containers", "home": "/Users/example", "risk": "sensitive", "rule": "sensitive.user-data"},
+  {"path": "/Users/example/Library/Preferences/com.example.plist", "home": "/Users/example", "risk": "sensitive", "rule": "sensitive.user-data"},
+  {"path": "/Users/example/Library/Developer/Xcode/DerivedData", "home": "/Users/example", "risk": "rebuildable", "rule": "rebuildable.xcode-derived-data"},
+  {"path": "/Users/example/Projects/app", "home": "/Users/example", "risk": "review", "rule": "review.home"}
 ]

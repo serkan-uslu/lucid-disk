@@ -8,12 +8,16 @@ enum InsightConfidence: String {
     case high
     case medium
     case low
+    /// A model's guess from metadata. Matching a safety rule says where an item
+    /// is, not what it is for, so model text never inherits the rule's confidence.
+    case modelEstimate
 
     var title: String {
         switch self {
         case .high: String(localized: "High confidence")
         case .medium: String(localized: "Medium confidence")
         case .low: String(localized: "Low confidence")
+        case .modelEstimate: String(localized: "Estimate from metadata")
         }
     }
 }
@@ -165,7 +169,7 @@ struct LocalFileInsightService {
             whyItMatters: fallback.whyItMatters,
             evidence: fallback.evidence,
             verificationSteps: fallback.verificationSteps,
-            confidence: fallback.confidence,
+            confidence: .modelEstimate,
             source: source,
             modelName: modelName
         )

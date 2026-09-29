@@ -52,6 +52,8 @@ final class ScanViewModel: ObservableObject {
     /// Saved scans available to reopen, newest first.
     @Published private(set) var savedScans: [SavedScanInfo] = []
     @Published private(set) var isOpeningSavedScan = false
+    /// The saved scan being loaded. A new scan clears it so a late load cannot replace fresh results.
+    private var savedScanRequest: UUID?
     /// Where a scanned volume's used space goes, for volume-root scans only.
     @Published private(set) var spaceBreakdown: SpaceBreakdown?
     var spaceProbe: SpaceProbe = SystemSpaceProbe()
@@ -74,6 +76,8 @@ final class ScanViewModel: ObservableObject {
         cancelScan()
         let scanID = UUID()
         activeScanID = scanID
+        savedScanRequest = nil
+        isOpeningSavedScan = false
         isScanning = true
         // Keep the completed snapshot intact until its replacement succeeds.
         // Cancelling or failing a rescan must not discard navigation or review work.
@@ -327,8 +331,9 @@ extension ScanViewModel {
 
     private func save(_ result: ScanResult) {
         guard let scanStore, ScanSaving.isEnabled else { return }
+        let generation = scanStore.generation
         Task {
-            _ = await Task.detached(priority: .utility) { try? scanStore.save(result) }.value
+            _ = await Task.detached(priority: .utility) { try? scanStore.save(result, generation: generation) }.value
             refreshSavedScans()
         }
     }
@@ -336,10 +341,14 @@ extension ScanViewModel {
     /// Shows a saved scan. Browsing and queueing work; Trash waits for a fresh scan.
     func openSavedScan(_ info: SavedScanInfo) {
         guard let scanStore, !isScanning, !isMovingToTrash, !isOpeningSavedScan else { return }
+        let request = UUID()
+        savedScanRequest = request
         isOpeningSavedScan = true
         errorMessage = nil
         Task {
             let loaded = await Task.detached(priority: .userInitiated) { try? scanStore.load(info) }.value
+            guard savedScanRequest == request, !isScanning else { return }
+            savedScanRequest = nil
             isOpeningSavedScan = false
             guard let loaded else {
                 errorMessage = String(localized: "The saved scan could not be opened. Scan again to replace it.")

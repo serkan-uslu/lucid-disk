@@ -51,8 +51,15 @@ jobs:
           test "$(jq -r .distribution.appNotarizationStatus candidate/release-evidence.json)" = "Accepted"
           test "$(jq -r .distribution.appStaplerValidated candidate/release-evidence.json)" = "true"
           git merge-base --is-ancestor "$SHA" origin/main
-          git tag -a "v$VERSION" "$SHA" -m "Lucid Disk $VERSION"
-          git push origin "v$VERSION"
+          # Re-runnable: an existing tag is reused only if it already names this commit.
+          # Tags never move; a mismatch stops here.
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null; then
+            git fetch -q origin "refs/tags/v$VERSION:refs/tags/v$VERSION"
+            test "$(git rev-list -n 1 "v$VERSION")" = "$SHA" || { echo "v$VERSION exists on another commit" >&2; exit 1; }
+          else
+            git tag -a "v$VERSION" "$SHA" -m "Lucid Disk $VERSION"
+            git push origin "v$VERSION"
+          fi
 
       - name: Create draft release
         run: |
@@ -61,5 +68,12 @@ jobs:
           for log in candidate/notarization-log.json candidate/app-notarization-log.json; do
             if [ -f "$log" ]; then files+=("$log"); fi
           done
-          gh release create "v$VERSION" "${files[@]}" --verify-tag --draft \
-            --title "Lucid Disk $VERSION" --generate-notes
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            # Only an unpublished draft may be completed; a published release is never changed.
+            test "$(gh release view "v$VERSION" --json isDraft -q .isDraft)" = "true" \
+              || { echo "v$VERSION is already published" >&2; exit 1; }
+            gh release upload "v$VERSION" "${files[@]}" --clobber
+          else
+            gh release create "v$VERSION" "${files[@]}" --verify-tag --draft \
+              --title "Lucid Disk $VERSION" --generate-notes
+          fi
