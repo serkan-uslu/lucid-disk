@@ -42,7 +42,11 @@ struct ExampleEditionApp: App {
 
 Contributions are replaced when added again with the same `id` and removed with `remove(id:)`, so an edition can install or withdraw features at runtime.
 
-Extensions receive a `LucidDiskContext`. It exposes the scan tree (read-only `FileNode`s), the selection, and the review queue, and allows starting a scan, changing focus or selection, and **adding** items to the review queue. It cannot move anything to Trash: that still requires the user's confirmation and the core's identity and safety checks. Risk comes from `DeletionSafety.assess`, whose verdicts extensions can read but not construct.
+Extensions receive a `LucidDiskContext`. It exposes the scan tree (read-only `FileNode`s), the selection (`selectedNode` and `selectedNodes`), and the review queue, and allows starting a scan, changing focus or selection, and **adding** items to the review queue. It cannot move anything to Trash: that still requires the user's confirmation and the core's identity and safety checks. Risk comes from `DeletionSafety.assess`, whose verdicts extensions can read but not construct.
+
+### Saved scans
+
+`ScanStore` saves each completed scan locally and lists, loads and deletes them (`list()`, `latest(forRootPath:)`, `load(_:)`, `delete(_:)`). The Community edition keeps one scan per location; another edition may raise `retentionPerRoot` to keep a history and build views on top of it. The store never uploads anything.
 
 ### Building another edition
 

@@ -106,6 +106,8 @@ struct AppSupportView: View {
             info("3", "Understand before removing", "Select a file for its size and safety notes. Press Space for Quick Look. Ask AI is optional: only that button requests an explanation, based on metadata, not file contents. Choose the AI provider in Settings (⌘,).")
             info("4", "Review, then move to Trash", "Add an item to the Review Queue. Select the queued item, choose Move to Trash, and confirm. Nothing is removed automatically. A new scan refreshes the list and clears the old queue.")
             Divider()
+            info(nil, "Where did my space go?", "After scanning a whole disk, choose the space button above the chart. It shows what the scan measured, volumes macOS manages, what a scan cannot see, and purgeable space.")
+            info(nil, "Several items at once", "⌘-click files in the list or the chart to select several, add them to the Review Queue together, then use Move All to Trash. Every item is checked again just before it moves.")
             info(nil, "Need a file back?", "Open Trash in Finder and use Put Back where available. Lucid Disk never empties the Trash. Disk space is not necessarily freed until you empty it yourself.")
             info(nil, "Missing files or access warnings?", "Some folders require Full Disk Access. You can enable Lucid Disk in System Settings → Privacy & Security → Full Disk Access, then scan again. This does not bypass all macOS protections.")
             Button("Open Privacy Settings") {
@@ -126,6 +128,7 @@ struct AppSupportView: View {
             shortcut("Open selected folder", "↩  →")
             shortcut("Back to parent folder", "⌘ ←")
             shortcut("Quick Look", "Space")
+            shortcut("Select several items", "⌘ Click")
             shortcut("Close preview or help", "Esc")
             shortcut("How to Use", "⌘ ?")
             shortcut("Settings", "⌘ ,")

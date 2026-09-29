@@ -4944,6 +4944,1238 @@
           }
         }
       }
+    },
+    "A saved scan shows names, paths, sizes and dates as they were. You can browse it and build a review queue, but moving items to the Trash always needs a fresh scan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A saved scan shows names, paths, sizes and dates as they were. You can browse it and build a review queue, but moving items to the Trash always needs a fresh scan."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıtlı bir tarama adları, yolları, boyutları ve tarihleri o anki haliyle gösterir. Göz atabilir ve inceleme kuyruğu oluşturabilirsiniz, ancak öğeleri Çöp Kutusu’na taşımak için her zaman yeni bir tarama gerekir."
+          }
+        }
+      }
+    },
+    "Add %lld to Review Queue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add %lld to Review Queue"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld öğeyi İnceleme Kuyruğuna Ekle"
+          }
+        }
+      }
+    },
+    "Added %lld to the queue.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Added %lld to the queue."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kuyruğa %lld öğe eklendi."
+          }
+        }
+      }
+    },
+    "Another volume sharing this disk's space. Scan it separately to see inside.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another volume sharing this disk's space. Scan it separately to see inside."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu diskin alanını paylaşan başka bir birim. İçini görmek için ayrıca tarayın."
+          }
+        }
+      }
+    },
+    "Clear": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temizle"
+          }
+        }
+      }
+    },
+    "Clear Selection": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear Selection"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçimi Temizle"
+          }
+        }
+      }
+    },
+    "Click a folder to open it. Click a file to inspect it. ⌘-click to select several.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click a folder to open it. Click a file to inspect it. ⌘-click to select several."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açmak için bir klasöre, incelemek için bir dosyaya tıklayın. Birden fazla seçmek için ⌘ ile tıklayın."
+          }
+        }
+      }
+    },
+    "Continue where you left off": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continue where you left off"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaldığınız yerden devam edin"
+          }
+        }
+      }
+    },
+    "Counted more than once": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Counted more than once"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Birden fazla sayılan"
+          }
+        }
+      }
+    },
+    "Delete Saved Scans": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Saved Scans"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıtlı Taramaları Sil"
+          }
+        }
+      }
+    },
+    "Delete Saved Scans…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete Saved Scans…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıtlı Taramaları Sil…"
+          }
+        }
+      }
+    },
+    "Delete all saved scans?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete all saved scans?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm kayıtlı taramalar silinsin mi?"
+          }
+        }
+      }
+    },
+    "Each item is checked again just before it moves. Nothing is permanently deleted.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each item is checked again just before it moves. Nothing is permanently deleted."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Her öğe taşınmadan hemen önce yeniden denetlenir. Hiçbir şey kalıcı olarak silinmez."
+          }
+        }
+      }
+    },
+    "Everything the scan could open and measure.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everything the scan could open and measure."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taramanın açıp ölçebildiği her şey."
+          }
+        }
+      }
+    },
+    "File-system metadata and hidden system folders on this volume.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File-system metadata and hidden system folders on this volume."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu birimdeki dosya sistemi üst verisi ve gizli sistem klasörleri."
+          }
+        }
+      }
+    },
+    "Files macOS needs to start up, including cryptexes for system updates. Managed by macOS.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Files macOS needs to start up, including cryptexes for system updates. Managed by macOS."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS’in başlamak için ihtiyaç duyduğu dosyalar; sistem güncellemeleri için cryptex’ler dahil. macOS tarafından yönetilir."
+          }
+        }
+      }
+    },
+    "General": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Genel"
+          }
+        }
+      }
+    },
+    "I Understand — Move All to Trash": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I Understand — Move All to Trash"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anlıyorum — Tümünü Çöp Kutusu’na Taşı"
+          }
+        }
+      }
+    },
+    "In queue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In queue"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kuyrukta"
+          }
+        }
+      }
+    },
+    "Lucid Disk can keep the last scan of each location so it opens instantly next time. Saved scans stay on this Mac and are never uploaded.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lucid Disk can keep the last scan of each location so it opens instantly next time. Saved scans stay on this Mac and are never uploaded."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lucid Disk her konumun son taramasını saklayabilir; böylece bir sonraki sefer anında açılır. Kayıtlı taramalar bu Mac’te kalır ve asla yüklenmez."
+          }
+        }
+      }
+    },
+    "Move All to Trash": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move All to Trash"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tümünü Çöp Kutusu’na Taşı"
+          }
+        }
+      }
+    },
+    "Move All to Trash…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move All to Trash…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tümünü Çöp Kutusu’na Taşı…"
+          }
+        }
+      }
+    },
+    "Move %lld items to Trash?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move %lld items to Trash?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld öğe Çöp Kutusu’na taşınsın mı?"
+          }
+        }
+      }
+    },
+    "Move %lld items, including sensitive data?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move %lld items, including sensitive data?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hassas veriler dahil %lld öğe taşınsın mı?"
+          }
+        }
+      }
+    },
+    "Moved 1 item to Trash. You can restore it from Finder.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moved 1 item to Trash. You can restore it from Finder."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 öğe Çöp Kutusu’na taşındı. Finder’dan geri yükleyebilirsiniz."
+          }
+        }
+      }
+    },
+    "Moved %lld items to Trash. You can restore them from Finder.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moved %lld items to Trash. You can restore them from Finder."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld öğe Çöp Kutusu’na taşındı. Finder’dan geri yükleyebilirsiniz."
+          }
+        }
+      }
+    },
+    "None of the queued items can be moved to the Trash.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "None of the queued items can be moved to the Trash."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kuyruktaki öğelerin hiçbiri Çöp Kutusu’na taşınamaz."
+          }
+        }
+      }
+    },
+    "Only Lucid Disk’s saved scan files are removed. Your own files are not touched.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only Lucid Disk’s saved scan files are removed. Your own files are not touched."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yalnızca Lucid Disk’in kayıtlı tarama dosyaları silinir. Kendi dosyalarınıza dokunulmaz."
+          }
+        }
+      }
+    },
+    "Open": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aç"
+          }
+        }
+      }
+    },
+    "Open Full Disk Access Settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Full Disk Access Settings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tam Disk Erişimi Ayarlarını Aç"
+          }
+        }
+      }
+    },
+    "Other volume: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other volume: %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diğer birim: %@"
+          }
+        }
+      }
+    },
+    "Queued items move to the Trash only after you confirm, and each is checked again first.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Queued items move to the Trash only after you confirm, and each is checked again first."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kuyruktaki öğeler yalnızca siz onayladıktan sonra Çöp Kutusu’na taşınır ve her biri önce yeniden denetlenir."
+          }
+        }
+      }
+    },
+    "Remove %lld from Review Queue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove %lld from Review Queue"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld öğeyi İnceleme Kuyruğundan Çıkar"
+          }
+        }
+      }
+    },
+    "Save the last scan of each location": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save the last scan of each location"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Her konumun son taramasını kaydet"
+          }
+        }
+      }
+    },
+    "Saved scan from %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved scan from %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıtlı tarama: %@"
+          }
+        }
+      }
+    },
+    "Saved scans": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saved scans"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıtlı taramalar"
+          }
+        }
+      }
+    },
+    "Scanned by Lucid Disk": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanned by Lucid Disk"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lucid Disk’in taradığı"
+          }
+        }
+      }
+    },
+    "See where this disk's used space goes, including what a scan cannot see": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See where this disk's used space goes, including what a scan cannot see"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu diskin kullanılan alanının nereye gittiğini, taramanın göremediği kısım dahil görün"
+          }
+        }
+      }
+    },
+    "Sizes come from macOS. Volumes it manages are listed so you know what they are; Lucid Disk never changes them.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sizes come from macOS. Volumes it manages are listed so you know what they are; Lucid Disk never changes them."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boyutlar macOS’ten gelir. Yönettiği birimler ne olduklarını bilmeniz için listelenir; Lucid Disk bunları asla değiştirmez."
+          }
+        }
+      }
+    },
+    "Skipped %lld: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skipped %lld: %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atlanan %lld: %@"
+          }
+        }
+      }
+    },
+    "Software update staging": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Software update staging"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yazılım güncelleme hazırlığı"
+          }
+        }
+      }
+    },
+    "Space breakdown": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Space breakdown"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alan dökümü"
+          }
+        }
+      }
+    },
+    "Space used while macOS prepares updates. Managed by macOS.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Space used while macOS prepares updates. Managed by macOS."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS güncellemeleri hazırlarken kullanılan alan. macOS tarafından yönetilir."
+          }
+        }
+      }
+    },
+    "Startup support (Preboot)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Startup support (Preboot)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlangıç desteği (Preboot)"
+          }
+        }
+      }
+    },
+    "Swap files and the sleep image. macOS manages this volume and shrinks it as memory pressure falls.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swap files and the sleep image. macOS manages this volume and shrinks it as memory pressure falls."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takas dosyaları ve uyku görüntüsü. Bu birimi macOS yönetir ve bellek baskısı azaldıkça küçültür."
+          }
+        }
+      }
+    },
+    "Swap in use: %@.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swap in use: %@."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kullanılan takas: %@."
+          }
+        }
+      }
+    },
+    "System files kept outside the folders a scan can reach: the Spotlight index, document versions, file-system event logs and APFS metadata.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System files kept outside the folders a scan can reach: the Spotlight index, document versions, file-system event logs and APFS metadata."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taramanın ulaşabildiği klasörlerin dışında tutulan sistem dosyaları: Spotlight dizini, belge sürümleri, dosya sistemi olay günlükleri ve APFS üst verisi."
+          }
+        }
+      }
+    },
+    "The recovery system used to repair or reinstall macOS. Managed by macOS.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The recovery system used to repair or reinstall macOS. Managed by macOS."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS’i onarmak veya yeniden yüklemek için kullanılan kurtarma sistemi. macOS tarafından yönetilir."
+          }
+        }
+      }
+    },
+    "The saved scan could not be opened. Scan again to replace it.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The saved scan could not be opened. Scan again to replace it."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıtlı tarama açılamadı. Yerine yenisini almak için yeniden tarayın."
+          }
+        }
+      }
+    },
+    "The scan adds up files whose blocks are shared on disk, such as APFS clones, so its total is higher than the space actually used.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The scan adds up files whose blocks are shared on disk, such as APFS clones, so its total is higher than the space actually used."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarama, APFS klonları gibi diskte blok paylaşan dosyaları ayrı ayrı toplar; bu yüzden toplamı gerçekte kullanılan alandan yüksektir."
+          }
+        }
+      }
+    },
+    "This is a saved scan. Scan again before moving items to the Trash.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is a saved scan. Scan again before moving items to the Trash."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kayıtlı bir tarama. Öğeleri Çöp Kutusu’na taşımadan önce yeniden tarayın."
+          }
+        }
+      }
+    },
+    "Up to %@ is purgeable: macOS frees it automatically when an app needs the space.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up to %@ is purgeable: macOS frees it automatically when an app needs the space."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ kadarı temizlenebilir alan: bir uygulama alana ihtiyaç duyduğunda macOS bunu otomatik olarak boşaltır."
+          }
+        }
+      }
+    },
+    "Used, but not visible to the scan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Used, but not visible to the scan"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kullanılan ama taramanın göremediği"
+          }
+        }
+      }
+    },
+    "Virtual memory": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Virtual memory"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sanal bellek"
+          }
+        }
+      }
+    },
+    "Where your space goes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where your space goes"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alanınız nereye gidiyor"
+          }
+        }
+      }
+    },
+    "and %lld more": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "and %lld more"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ve %lld tane daha"
+          }
+        }
+      }
+    },
+    "macOS 14+": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 14+"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS 14+"
+          }
+        }
+      }
+    },
+    "macOS Recovery": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS Recovery"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS Kurtarma"
+          }
+        }
+      }
+    },
+    "· Browse and queue now; scan again before moving anything to the Trash.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "· Browse and queue now; scan again before moving anything to the Trash."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "· Şimdi göz atıp kuyruğa ekleyebilirsiniz; bir şeyi Çöp Kutusu’na taşımadan önce yeniden tarayın."
+          }
+        }
+      }
+    },
+    "%lld items selected": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld items selected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld öğe seçildi"
+          }
+        }
+      }
+    },
+    "%lld were already queued.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld were already queued."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld öğe zaten kuyruktaydı."
+          }
+        }
+      }
+    },
+    "%lld protected items were skipped.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld protected items were skipped."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld korumalı öğe atlandı."
+          }
+        }
+      }
+    },
+    "%lld “Other” groups were skipped; open them to pick items.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld “Other” groups were skipped; open them to pick items."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld “Diğer” grubu atlandı; öğe seçmek için grupları açın."
+          }
+        }
+      }
+    },
+    "%lld items may contain personal or app data.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld items may contain personal or app data."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld öğe kişisel veya uygulama verisi içerebilir."
+          }
+        }
+      }
+    },
+    "%lld protected items stay where they are.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld protected items stay where they are."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld korumalı öğe yerinde kalır."
+          }
+        }
+      }
+    },
+    "%lld items are inside a queued folder and move with it.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld items are inside a queued folder and move with it."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld öğe kuyruktaki bir klasörün içinde ve onunla birlikte taşınır."
+          }
+        }
+      }
+    },
+    "%lld local Time Machine snapshots. macOS does not report their size and removes them automatically when space runs low.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld local Time Machine snapshots. macOS does not report their size and removes them automatically when space runs low."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld yerel Time Machine anlık görüntüsü. macOS boyutlarını bildirmez ve alan azaldığında bunları otomatik olarak siler."
+          }
+        }
+      }
+    },
+    "%lld folders could not be read. Grant Full Disk Access and scan again to measure them.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld folders could not be read. Grant Full Disk Access and scan again to measure them."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld klasör okunamadı. Ölçmek için Tam Disk Erişimi verin ve yeniden tarayın."
+          }
+        }
+      }
+    },
+    "%lld folders could not be read.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld folders could not be read."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld klasör okunamadı."
+          }
+        }
+      }
+    },
+    "%lld saved scans": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld saved scans"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld kayıtlı tarama"
+          }
+        }
+      }
+    },
+    "%@ · %@ used of %@ · %@ free": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · %@ used of %@ · %@ free"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · %3$@ alanın %2$@ kadarı kullanılıyor · %4$@ boş"
+          }
+        }
+      }
+    },
+    "%@ outside the scan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ outside the scan"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ taramanın dışında"
+          }
+        }
+      }
+    },
+    "Where did my space go?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Where did my space go?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alanım nereye gitti?"
+          }
+        }
+      }
+    },
+    "After scanning a whole disk, choose the space button above the chart. It shows what the scan measured, volumes macOS manages, what a scan cannot see, and purgeable space.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After scanning a whole disk, choose the space button above the chart. It shows what the scan measured, volumes macOS manages, what a scan cannot see, and purgeable space."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bütün bir diski taradıktan sonra grafiğin üstündeki alan düğmesini seçin. Taramanın ölçtüğü alanı, macOS’in yönettiği birimleri, taramanın göremediği kısmı ve temizlenebilir alanı gösterir."
+          }
+        }
+      }
+    },
+    "Several items at once": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Several items at once"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aynı anda birden fazla öğe"
+          }
+        }
+      }
+    },
+    "⌘-click files in the list or the chart to select several, add them to the Review Queue together, then use Move All to Trash. Every item is checked again just before it moves.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⌘-click files in the list or the chart to select several, add them to the Review Queue together, then use Move All to Trash. Every item is checked again just before it moves."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Birden fazla seçmek için listede veya grafikte dosyalara ⌘ ile tıklayın, hepsini birlikte İnceleme Kuyruğuna ekleyin, ardından Tümünü Çöp Kutusu’na Taşı’yı kullanın. Her öğe taşınmadan hemen önce yeniden denetlenir."
+          }
+        }
+      }
+    },
+    "Select several items": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select several items"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Birden fazla öğe seç"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

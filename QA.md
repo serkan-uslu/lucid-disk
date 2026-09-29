@@ -1,5 +1,7 @@
 # Desktop regression review — 0.2.1
 
+> **0.4.0 note:** Adds multi-selection with batch review and Move All to Trash, saved scans, and the space breakdown. `swift test` (88 tests) and `Tools/review_ui.sh` in English and Turkish passed on 2026-09-29, including batch selection, batch confirmation, saved-scan Trash blocking, and a space breakdown computed from this Mac's real `diskutil` data whose parts add up to the used space. Batch Trash against real files is covered by `BatchReviewTests`.
+
 > **0.3.0 note:** 0.3.0 adds selectable AI providers (Apple on-device, Ollama, Claude API, rules only), a Settings window with AI and MCP tabs, a visual refresh, case-insensitive safety rules shared with the MCP server through one fixture, and two new read-only MCP tools. Automated coverage: `swift test` and `pytest mcp/tests`. The desktop review below predates 0.3.0; re-run `Tools/review_ui.sh` on an otherwise idle desktop (keyboard checks fail if another app takes focus) and exercise real Ollama and Claude API requests manually before a release.
 
 Reviewed on 2026-09-29 on Apple Silicon, macOS 26.4. This is a local development build, not a notarized release sign-off.
