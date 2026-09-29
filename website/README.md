@@ -20,7 +20,7 @@ npm run build
 
 ## Deploy
 
-Live at https://lucid-disk.vercel.app (Vercel project `lucid-disk`). Deploy from this folder with `npx vercel deploy --prod`, or connect the repository with **Root Directory** set to `website`. Set `NEXT_PUBLIC_SITE_URL` to the production URL so social previews use absolute links.
+Live at https://lucid-disk.vercel.app. The Vercel project `lucid-disk` is connected to this repository with **Root Directory** `website`: pushes to `main` deploy production and pull requests get preview deployments. For a manual production deploy, run `npx vercel deploy --prod` from the repository root. Set `NEXT_PUBLIC_SITE_URL` to the production URL so social previews use absolute links.
 
 ## License
 
