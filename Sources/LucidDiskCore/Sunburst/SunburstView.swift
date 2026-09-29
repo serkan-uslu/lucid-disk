@@ -32,9 +32,11 @@ struct SunburstView: View {
     let focusedNode: FileNode
     let wedges: [Wedge]
     let selectedNode: FileNode?
+    let selectedIDs: Set<UUID>
     var onZoomOut: () -> Void
     var onSelect: (FileNode?) -> Void
     var onFocus: (FileNode) -> Void
+    var onToggleSelection: (FileNode) -> Void = { _ in }
 
     @State private var hoveredNodeID: UUID?
     private var hovered: FileNode? { wedges.first { $0.node.id == hoveredNodeID }?.node }
@@ -64,7 +66,7 @@ struct SunburstView: View {
                                 startDegrees: wedge.startDegrees, endDegrees: wedge.endDegrees
                             )
                             let color = chartColor(seed: wedge.colorSeed, level: wedge.level, aggregate: wedge.node.isAggregate)
-                            let selected = selectedNode?.id == wedge.node.id
+                            let selected = selectedIDs.contains(wedge.node.id)
                             let hovered = hoveredNodeID == wedge.node.id
                             let dimmed = hoveredNodeID != nil && !hovered && !selected
                             context.fill(path, with: .color(color.opacity(dimmed ? 0.55 : (hovered || selected ? 1 : 0.88))))
@@ -89,7 +91,7 @@ struct SunburstView: View {
                         }
                     }
 
-                    ChartInputSurface(wedges: wedges, onActivate: activate, onZoomOut: onZoomOut, onHover: { next in
+                    ChartInputSurface(wedges: wedges, onActivate: activate, onToggle: onToggleSelection, onZoomOut: onZoomOut, onHover: { next in
                         if next != hoveredNodeID { hoveredNodeID = next }
                     })
                     .accessibilityHidden(true)
@@ -151,6 +153,7 @@ struct SunburstView: View {
 private struct ChartInputSurface: NSViewRepresentable {
     let wedges: [Wedge]
     let onActivate: (FileNode) -> Void
+    let onToggle: (FileNode) -> Void
     let onZoomOut: () -> Void
     let onHover: (UUID?) -> Void
 
@@ -163,6 +166,7 @@ private struct ChartInputSurface: NSViewRepresentable {
     func updateNSView(_ view: ChartMouseView, context: Context) {
         view.wedges = wedges
         view.onActivate = onActivate
+        view.onToggle = onToggle
         view.onZoomOut = onZoomOut
         view.onHover = onHover
     }
@@ -171,6 +175,7 @@ private struct ChartInputSurface: NSViewRepresentable {
 private final class ChartMouseView: NSView {
     var wedges: [Wedge] = []
     var onActivate: ((FileNode) -> Void)?
+    var onToggle: ((FileNode) -> Void)?
     var onZoomOut: (() -> Void)?
     var onHover: ((UUID?) -> Void)?
     private var tracking: NSTrackingArea?
@@ -194,7 +199,13 @@ private final class ChartMouseView: NSView {
             onZoomOut?()
             return
         }
-        if let node = node(at: event) { onActivate?(node) }
+        guard let node = node(at: event) else { return }
+        // ⌘-click adds a slice to the selection instead of opening it.
+        if event.modifierFlags.contains(.command), !node.isAggregate {
+            onToggle?(node)
+        } else {
+            onActivate?(node)
+        }
     }
 
     override func mouseMoved(with event: NSEvent) {

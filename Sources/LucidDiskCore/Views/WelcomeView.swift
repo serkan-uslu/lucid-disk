@@ -38,7 +38,10 @@ struct ScanProgressView: View {
 
 struct WelcomeView: View {
     let volumes: [ScanVolume]
+    var savedScans: [SavedScanInfo] = []
+    var isOpeningSavedScan = false
     let onScan: (String) -> Void
+    var onOpenSaved: (SavedScanInfo) -> Void = { _ in }
     let onChooseFolder: () -> Void
 
     var body: some View {
@@ -86,6 +89,19 @@ struct WelcomeView: View {
                                                startPoint: .topLeading, endPoint: .bottomTrailing),
                                 in: RoundedRectangle(cornerRadius: 20, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Theme.cardStroke))
+
+                    if !savedScans.isEmpty {
+                        VStack(alignment: .leading, spacing: 14) {
+                            HStack {
+                                Text("Continue where you left off").font(.title3.weight(.semibold))
+                                if isOpeningSavedScan { ProgressView().controlSize(.small) }
+                            }
+                            ForEach(savedScans) { scan in
+                                SavedScanRow(scan: scan, onOpen: { onOpenSaved(scan) }, onRescan: { onScan(scan.rootPath) })
+                                    .disabled(isOpeningSavedScan)
+                            }
+                        }
+                    }
 
                     VStack(alignment: .leading, spacing: 14) {
                         Text("Connected storage").font(.title3.weight(.semibold))
@@ -151,5 +167,35 @@ struct ScanningRings: View {
         }
         .onAppear { spinning = true }
         .accessibilityHidden(true)
+    }
+}
+
+private struct SavedScanRow: View {
+    let scan: SavedScanInfo
+    let onOpen: () -> Void
+    let onRescan: () -> Void
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: "clock.arrow.circlepath")
+                .font(.title3).foregroundStyle(Theme.accent)
+                .frame(width: 40, height: 40)
+                .background(Theme.accent.opacity(0.13), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(scan.rootName).font(.headline).lineLimit(1)
+                Text(scan.rootPath).font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+            }
+            Spacer(minLength: 12)
+            VStack(alignment: .trailing, spacing: 3) {
+                Text(ByteCountFormatter.string(fromByteCount: scan.allocatedSizeBytes, countStyle: .file))
+                    .font(.callout.weight(.semibold)).monospacedDigit()
+                Text(scan.scannedAt.formatted(.relative(presentation: .named)))
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Button("Open", action: onOpen).buttonStyle(.borderedProminent)
+                .accessibilityIdentifier("open-saved-scan")
+            Button("Scan Again", action: onRescan).buttonStyle(.bordered)
+        }
+        .card(padding: 14)
     }
 }

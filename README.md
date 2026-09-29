@@ -9,7 +9,9 @@ The project is licensed under the [Apache License 2.0](LICENSE).
 - Scans folders and mounted volumes with cancellable, stale-result-safe tasks.
 - Reports logical and allocated sizes, hard-link deduplication, and incomplete or estimated measurements.
 - Provides searchable and sortable file views, Quick Look, keyboard navigation, and VoiceOver labels.
-- Builds a review queue before any cleanup and blocks protected system locations.
+- Builds a review queue before any cleanup and blocks protected system locations. Select several items with ⌘-click (list or chart) to queue them together, then **Move All to Trash** with one confirmation; every item is re-checked just before it moves.
+- Explains "System Data": after scanning a whole disk, **Space breakdown** shows what the scan measured, other APFS volumes (Preboot, Recovery, VM, Update), what is used but not visible to a scan, purgeable space, local Time Machine snapshots, and unreadable folders.
+- Saves the last scan of each location on this Mac so it reopens instantly; saved scans can be browsed and queued, and a fresh scan is required before anything moves to the Trash.
 - Produces Lucid Insight explanations only when you press **Ask AI**; ordinary selection never invokes a model. In **Settings → AI** choose Apple's on-device model (default), a local [Ollama](https://ollama.com) model, the Claude API with your own key, or rules only. The model only suggests a probable purpose; safety decisions stay deterministic.
 - Includes an optional, read-only MCP server with five tools; **Settings → MCP** lists them and generates setup commands for Claude Code, Claude Desktop, and Codex.
 

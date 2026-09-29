@@ -128,6 +128,7 @@ final class ReviewDelegate: NSObject, NSApplicationDelegate {
         try await reviewSettings()
         window.makeKeyAndOrderFront(nil)
         try await reviewExtensionSlots(root)
+        try await reviewCommunityFeatures(root)
         check(model.focusedNode?.id == selectedBeforeHelp, "Help leaves disk navigation intact")
         model.rootNode = nil
         model.focusedNode = nil
@@ -161,6 +162,57 @@ final class ReviewDelegate: NSObject, NSApplicationDelegate {
             }
         } else { failures.append("10,000-entry directory did not load") }
         try await reviewRealFileWorkflow()
+    }
+
+    /// Batch selection, saved-scan state and the space breakdown sheet.
+    func reviewCommunityFeatures(_ root: FileNode) async throws {
+        model.focus(on: root.children[1])
+        try await pause()
+        let files = root.children[1].children
+        model.select(Array(files.prefix(3)), primary: files[2])
+        try await pause(); try await pause()
+        check(model.selectedNodes.count == 3, "Several files can be selected")
+        capture("batch-selection")
+        let outcome = model.addToReview(Array(files.prefix(3)))
+        check(outcome.added == 3, "Batch adds items to the review queue")
+        try await pause()
+        capture("batch-queued")
+        model.requestBatchDeletion()
+        try await pause()
+        check(model.pendingBatchDeletion?.items.count == 3, "Move All asks for confirmation with every item")
+        capture("batch-confirmation")
+        model.pendingBatchDeletion = nil
+        model.clearReviewQueue()
+        model.select([], primary: nil)
+
+        let info = SavedScanInfo(id: UUID(), rootPath: root.path, rootName: root.name,
+                                 scannedAt: Date().addingTimeInterval(-7_200), duration: 3.2, fileCount: 48,
+                                 directoryCount: 7, logicalSizeBytes: root.size, allocatedSizeBytes: root.size,
+                                 unreadableDirectoryCount: 0, duplicateHardLinkCount: 0, warnings: [],
+                                 formatVersion: 1)
+        model.show(savedScan: SavedScan(info: info, root: root))
+        try await pause()
+        check(model.isShowingSavedScan, "A saved scan opens as a snapshot")
+        capture("saved-scan")
+        model.requestDeletion(node: files[0])
+        check(model.pendingDeletion == nil, "A saved scan never asks to move items to the Trash")
+        model.errorMessage = nil
+        model.snapshotDate = nil
+        model.focus(on: root)
+
+        if let breakdown = SpaceAnalyzer.breakdown(rootPath: "/", scannedBytes: 720_000_000_000, unreadableFolderCount: 12) {
+            let sheet = NSWindow(contentRect: NSRect(x: 200, y: 160, width: 640, height: 600),
+                                 styleMask: [.titled, .closable], backing: .buffered, defer: false)
+            sheet.isReleasedWhenClosed = false
+            sheet.contentView = NSHostingView(rootView: SpaceBreakdownView(breakdown: breakdown) {}
+                .preferredColorScheme(.dark).tint(Theme.accent))
+            sheet.makeKeyAndOrderFront(nil)
+            try await pause(); try await pause()
+            capture("space-breakdown", in: sheet)
+            check(breakdown.items.reduce(0) { $0 + $1.bytes } == breakdown.usedBytes, "Space breakdown adds up to used space")
+            sheet.close()
+        }
+        window.makeKeyAndOrderFront(nil)
     }
 
     /// Installs a throwaway edition to prove the open-core slots render, then removes it.

@@ -8,10 +8,11 @@ struct ContentView: View {
     @ObservedObject private var extensions = LucidDiskExtensions.shared
     @State private var wedges: [Wedge] = []
     @State private var quickLookItem: QuickLookItem?
+    @State private var showingSpaceBreakdown = false
 
     @MainActor
     init(viewModel: ScanViewModel? = nil) {
-        _viewModel = StateObject(wrappedValue: viewModel ?? ScanViewModel())
+        _viewModel = StateObject(wrappedValue: viewModel ?? ScanViewModel(scanStore: .shared))
     }
 
     var body: some View {
@@ -94,6 +95,9 @@ struct ContentView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { viewModel.refreshMountedVolumes() }
         }
+        .onReceive(NotificationCenter.default.publisher(for: ScanStore.didChangeNotification).receive(on: RunLoop.main)) { _ in
+            viewModel.refreshSavedScans()
+        }
         .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didMountNotification)) { _ in
             viewModel.refreshMountedVolumes()
         }
@@ -104,6 +108,11 @@ struct ContentView: View {
             guard let node = viewModel.selectedNode, !node.isAggregate else { return .ignored }
             quickLookItem = QuickLookItem(url: URL(fileURLWithPath: node.path))
             return .handled
+        }
+        .sheet(isPresented: $showingSpaceBreakdown) {
+            if let breakdown = viewModel.spaceBreakdown {
+                SpaceBreakdownView(breakdown: breakdown) { showingSpaceBreakdown = false }
+            }
         }
         .sheet(item: $quickLookItem) { item in
             VStack(spacing: 0) {
@@ -150,6 +159,25 @@ struct ContentView: View {
         } message: {
             if let pending = viewModel.pendingDeletion {
                 Text(deletionMessage(for: pending))
+            }
+        }
+        .confirmationDialog(
+            batchDialogTitle,
+            isPresented: Binding(
+                get: { viewModel.pendingBatchDeletion != nil },
+                set: { if !$0 { viewModel.pendingBatchDeletion = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button(batchButtonTitle, role: .destructive) {
+                viewModel.confirmBatchDeletion()
+            }
+            Button("Cancel", role: .cancel) {
+                viewModel.pendingBatchDeletion = nil
+            }
+        } message: {
+            if let pending = viewModel.pendingBatchDeletion {
+                Text(batchMessage(for: pending))
             }
         }
     }
@@ -220,6 +248,21 @@ struct ContentView: View {
                             .accessibilityLabel("Remove from review queue")
                         }
                     }
+                    HStack {
+                        Button("Clear") { viewModel.clearReviewQueue() }
+                            .buttonStyle(.borderless)
+                        Spacer()
+                        Button {
+                            viewModel.requestBatchDeletion()
+                        } label: {
+                            Label("Move All to Trash…", systemImage: "trash")
+                        }
+                        .buttonStyle(.borderless)
+                        .foregroundStyle(.red)
+                        .disabled(viewModel.isScanning || viewModel.isMovingToTrash)
+                        .accessibilityIdentifier("move-all-to-trash")
+                    }
+                    .font(.caption)
                 } header: {
                     HStack {
                         Text("Review Queue")
@@ -301,6 +344,16 @@ struct ContentView: View {
                             PathBar(chain: ancestorChain(from: focused)) { viewModel.focus(on: $0) }
                         }
                         Spacer(minLength: 8)
+                        if let breakdown = viewModel.spaceBreakdown {
+                            Button { showingSpaceBreakdown = true } label: {
+                                Label(spaceButtonTitle(breakdown), systemImage: "chart.bar.doc.horizontal")
+                                    .font(.caption.weight(.semibold))
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(breakdown.outsideScanBytes > breakdown.usedBytes / 20 ? .orange : Theme.accent)
+                            .help("See where this disk's used space goes, including what a scan cannot see")
+                            .accessibilityIdentifier("space-breakdown")
+                        }
                         if area.size.width > 1_000 {
                             HStack(spacing: 18) {
                                 StatView(title: String(localized: "Allocated"),
@@ -318,12 +371,14 @@ struct ContentView: View {
                         focusedNode: focused,
                         wedges: wedges,
                         selectedNode: viewModel.selectedNode,
+                        selectedIDs: Set(viewModel.selectedNodes.map(\.id)),
                         onZoomOut: { viewModel.zoomOut() },
                         onSelect: { node in viewModel.selectedNode = node },
-                        onFocus: { node in viewModel.focus(on: node) }
+                        onFocus: { node in viewModel.focus(on: node) },
+                        onToggleSelection: { node in viewModel.toggleSelection(node) }
                     )
                     .padding(.horizontal, 20).padding(.vertical, 12)
-                    Text("Click a folder to open it. Click a file to inspect it.")
+                    Text("Click a folder to open it. Click a file to inspect it. ⌘-click to select several.")
                         .font(.caption).foregroundStyle(.tertiary)
                         .frame(maxWidth: .infinity).padding(.bottom, 14)
                 }
@@ -335,13 +390,17 @@ struct ContentView: View {
                     PieContentsPanel(
                         focusedNode: focused,
                         searchRoot: viewModel.rootNode ?? focused,
-                        selectedNode: viewModel.selectedNode,
-                        onSelect: { node in viewModel.selectedNode = node },
+                        selectedIDs: Set(viewModel.selectedNodes.map(\.id)),
+                        onSelect: { nodes, primary in viewModel.select(nodes, primary: primary) },
                         onFocus: { node in viewModel.focus(on: node) },
                         onPreview: { node in quickLookItem = QuickLookItem(url: URL(fileURLWithPath: node.path)) }
                     )
                     .frame(minHeight: 200, maxHeight: .infinity)
-                    if let selected = viewModel.selectedNode {
+                    if viewModel.selectedNodes.count > 1 {
+                        Divider()
+                        BatchSelectionPanel(nodes: viewModel.selectedNodes, viewModel: viewModel)
+                            .frame(height: min(460, max(300, area.size.height * 0.54)))
+                    } else if let selected = viewModel.selectedNode {
                         Divider()
                         DetailPanel(node: selected, viewModel: viewModel,
                                     onQuickLook: { quickLookItem = QuickLookItem(url: $0) })
@@ -355,7 +414,10 @@ struct ContentView: View {
             }
         } else {
             WelcomeView(volumes: viewModel.mountedVolumes,
+                        savedScans: Array(viewModel.savedScans.prefix(3)),
+                        isOpeningSavedScan: viewModel.isOpeningSavedScan,
                         onScan: { viewModel.startScan(path: $0) },
+                        onOpenSaved: { viewModel.openSavedScan($0) },
                         onChooseFolder: chooseFolder)
         }
     }
@@ -387,6 +449,17 @@ struct ContentView: View {
                     }
                     Button { viewModel.completionMessage = nil } label: { Image(systemName: "xmark") }
                         .buttonStyle(.plain).accessibilityLabel("Dismiss notification")
+                } else if let savedAt = viewModel.snapshotDate, !viewModel.isScanning {
+                    Image(systemName: "clock.arrow.circlepath").foregroundStyle(.orange)
+                    Text("Saved scan from \(savedAt.formatted(.relative(presentation: .named)))")
+                    Text("· Browse and queue now; scan again before moving anything to the Trash.")
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    if let path = viewModel.rootNode?.path {
+                        Button("Scan Again") { viewModel.startScan(path: path) }
+                            .buttonStyle(.link)
+                            .accessibilityIdentifier("rescan-saved")
+                    }
                 } else if let result = viewModel.lastScanResult, !viewModel.isScanning {
                     Image(systemName: viewModel.scanWarnings.isEmpty ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                         .foregroundStyle(viewModel.scanWarnings.isEmpty ? Theme.accent : .orange)
@@ -413,6 +486,44 @@ struct ContentView: View {
     private func deletionMessage(for pending: PendingDeletion) -> String {
         let size = ByteCountFormatter.string(fromByteCount: pending.node.size, countStyle: .file)
         return "\(pending.assessment.risk.title)\n\n\(pending.node.name) • \(size)\n\(pending.node.path)\n\n\(pending.assessment.summary)\n\(pending.assessment.recommendation)"
+    }
+
+    private func spaceButtonTitle(_ breakdown: SpaceBreakdown) -> String {
+        let outside = breakdown.outsideScanBytes
+        guard outside > 0 else { return String(localized: "Space breakdown") }
+        return String(localized: "\(ByteCountFormatter.string(fromByteCount: outside, countStyle: .file)) outside the scan")
+    }
+
+    private var batchDialogTitle: String {
+        guard let pending = viewModel.pendingBatchDeletion else { return "" }
+        return pending.requiresStrongConfirmation
+            ? String(localized: "Move \(pending.items.count) items, including sensitive data?")
+            : String(localized: "Move \(pending.items.count) items to Trash?")
+    }
+
+    private var batchButtonTitle: String {
+        viewModel.pendingBatchDeletion?.requiresStrongConfirmation == true
+            ? String(localized: "I Understand — Move All to Trash")
+            : String(localized: "Move All to Trash")
+    }
+
+    private func batchMessage(for pending: PendingBatchDeletion) -> String {
+        var lines = [ByteCountFormatter.string(fromByteCount: pending.totalBytes, countStyle: .file)]
+        lines += pending.items.prefix(6).map { "• \($0.node.name) — \($0.assessment.risk.title)" }
+        if pending.items.count > 6 {
+            lines.append(String(localized: "and \(pending.items.count - 6) more"))
+        }
+        if pending.sensitiveCount > 0 {
+            lines.append(String(localized: "\(pending.sensitiveCount) items may contain personal or app data."))
+        }
+        if pending.excludedProtected > 0 {
+            lines.append(String(localized: "\(pending.excludedProtected) protected items stay where they are."))
+        }
+        if pending.excludedNested > 0 {
+            lines.append(String(localized: "\(pending.excludedNested) items are inside a queued folder and move with it."))
+        }
+        lines.append(String(localized: "Each item is checked again just before it moves. Nothing is permanently deleted."))
+        return lines.joined(separator: "\n")
     }
 
     private var deletionDialogTitle: String {

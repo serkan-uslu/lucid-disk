@@ -143,6 +143,8 @@ public final class LucidDiskContext: ObservableObject {
     public var rootNode: FileNode? { viewModel.rootNode }
     public var focusedNode: FileNode? { viewModel.focusedNode }
     public var selectedNode: FileNode? { viewModel.selectedNode }
+    /// Every selected item, including `selectedNode`.
+    public var selectedNodes: [FileNode] { viewModel.selectedNodes }
     public var reviewQueue: [FileNode] { viewModel.reviewQueue }
     public var isScanning: Bool { viewModel.isScanning }
     public var mountedVolumePaths: [String] { viewModel.mountedVolumes.map(\.url.path) }

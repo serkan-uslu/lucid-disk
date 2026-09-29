@@ -36,8 +36,8 @@ struct BrowserContents {
 struct PieContentsPanel: View {
     let focusedNode: FileNode
     let searchRoot: FileNode
-    let selectedNode: FileNode?
-    let onSelect: (FileNode?) -> Void
+    let selectedIDs: Set<UUID>
+    let onSelect: ([FileNode], FileNode?) -> Void
     let onFocus: (FileNode) -> Void
     let onPreview: (FileNode) -> Void
 
@@ -97,7 +97,7 @@ struct PieContentsPanel: View {
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                FileBrowserTable(contents: contents, selectedID: selectedNode?.id,
+                FileBrowserTable(contents: contents, selectedIDs: selectedIDs,
                                  total: focusedNode.size, showPath: !searchText.isEmpty,
                                  onSelect: onSelect, onOpen: { node in
                                      searchText = ""
@@ -143,10 +143,10 @@ struct PieContentsPanel: View {
 /// Native row reuse and selection avoid rebuilding a large SwiftUI List on every click.
 private struct FileBrowserTable: NSViewRepresentable {
     let contents: BrowserContents
-    let selectedID: UUID?
+    let selectedIDs: Set<UUID>
     let total: Int64
     let showPath: Bool
-    let onSelect: (FileNode?) -> Void
+    let onSelect: ([FileNode], FileNode?) -> Void
     let onOpen: (FileNode) -> Void
     let onPreview: (FileNode) -> Void
 
@@ -167,7 +167,8 @@ private struct FileBrowserTable: NSViewRepresentable {
         table.intercellSpacing = NSSize(width: 0, height: 2)
         table.backgroundColor = .clear
         table.selectionHighlightStyle = .regular
-        table.allowsMultipleSelection = false
+        // ⌘-click and ⇧-click select several items for batch review.
+        table.allowsMultipleSelection = true
         table.allowsEmptySelection = true
         let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("file"))
         column.resizingMask = .autoresizingMask
@@ -198,10 +199,10 @@ private struct FileBrowserTable: NSViewRepresentable {
             coordinator.rowByID = Dictionary(uniqueKeysWithValues: contents.nodes.enumerated().map { ($0.element.id, $0.offset) })
             table.reloadData()
         }
-        let row = selectedID.flatMap { coordinator.rowByID[$0] } ?? -1
-        if table.selectedRow != row {
-            table.selectRowIndexes(row < 0 ? [] : IndexSet(integer: row), byExtendingSelection: false)
-            if row >= 0 { table.scrollRowToVisible(row) }
+        let rows = IndexSet(selectedIDs.compactMap { coordinator.rowByID[$0] })
+        if table.selectedRowIndexes != rows {
+            table.selectRowIndexes(rows, byExtendingSelection: false)
+            if rows.count == 1, let row = rows.first { table.scrollRowToVisible(row) }
         }
         coordinator.updating = false
     }
@@ -233,7 +234,10 @@ private struct FileBrowserTable: NSViewRepresentable {
 
         func tableViewSelectionDidChange(_ notification: Notification) {
             guard !updating, let table = notification.object as? NSTableView else { return }
-            parent.onSelect(node(at: table.selectedRow))
+            let nodes = table.selectedRowIndexes.compactMap { node(at: $0) }
+            // The clicked row is the natural primary item; keyboard moves use the last selected row.
+            let primaryRow = table.selectedRowIndexes.contains(table.clickedRow) ? table.clickedRow : table.selectedRow
+            parent.onSelect(nodes, node(at: primaryRow))
         }
 
         @objc func openSelected(_ table: NSTableView) {

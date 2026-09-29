@@ -8,7 +8,8 @@ Lucid Disk is designed to analyze storage locally.
 - Scans produce file-system metadata such as paths, types, sizes, and dates in memory on the Mac.
 - Lucid Insight runs only after you press **Ask AI**. Selecting or browsing a file does not invoke a model. It uses metadata, not file contents. Changing the selected file cancels an outstanding explanation and discards its result.
 - Cleanup happens only after review and uses the macOS Trash. The app does not permanently erase files.
-- Scan results are not uploaded or persisted by the app.
+- Scan results are never uploaded. By default the last scan of each location is saved on this Mac (under `~/Library/Application Support/Lucid Disk/Scans`, excluded from backups) so it can reopen instantly. Turn this off or delete saved scans in **Settings → General**. A saved scan can be browsed, but moving items to the Trash always requires a fresh scan.
+- The space breakdown reads volume sizes from macOS (`diskutil`, `tmutil`, and swap statistics) on this Mac only.
 
 ## Lucid Insight providers
 

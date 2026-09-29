@@ -6,6 +6,8 @@ struct SettingsView: View {
 
     var body: some View {
         TabView {
+            GeneralSettingsPane()
+                .tabItem { Label("General", systemImage: "gearshape") }
             InsightSettingsPane()
                 .tabItem { Label("AI", systemImage: "sparkles") }
             MCPSettingsPane()
@@ -17,6 +19,65 @@ struct SettingsView: View {
         }
         .frame(width: 660, height: 640)
         .tint(Theme.accent)
+    }
+}
+
+// MARK: - General
+
+struct GeneralSettingsPane: View {
+    @AppStorage(ScanSaving.key) private var saveScans = true
+    @State private var savedCount = 0
+    @State private var savedBytes: Int64 = 0
+    @State private var confirmDelete = false
+    private let store = ScanStore.shared
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Saved scans").font(.title2.weight(.semibold))
+                    Text("Lucid Disk can keep the last scan of each location so it opens instantly next time. Saved scans stay on this Mac and are never uploaded.")
+                        .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
+                VStack(alignment: .leading, spacing: 12) {
+                    Toggle("Save the last scan of each location", isOn: $saveScans)
+                        .accessibilityIdentifier("save-scans-toggle")
+                    Text("A saved scan shows names, paths, sizes and dates as they were. You can browse it and build a review queue, but moving items to the Trash always needs a fresh scan.")
+                        .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    Divider()
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("\(savedCount) saved scans")
+                            Text(ByteCountFormatter.string(fromByteCount: savedBytes, countStyle: .file))
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Button("Show in Finder") {
+                            NSWorkspace.shared.activateFileViewerSelecting([store.directory])
+                        }
+                        .disabled(savedCount == 0)
+                        Button("Delete Saved Scans…", role: .destructive) { confirmDelete = true }
+                            .disabled(savedCount == 0)
+                    }
+                }
+                .card()
+            }
+            .padding(24)
+        }
+        .task { refresh() }
+        .onReceive(NotificationCenter.default.publisher(for: ScanStore.didChangeNotification).receive(on: RunLoop.main)) { _ in
+            refresh()
+        }
+        .confirmationDialog("Delete all saved scans?", isPresented: $confirmDelete) {
+            Button("Delete Saved Scans", role: .destructive) { store.deleteAll() }
+        } message: {
+            Text("Only Lucid Disk’s saved scan files are removed. Your own files are not touched.")
+        }
+    }
+
+    private func refresh() {
+        savedCount = store.list().count
+        savedBytes = store.diskUsage()
     }
 }
 
