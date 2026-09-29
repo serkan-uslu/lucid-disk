@@ -14,6 +14,18 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 DMG="build/LucidDisk.dmg"
+
+# hdiutil occasionally fails with "Resource temporarily unavailable" on busy
+# machines (notably CI runners); retry a few times before giving up.
+retry() {
+    local attempt
+    for attempt in 1 2 3 4; do
+        "$@" && return 0
+        echo "Attempt $attempt failed: $*" >&2
+        sleep $((attempt * 5))
+    done
+    "$@"
+}
 STAGING="build/dmg-staging"
 # Start clean so an old DMG, log or checksum can never be mistaken for this build.
 rm -f "$DMG" build/SHA256SUMS.txt build/notarization.json build/notarization-log.json
@@ -25,9 +37,9 @@ mkdir -p "$STAGING"
 cp -R "build/${APP_NAME}.app" "$STAGING/"
 cp "LICENSE" "$STAGING/LICENSE.txt"
 ln -s /Applications "$STAGING/Applications"
-hdiutil create -volname "$APP_NAME" -srcfolder "$STAGING" -ov -format UDZO "$DMG"
+retry hdiutil create -volname "$APP_NAME" -srcfolder "$STAGING" -ov -format UDZO "$DMG"
 rm -rf "$STAGING"
-hdiutil verify "$DMG"
+retry hdiutil verify "$DMG"
 
 if [[ "$SIGN_IDENTITY" != "-" ]]; then
     codesign --force --timestamp --sign "$SIGN_IDENTITY" "$DMG"
