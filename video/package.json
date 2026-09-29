@@ -1,0 +1,24 @@
+{
+  "name": "lucid-disk-video",
+  "version": "0.1.0",
+  "private": true,
+  "description": "30-second motion design promo for Lucid Disk, built with Remotion.",
+  "license": "Apache-2.0",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render LucidDiskPromo out/lucid-disk-promo.mp4",
+    "still": "remotion still LucidDiskPromo out/poster.png --frame=880",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.529",
+    "@remotion/google-fonts": "4.0.529",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.529"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "typescript": "^5"
+  }
+}

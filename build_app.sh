@@ -4,8 +4,8 @@ set -euo pipefail
 APP_NAME="Lucid Disk"
 EXECUTABLE="LucidDisk"
 BUNDLE_ID="com.serkanuslu.luciddisk"
-APP_VERSION="${APP_VERSION:-0.2.1}"
-APP_BUILD="${APP_BUILD:-3}"
+APP_VERSION="${APP_VERSION:-0.3.0}"
+APP_BUILD="${APP_BUILD:-4}"
 SIGN_IDENTITY="${CODE_SIGN_IDENTITY:--}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
@@ -32,7 +32,7 @@ cp "Resources/AppIcon.icns" "$APP_DIR/Contents/Resources/AppIcon.icns"
 cp "LICENSE" "$APP_DIR/Contents/Resources/LICENSE"
 find "$resource_dir" -maxdepth 1 -type d -name '*.bundle' -exec cp -R {} "$APP_DIR/Contents/Resources/" \;
 xcrun xcstringstool compile \
-    "Sources/LucidDisk/Resources/Localizable.xcstrings" \
+    "Sources/LucidDiskCore/Resources/Localizable.xcstrings" \
     --output-directory "$APP_DIR/Contents/Resources"
 
 cat > "$APP_DIR/Contents/Info.plist" <<PLIST
@@ -64,6 +64,12 @@ cat > "$APP_DIR/Contents/Info.plist" <<PLIST
     <true/>
     <key>LSApplicationCategoryType</key>
     <string>public.app-category.utilities</string>
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <!-- Lets a user-chosen Ollama server on the local network use plain HTTP. -->
+        <key>NSAllowsLocalNetworking</key>
+        <true/>
+    </dict>
 </dict>
 </plist>
 PLIST

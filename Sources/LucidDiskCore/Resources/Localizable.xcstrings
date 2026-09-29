@@ -1,0 +1,4950 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "How to Use": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How to Use"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nasıl Kullanılır"
+          }
+        }
+      }
+    },
+    "Keyboard Shortcuts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keyboard Shortcuts"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klavye Kısayolları"
+          }
+        }
+      }
+    },
+    "Privacy & Safety": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy & Safety"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gizlilik ve Güvenlik"
+          }
+        }
+      }
+    },
+    "About": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hakkında"
+          }
+        }
+      }
+    },
+    "About Lucid Disk": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About Lucid Disk"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lucid Disk Hakkında"
+          }
+        }
+      }
+    },
+    "Understand your space. Keep control.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Understand your space. Keep control."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alanınızı anlayın. Kontrol sizde kalsın."
+          }
+        }
+      }
+    },
+    "Help topic": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Help topic"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yardım konusu"
+          }
+        }
+      }
+    },
+    "Apache License 2.0": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apache License 2.0"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apache Lisansı 2.0"
+          }
+        }
+      }
+    },
+    "From a full disk to a clear decision.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "From a full disk to a clear decision."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dolu bir diskten bilinçli bir karara."
+          }
+        }
+      }
+    },
+    "Start with a folder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start with a folder"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir klasörle başlayın"
+          }
+        }
+      }
+    },
+    "Choose Folder is a good first scan. Explore Disk scans a mounted volume. Stop Scan cancels safely; your previous completed scan stays available.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose Folder is a good first scan. Explore Disk scans a mounted volume. Stop Scan cancels safely; your previous completed scan stays available."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlk tarama için Klasör Seç’i kullanın. Diski Keşfet, bağlı bir diski tarar. Taramayı Durdur güvenle iptal eder; tamamlanmış önceki taramanız korunur."
+          }
+        }
+      }
+    },
+    "Explore the map": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explore the map"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Haritayı keşfedin"
+          }
+        }
+      }
+    },
+    "On the chart, click a folder to enter it and the center to go back. In the file list, single-click to inspect and double-click a folder to open it. Other groups contain real, smaller items.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On the chart, click a folder to enter it and the center to go back. In the file list, single-click to inspect and double-click a folder to open it. Other groups contain real, smaller items."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grafikte klasöre tıklayarak içine girin, merkeze tıklayarak geri dönün. Listede tek tıklama inceler, klasöre çift tıklama onu açar. Diğer grupları, gerçek küçük öğeleri içerir."
+          }
+        }
+      }
+    },
+    "Understand before removing": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Understand before removing"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Silmeden önce anlayın"
+          }
+        }
+      }
+    },
+    "Select a file for its size and safety notes. Press Space for Quick Look. Ask AI is optional: only that button requests a local explanation, based on metadata, not file contents.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a file for its size and safety notes. Press Space for Quick Look. Ask AI is optional: only that button requests a local explanation, based on metadata, not file contents."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boyut ve güvenlik notları için dosyayı seçin. Hızlı Bakış için Boşluk’a basın. AI’a Sor isteğe bağlıdır: yalnızca bu düğme, dosya içeriğini değil üst verileri kullanan yerel bir açıklama ister."
+          }
+        }
+      }
+    },
+    "Review, then move to Trash": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review, then move to Trash"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İnceleyin, sonra Çöp Kutusu’na taşıyın"
+          }
+        }
+      }
+    },
+    "Add an item to the Review Queue. Select the queued item, choose Move to Trash, and confirm. Nothing is removed automatically. A new scan refreshes the list and clears the old queue.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add an item to the Review Queue. Select the queued item, choose Move to Trash, and confirm. Nothing is removed automatically. A new scan refreshes the list and clears the old queue."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öğeyi İnceleme Kuyruğu’na ekleyin. Kuyruktan seçip Çöp Kutusu’na Taşı’ya basın ve onaylayın. Hiçbir şey otomatik silinmez. Yeni tarama listeyi yeniler ve eski kuyruğu temizler."
+          }
+        }
+      }
+    },
+    "Need a file back?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Need a file back?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir dosyayı geri mi istiyorsunuz?"
+          }
+        }
+      }
+    },
+    "Open Trash in Finder and use Put Back where available. Lucid Disk never empties the Trash. Disk space is not necessarily freed until you empty it yourself.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Trash in Finder and use Put Back where available. Lucid Disk never empties the Trash. Disk space is not necessarily freed until you empty it yourself."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finder’da Çöp Kutusu’nu açıp varsa Geri Koy’u kullanın. Lucid Disk, Çöp Kutusu’nu asla boşaltmaz. Siz boşaltana kadar disk alanı açılmayabilir."
+          }
+        }
+      }
+    },
+    "Missing files or access warnings?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Missing files or access warnings?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eksik dosyalar veya erişim uyarıları mı var?"
+          }
+        }
+      }
+    },
+    "Some folders require Full Disk Access. You can enable Lucid Disk in System Settings → Privacy & Security → Full Disk Access, then scan again. This does not bypass all macOS protections.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some folders require Full Disk Access. You can enable Lucid Disk in System Settings → Privacy & Security → Full Disk Access, then scan again. This does not bypass all macOS protections."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bazı klasörler Tam Disk Erişimi gerektirir. Sistem Ayarları → Gizlilik ve Güvenlik → Tam Disk Erişimi’nde Lucid Disk’i etkinleştirip yeniden tarayabilirsiniz. Bu izin tüm macOS korumalarını aşmaz."
+          }
+        }
+      }
+    },
+    "Open Privacy Settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Privacy Settings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gizlilik Ayarlarını Aç"
+          }
+        }
+      }
+    },
+    "A little less clicking.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A little less clicking."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daha az tıklama."
+          }
+        }
+      }
+    },
+    "Scan Again": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan Again"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeniden Tara"
+          }
+        }
+      }
+    },
+    "Move between files": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move between files"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosyalar arasında gezin"
+          }
+        }
+      }
+    },
+    "Open selected folder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open selected folder"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçili klasörü aç"
+          }
+        }
+      }
+    },
+    "Close preview or help": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close preview or help"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önizlemeyi veya yardımı kapat"
+          }
+        }
+      }
+    },
+    "File navigation shortcuts apply while the file list is focused. Search covers the entire completed scan, including nested folders.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File navigation shortcuts apply while the file list is focused. Search covers the entire completed scan, including nested folders."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya gezinme kısayolları, liste odaktayken çalışır. Arama, iç içe klasörler dahil tamamlanmış taramanın tümünü kapsar."
+          }
+        }
+      }
+    },
+    "Your files. Your decision.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your files. Your decision."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosyalarınız. Sizin kararınız."
+          }
+        }
+      }
+    },
+    "Local by design": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local by design"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yerel çalışmak için tasarlandı"
+          }
+        }
+      }
+    },
+    "Disk scans run on your Mac. There is no telemetry, analytics, or cloud AI fallback. Selecting a file does not invoke AI.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk scans run on your Mac. There is no telemetry, analytics, or cloud AI fallback. Selecting a file does not invoke AI."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk taramaları Mac’inizde çalışır. Telemetri, analitik veya bulut AI yedeği yoktur. Dosya seçmek AI’ı çalıştırmaz."
+          }
+        }
+      }
+    },
+    "AI only when you ask": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI only when you ask"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI yalnızca siz istediğinizde"
+          }
+        }
+      }
+    },
+    "Ask AI uses Apple’s on-device model when available. Otherwise, a rule-based explanation is shown. Neither reads file contents. AI cannot authorize deletion or lower a safety restriction.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask AI uses Apple’s on-device model when available. Otherwise, a rule-based explanation is shown. Neither reads file contents. AI cannot authorize deletion or lower a safety restriction."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI’a Sor, kullanılabiliyorsa Apple’ın cihaz içi modelini kullanır. Aksi halde kurallara dayalı açıklama gösterilir. İkisi de dosya içeriğini okumaz. AI, silme yetkisi veremez veya güvenlik kısıtlamasını azaltamaz."
+          }
+        }
+      }
+    },
+    "Honest size estimates": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Honest size estimates"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şeffaf boyut tahminleri"
+          }
+        }
+      }
+    },
+    "Allocated size is disk allocation; logical size is file length. Hard links are counted once. APFS clones may share blocks, so estimates are not a promise of reclaimable space. Incomplete scans are labeled.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allocated size is disk allocation; logical size is file length. Hard links are counted once. APFS clones may share blocks, so estimates are not a promise of reclaimable space. Incomplete scans are labeled."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayrılan boyut diskte tahsis edilen alan, mantıksal boyut dosya uzunluğudur. Sabit bağlantılar bir kez sayılır. APFS klonları blokları paylaşabilir; tahminler açılacak alanın garantisi değildir. Eksik taramalar işaretlenir."
+          }
+        }
+      }
+    },
+    "Protected removal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Protected removal"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Korumalı silme"
+          }
+        }
+      }
+    },
+    "Protected system locations are blocked. Before moving a reviewed item to Trash, Lucid Disk checks its identity and path again. Sensitive items require stronger confirmation.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Protected system locations are blocked. Before moving a reviewed item to Trash, Lucid Disk checks its identity and path again. Sensitive items require stronger confirmation."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Korunan sistem konumları engellenir. Lucid Disk, incelenen öğeyi Çöp Kutusu’na taşımadan önce kimliğini ve yolunu yeniden denetler. Hassas öğeler daha güçlü onay gerektirir."
+          }
+        }
+      }
+    },
+    "MCP is separate": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MCP is separate"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MCP ayrıdır"
+          }
+        }
+      }
+    },
+    "The optional developer MCP server is not included in this app. Its read-only tools can expose metadata to the model you connect; review that client’s privacy settings before sharing anything.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The optional developer MCP server is not included in this app. Its read-only tools can expose metadata to the model you connect; review that client’s privacy settings before sharing anything."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İsteğe bağlı geliştirici MCP sunucusu bu uygulamaya dahil değildir. Salt okunur araçları, bağladığınız modele üst veri aktarabilir; paylaşmadan önce istemcinin gizlilik ayarlarını inceleyin."
+          }
+        }
+      }
+    },
+    "A clearer view of your Mac.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A clearer view of your Mac."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac’inize daha net bir bakış."
+          }
+        }
+      }
+    },
+    "An open-source disk explorer for understanding storage and reviewing what you choose to remove.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An open-source disk explorer for understanding storage and reviewing what you choose to remove."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Depolamayı anlamak ve kaldırmayı seçtiğiniz dosyaları incelemek için açık kaynaklı bir disk gezgini."
+          }
+        }
+      }
+    },
+    "Made by Serkan Uslu": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Made by Serkan Uslu"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serkan Uslu tarafından geliştirildi"
+          }
+        }
+      }
+    },
+    "Built with Swift, SwiftUI and AppKit. Optional on-device explanations use Apple Foundation Models on supported Macs.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Built with Swift, SwiftUI and AppKit. Optional on-device explanations use Apple Foundation Models on supported Macs."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swift, SwiftUI ve AppKit ile geliştirildi. İsteğe bağlı cihaz içi açıklamalar, desteklenen Mac’lerde Apple Foundation Models kullanır."
+          }
+        }
+      }
+    },
+    "Open source · Apache 2.0": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open source · Apache 2.0"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açık kaynak · Apache 2.0"
+          }
+        }
+      }
+    },
+    "You may use, study, modify and distribute Lucid Disk under the Apache License 2.0. The software is provided without warranties; review files and keep backups before removing anything.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You may use, study, modify and distribute Lucid Disk under the Apache License 2.0. The software is provided without warranties; review files and keep backups before removing anything."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lucid Disk’i Apache Lisansı 2.0 kapsamında kullanabilir, inceleyebilir, değiştirebilir ve dağıtabilirsiniz. Yazılım garanti verilmeden sunulur; silmeden önce dosyaları inceleyin ve yedek alın."
+          }
+        }
+      }
+    },
+    "Read License": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read License"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lisansı Oku"
+          }
+        }
+      }
+    },
+    "Development build": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Development build"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geliştirme derlemesi"
+          }
+        }
+      }
+    },
+    "Version %@ (%@)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %@ (%@)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sürüm %@ (%@)"
+          }
+        }
+      }
+    },
+    "The license is included in packaged builds and in the source repository’s LICENSE file.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The license is included in packaged builds and in the source repository’s LICENSE file."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lisans, uygulama paketlerinde ve kaynak deponun LICENSE dosyasında bulunur."
+          }
+        }
+      }
+    },
+    "Moving to Trash…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moving to Trash…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çöp Kutusu’na taşınıyor…"
+          }
+        }
+      }
+    },
+    "Moved %@ to Trash. You can restore it from Finder.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moved %@ to Trash. You can restore it from Finder."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ Çöp Kutusu’na taşındı. Finder’dan geri yükleyebilirsiniz."
+          }
+        }
+      }
+    },
+    "Show in Trash": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show in Trash"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çöp Kutusu’nda Göster"
+          }
+        }
+      }
+    },
+    "Dismiss notification": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismiss notification"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirimi kapat"
+          }
+        }
+      }
+    },
+    "%lld files · %@ s": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld files · %@ s"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld dosya · %@ sn"
+          }
+        }
+      }
+    },
+    "Partial scan — see warnings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partial scan — see warnings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kısmi tarama — uyarılara bakın"
+          }
+        }
+      }
+    },
+    "Allocated size · estimates may include shared blocks": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allocated size · estimates may include shared blocks"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayrılan boyut · tahminler ortak blokları içerebilir"
+          }
+        }
+      }
+    },
+    "Close preview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close preview"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önizlemeyi kapat"
+          }
+        }
+      }
+    },
+    "Mapping your storage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mapping your storage"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Depolamanız haritalanıyor"
+          }
+        }
+      }
+    },
+    "Finding where your space goes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finding where your space goes."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alanınızın nerede kullanıldığı bulunuyor."
+          }
+        }
+      }
+    },
+    "Files scanned": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Files scanned"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taranan dosya"
+          }
+        }
+      }
+    },
+    "Space mapped": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Space mapped"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Haritalanan alan"
+          }
+        }
+      }
+    },
+    "Stop Scan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop Scan"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taramayı Durdur"
+          }
+        }
+      }
+    },
+    "Lucid Disk": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lucid Disk"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lucid Disk"
+          }
+        }
+      }
+    },
+    "%lld items": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld items"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld öğe"
+          }
+        }
+      }
+    },
+    "Open Group": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Group"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grubu Aç"
+          }
+        }
+      }
+    },
+    "Open Folder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Folder"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klasörü Aç"
+          }
+        }
+      }
+    },
+    "Ask AI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask AI"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI’a Sor"
+          }
+        }
+      }
+    },
+    "Evidence and verification": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evidence and verification"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kanıtlar ve doğrulama"
+          }
+        }
+      }
+    },
+    "AI runs only when you ask. File contents stay unread.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI runs only when you ask. File contents stay unread."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI yalnızca siz istediğinizde çalışır. Dosya içerikleri okunmaz."
+          }
+        }
+      }
+    },
+    "Back to parent folder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Back to parent folder"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Üst klasöre dön"
+          }
+        }
+      }
+    },
+    "Click a folder to open it. Click a file to inspect it.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click a folder to open it. Click a file to inspect it."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klasörü açmak, dosyayı incelemek için tıklayın."
+          }
+        }
+      }
+    },
+    "Search Results": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search Results"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arama Sonuçları"
+          }
+        }
+      }
+    },
+    "Search all scanned files": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search all scanned files"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taranan tüm dosyalarda ara"
+          }
+        }
+      }
+    },
+    "Clear search": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clear search"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aramayı temizle"
+          }
+        }
+      }
+    },
+    "No matching files": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching files"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eşleşen dosya yok"
+          }
+        }
+      }
+    },
+    "Try another file name or path.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try another file name or path."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başka bir dosya adı veya yol deneyin."
+          }
+        }
+      }
+    },
+    "Inspect": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inspect"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İncele"
+          }
+        }
+      }
+    },
+    "YOUR SPACE, CLEARLY.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "YOUR SPACE, CLEARLY."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ALANINIZI NET GÖRÜN."
+          }
+        }
+      }
+    },
+    "Make room for\nwhat matters.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Make room for\nwhat matters."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önemli olanlara\nyer açın."
+          }
+        }
+      }
+    },
+    "Explore your storage. Understand your files. Choose what goes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explore your storage. Understand your files. Choose what goes."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Depolamanızı keşfedin. Dosyalarınızı anlayın. Silinecekleri siz seçin."
+          }
+        }
+      }
+    },
+    "Connected storage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected storage"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bağlı diskler"
+          }
+        }
+      }
+    },
+    "%@ available of %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ available of %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ kullanılabilir / %@"
+          }
+        }
+      }
+    },
+    "Explore Disk": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explore Disk"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diski Keşfet"
+          }
+        }
+      }
+    },
+    "On your Mac. Under your control.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On your Mac. Under your control."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mac’inizde. Sizin kontrolünüzde."
+          }
+        }
+      }
+    },
+    "%lld results": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld results"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld sonuç"
+          }
+        }
+      }
+    },
+    "%lld slices": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld slices"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld dilim"
+          }
+        }
+      }
+    },
+    "%lld small items": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld small items"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld küçük öğe"
+          }
+        }
+      }
+    },
+    "%lld small items • %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld small items • %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld küçük öğe • %@"
+          }
+        }
+      }
+    },
+    "A different mounted volume was not scanned.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A different mounted volume was not scanned."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Farklı bir bağlı disk taranmadı."
+          }
+        }
+      }
+    },
+    "A file whose owner is not yet known": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A file whose owner is not yet known"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sahibi henüz bilinmeyen bir dosya"
+          }
+        }
+      }
+    },
+    "A folder whose owner is not yet known": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A folder whose owner is not yet known"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sahibi henüz bilinmeyen bir klasör"
+          }
+        }
+      }
+    },
+    "A scanned root cannot be moved in one operation.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A scanned root cannot be moved in one operation."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taranan kök tek işlemde taşınamaz."
+          }
+        }
+      }
+    },
+    "Add to Review Queue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add to Review Queue"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İnceleme Kuyruğuna Ekle"
+          }
+        }
+      }
+    },
+    "Add this item to the review queue before moving it to the Trash.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add this item to the review queue before moving it to the Trash."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çöp Kutusu’na taşımadan önce bu öğeyi inceleme kuyruğuna ekleyin."
+          }
+        }
+      }
+    },
+    "Add this item to the review queue first.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add this item to the review queue first."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önce bu öğeyi inceleme kuyruğuna ekleyin."
+          }
+        }
+      }
+    },
+    "Allocated: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allocated: %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayrılan: %@"
+          }
+        }
+      }
+    },
+    "Allocated size: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allocated size: %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayrılan alan: %@"
+          }
+        }
+      }
+    },
+    "Archived app builds and debugging symbols": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archived app builds and debugging symbols"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşivlenmiş uygulama derlemeleri ve hata ayıklama sembolleri"
+          }
+        }
+      }
+    },
+    "Archives can contain shipped builds and symbol files.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archives can contain shipped builds and symbol files."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arşivler yayımlanmış derlemeleri ve sembol dosyalarını içerebilir."
+          }
+        }
+      }
+    },
+    "Associated application: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Associated application: %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlişkili uygulama: %@"
+          }
+        }
+      }
+    },
+    "Cancel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İptal"
+          }
+        }
+      }
+    },
+    "Choose Folder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose Folder"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klasör Seç"
+          }
+        }
+      }
+    },
+    "Choose a volume or folder to start scanning.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a volume or folder to start scanning."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taramaya başlamak için bir disk veya klasör seçin."
+          }
+        }
+      }
+    },
+    "Click the center to go back": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click the center to go back"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri dönmek için merkeze tıklayın"
+          }
+        }
+      }
+    },
+    "Close Xcode and confirm that no active build needs it before moving it to the Trash.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close Xcode and confirm that no active build needs it before moving it to the Trash."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çöp Kutusu’na taşımadan önce Xcode’u kapatın ve etkin bir derlemenin buna ihtiyaç duymadığını doğrulayın."
+          }
+        }
+      }
+    },
+    "Confirm that the device versions are old; Xcode can recreate needed support data.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm that the device versions are old; Xcode can recreate needed support data."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aygıt sürümlerinin eski olduğunu doğrulayın; Xcode gerekli destek verilerini yeniden oluşturabilir."
+          }
+        }
+      }
+    },
+    "Contents": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Contents"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İçerik"
+          }
+        }
+      }
+    },
+    "Date Modified": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date Modified"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Değiştirilme Tarihi"
+          }
+        }
+      }
+    },
+    "Disk contents": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk contents"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk içeriği"
+          }
+        }
+      }
+    },
+    "Disk usage chart": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk usage chart"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk kullanım grafiği"
+          }
+        }
+      }
+    },
+    "Do not move it to the Trash without the account owner's approval and a verified backup.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do not move it to the Trash without the account owner's approval and a verified backup."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hesap sahibinin onayı ve doğrulanmış bir yedek olmadan Çöp Kutusu’na taşımayın."
+          }
+        }
+      }
+    },
+    "Do not remove it with Lucid Disk; use macOS or the owning management tool.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Do not remove it with Lucid Disk; use macOS or the owning management tool."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lucid Disk ile kaldırmayın; macOS’i veya sahibi olan yönetim aracını kullanın."
+          }
+        }
+      }
+    },
+    "Done": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Done"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bitti"
+          }
+        }
+      }
+    },
+    "Error": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hata"
+          }
+        }
+      }
+    },
+    "Estimated measurement": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimated measurement"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tahmini ölçüm"
+          }
+        }
+      }
+    },
+    "Exact measurement": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exact measurement"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kesin ölçüm"
+          }
+        }
+      }
+    },
+    "File name or path": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File name or path"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya adı veya yolu"
+          }
+        }
+      }
+    },
+    "File type: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File type: %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya türü: %@"
+          }
+        }
+      }
+    },
+    "Focus": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Focus"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odaklan"
+          }
+        }
+      }
+    },
+    "High confidence": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "High confidence"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yüksek güven"
+          }
+        }
+      }
+    },
+    "I Understand — Move to Trash": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I Understand — Move to Trash"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anlıyorum — Çöp Kutusu’na Taşı"
+          }
+        }
+      }
+    },
+    "Incomplete measurement": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incomplete measurement"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eksik ölçüm"
+          }
+        }
+      }
+    },
+    "Identify the owning app and prefer its uninstall or management flow.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Identify the owning app and prefer its uninstall or management flow."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sahibi olan uygulamayı belirleyin ve kaldırma ya da yönetim akışını tercih edin."
+          }
+        }
+      }
+    },
+    "Last modified: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last modified: %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Son değiştirilme: %@"
+          }
+        }
+      }
+    },
+    "Local rules": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local rules"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yerel kurallar"
+          }
+        }
+      }
+    },
+    "Location": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Location"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konum"
+          }
+        }
+      }
+    },
+    "Logical: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logical: %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mantıksal: %@"
+          }
+        }
+      }
+    },
+    "Low confidence": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Low confidence"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düşük güven"
+          }
+        }
+      }
+    },
+    "Lucid Disk cannot automatically determine whether this user item is safe to remove.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lucid Disk cannot automatically determine whether this user item is safe to remove."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lucid Disk bu kullanıcı öğesinin kaldırılmasının güvenli olup olmadığını otomatik belirleyemez."
+          }
+        }
+      }
+    },
+    "Lucid Insight": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lucid Insight"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lucid Insight"
+          }
+        }
+      }
+    },
+    "Manage unused simulators with Xcode or simctl instead of deleting the raw folder.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage unused simulators with Xcode or simctl instead of deleting the raw folder."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ham klasörü silmek yerine kullanılmayan simülatörleri Xcode veya simctl ile yönetin."
+          }
+        }
+      }
+    },
+    "Matched safety rule: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Matched safety rule: %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eşleşen güvenlik kuralı: %@"
+          }
+        }
+      }
+    },
+    "Medium confidence": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medium confidence"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orta güven"
+          }
+        }
+      }
+    },
+    "Move to Trash": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move to Trash"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çöp Kutusu’na Taşı"
+          }
+        }
+      }
+    },
+    "Move to Trash?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move to Trash?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çöp Kutusu’na taşınsın mı?"
+          }
+        }
+      }
+    },
+    "Name": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ad"
+          }
+        }
+      }
+    },
+    "Nothing to display": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing to display"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görüntülenecek bir şey yok"
+          }
+        }
+      }
+    },
+    "OK": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tamam"
+          }
+        }
+      }
+    },
+    "On-device AI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "On-device AI"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aygıt üzerindeki yapay zekâ"
+          }
+        }
+      }
+    },
+    "Open it and verify what created it and whether it is backed up.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open it and verify what created it and whether it is backed up."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açın; neyin oluşturduğunu ve yedeklenip yedeklenmediğini doğrulayın."
+          }
+        }
+      }
+    },
+    "Open the group and select a real file or folder first.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the group and select a real file or folder first."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önce grubu açıp gerçek bir dosya veya klasör seçin."
+          }
+        }
+      }
+    },
+    "Other": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diğer"
+          }
+        }
+      }
+    },
+    "Persistent personal or application data": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Persistent personal or application data"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalıcı kişisel veya uygulama verileri"
+          }
+        }
+      }
+    },
+    "Prefer the owning app, or verify a backup before moving it to the Trash.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prefer the owning app, or verify a backup before moving it to the Trash."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sahibi olan uygulamayı tercih edin veya Çöp Kutusu’na taşımadan önce bir yedeği doğrulayın."
+          }
+        }
+      }
+    },
+    "Preview the item and confirm its creating application before moving it to Trash.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preview the item and confirm its creating application before moving it to Trash."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çöp Kutusu’na taşımadan önce öğeyi önizleyin ve oluşturan uygulamayı doğrulayın."
+          }
+        }
+      }
+    },
+    "Protected": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Protected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Korumalı"
+          }
+        }
+      }
+    },
+    "Protected macOS system data": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Protected macOS system data"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Korumalı macOS sistem verileri"
+          }
+        }
+      }
+    },
+    "Quick Look": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quick Look"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hızlı Bakış"
+          }
+        }
+      }
+    },
+    "Rebuildable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rebuildable"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeniden oluşturulabilir"
+          }
+        }
+      }
+    },
+    "Remove from Review Queue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from Review Queue"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İnceleme Kuyruğundan Çıkar"
+          }
+        }
+      }
+    },
+    "Remove from review queue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove from review queue"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İnceleme kuyruğundan çıkar"
+          }
+        }
+      }
+    },
+    "Review Queue": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review Queue"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İnceleme Kuyruğu"
+          }
+        }
+      }
+    },
+    "Review first": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review first"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önce incele"
+          }
+        }
+      }
+    },
+    "Review its children individually.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review its children individually."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alt öğelerini tek tek inceleyin."
+          }
+        }
+      }
+    },
+    "Ring %lld": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ring %lld"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Halka %lld"
+          }
+        }
+      }
+    },
+    "Scan Startup Disk": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan Startup Disk"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlangıç Diskini Tara"
+          }
+        }
+      }
+    },
+    "Scan Warnings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan Warnings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarama Uyarıları"
+          }
+        }
+      }
+    },
+    "Scanning protected locations may require Full Disk Access in System Settings.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanning protected locations may require Full Disk Access in System Settings."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Korumalı konumları taramak için Sistem Ayarları’nda Tam Disk Erişimi gerekebilir."
+          }
+        }
+      }
+    },
+    "Scanning… %lld items, %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanning… %lld items, %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taranıyor… %1$lld öğe, %2$@"
+          }
+        }
+      }
+    },
+    "Selected": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçili"
+          }
+        }
+      }
+    },
+    "Sensitive data": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sensitive data"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hassas veri"
+          }
+        }
+      }
+    },
+    "Sensitive item — confirm move": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sensitive item — confirm move"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hassas öğe — taşımayı doğrulayın"
+          }
+        }
+      }
+    },
+    "Show in Finder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show in Finder"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finder’da Göster"
+          }
+        }
+      }
+    },
+    "Simulator device and application data": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simulator device and application data"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simülatör aygıt ve uygulama verileri"
+          }
+        }
+      }
+    },
+    "Size": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Size"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boyut"
+          }
+        }
+      }
+    },
+    "Sort": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sort"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sırala"
+          }
+        }
+      }
+    },
+    "Stop": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durdur"
+          }
+        }
+      }
+    },
+    "The item changed after it was scanned. Scan it again before moving it to the Trash.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The item changed after it was scanned. Scan it again before moving it to the Trash."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öğe tarandıktan sonra değişti. Çöp Kutusu’na taşımadan önce yeniden tarayın."
+          }
+        }
+      }
+    },
+    "The item has no scan identity. Scan it again before moving it to the Trash.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The item has no scan identity. Scan it again before moving it to the Trash."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öğenin tarama kimliği yok. Çöp Kutusu’na taşımadan önce yeniden tarayın."
+          }
+        }
+      }
+    },
+    "The item no longer exists at the scanned path.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The item no longer exists at the scanned path."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öğe artık taranan yolda bulunmuyor."
+          }
+        }
+      }
+    },
+    "The scan item limit was reached.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The scan item limit was reached."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarama öğe sınırına ulaşıldı."
+          }
+        }
+      }
+    },
+    "This can contain simulator app data and device state.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This can contain simulator app data and device state."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu konum simülatör uygulama verilerini ve aygıt durumunu içerebilir."
+          }
+        }
+      }
+    },
+    "This can contain snippets, breakpoints, and personal Xcode settings.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This can contain snippets, breakpoints, and personal Xcode settings."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu konum kod parçacıkları, kesme noktaları ve kişisel Xcode ayarları içerebilir."
+          }
+        }
+      }
+    },
+    "This contains support and symbol data for connected iOS versions.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This contains support and symbol data for connected iOS versions."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu konum bağlı iOS sürümlerine ait destek ve sembol verilerini içerir."
+          }
+        }
+      }
+    },
+    "This directory could not be read.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This directory could not be read."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu dizin okunamadı."
+          }
+        }
+      }
+    },
+    "This filesystem location was intentionally excluded.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This filesystem location was intentionally excluded."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu dosya sistemi konumu bilerek hariç tutuldu."
+          }
+        }
+      }
+    },
+    "This folder may be empty or unreadable.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This folder may be empty or unreadable."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu klasör boş veya okunamıyor olabilir."
+          }
+        }
+      }
+    },
+    "This is a filesystem, users, or home root.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is a filesystem, users, or home root."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu bir dosya sistemi, kullanıcılar veya ana klasör köküdür."
+          }
+        }
+      }
+    },
+    "This is a machine-wide application or configuration area.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is a machine-wide application or configuration area."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu makine genelinde kullanılan bir uygulama veya yapılandırma alanıdır."
+          }
+        }
+      }
+    },
+    "This is a machine-wide application or configuration root.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This is a machine-wide application or configuration root."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu makine genelinde kullanılan bir uygulama veya yapılandırma köküdür."
+          }
+        }
+      }
+    },
+    "This item cannot be removed with Lucid Disk.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This item cannot be removed with Lucid Disk."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu öğe Lucid Disk ile kaldırılamaz."
+          }
+        }
+      }
+    },
+    "This item changed or became unreadable during the scan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This item changed or became unreadable during the scan."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu öğe tarama sırasında değişti veya okunamaz hâle geldi."
+          }
+        }
+      }
+    },
+    "This item is a symbolic link.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This item is a symbolic link."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu öğe sembolik bağlantıdır."
+          }
+        }
+      }
+    },
+    "This location can contain another user's data.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This location can contain another user's data."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu konum başka bir kullanıcının verilerini içerebilir."
+          }
+        }
+      }
+    },
+    "This location can contain personal, synced, or persistent app data.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This location can contain personal, synced, or persistent app data."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu konum kişisel, eşzamanlanmış veya kalıcı uygulama verileri içerebilir."
+          }
+        }
+      }
+    },
+    "This location does not match a known cleanup rule.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This location does not match a known cleanup rule."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu konum bilinen bir temizlik kuralıyla eşleşmiyor."
+          }
+        }
+      }
+    },
+    "This location is part of a protected or machine-wide macOS area.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This location is part of a protected or machine-wide macOS area."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu konum korumalı veya makine genelinde kullanılan bir macOS alanının parçasıdır."
+          }
+        }
+      }
+    },
+    "This location often contains removable items, but it can also contain user data.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This location often contains removable items, but it can also contain user data."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu konum çoğunlukla kaldırılabilir öğeler içerir ancak kullanıcı verileri de barındırabilir."
+          }
+        }
+      }
+    },
+    "Understanding this item locally…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Understanding this item locally…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu öğe yerel olarak anlamlandırılıyor…"
+          }
+        }
+      }
+    },
+    "Used storage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Used storage"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kullanılan depolama"
+          }
+        }
+      }
+    },
+    "User-managed downloads, logs, or cached data": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "User-managed downloads, logs, or cached data"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kullanıcı tarafından yönetilen indirmeler, günlükler veya önbellek verileri"
+          }
+        }
+      }
+    },
+    "Verify its contents and backup before moving it to the Trash.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify its contents and backup before moving it to the Trash."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çöp Kutusu’na taşımadan önce içeriğini ve yedeğini doğrulayın."
+          }
+        }
+      }
+    },
+    "Verify its source, contents, and backup before moving it to the Trash.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify its source, contents, and backup before moving it to the Trash."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çöp Kutusu’na taşımadan önce kaynağını, içeriğini ve yedeğini doğrulayın."
+          }
+        }
+      }
+    },
+    "Verify the file name, owning app, and whether you still need it.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify the file name, owning app, and whether you still need it."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya adını, sahibi olan uygulamayı ve hâlâ gerekip gerekmediğini doğrulayın."
+          }
+        }
+      }
+    },
+    "Verify the release and dSYM requirements in Xcode Organizer first.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verify the release and dSYM requirements in Xcode Organizer first."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önce Xcode Organizer’da sürüm ve dSYM gereksinimlerini doğrulayın."
+          }
+        }
+      }
+    },
+    "Volumes": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volumes"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diskler"
+          }
+        }
+      }
+    },
+    "Xcode build and index cache": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode build and index cache"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode derleme ve dizin önbelleği"
+          }
+        }
+      }
+    },
+    "Xcode can rebuild this build and index cache.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode can rebuild this build and index cache."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode bu derleme ve dizin önbelleğini yeniden oluşturabilir."
+          }
+        }
+      }
+    },
+    "‘Other’ represents multiple small items.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "‘Other’ represents multiple small items."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "‘Diğer’ birden çok küçük öğeyi temsil eder."
+          }
+        }
+      }
+    },
+    "AI": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI"
+          }
+        }
+      }
+    },
+    "AI runs only when you ask, with %@. File contents stay unread.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI runs only when you ask, with %@. File contents stay unread."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI yalnızca siz istediğinizde, %@ ile çalışır. Dosya içerikleri okunmaz."
+          }
+        }
+      }
+    },
+    "API key (sk-ant-…)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API key (sk-ant-…)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API anahtarı (sk-ant-…)"
+          }
+        }
+      }
+    },
+    "Add a Claude API key in Settings.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add a Claude API key in Settings."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayarlar’a bir Claude API anahtarı ekleyin."
+          }
+        }
+      }
+    },
+    "Alias": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alias"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takma ad"
+          }
+        }
+      }
+    },
+    "Allocated": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allocated"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayrılan"
+          }
+        }
+      }
+    },
+    "Allocated on disk": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allocated on disk"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diskte ayrılan"
+          }
+        }
+      }
+    },
+    "Allow sending metadata to Anthropic": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow sending metadata to Anthropic"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anthropic’e üst veri gönderilmesine izin ver"
+          }
+        }
+      }
+    },
+    "Allow sending metadata to Anthropic in Settings first.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow sending metadata to Anthropic in Settings first."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önce Ayarlar’da Anthropic’e üst veri gönderilmesine izin verin."
+          }
+        }
+      }
+    },
+    "An optional companion that lets assistants such as Claude Code, Claude Desktop or Codex look at your disk through five tools. It never deletes, moves or changes files, and it runs separately from this app.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An optional companion that lets assistants such as Claude Code, Claude Desktop or Codex look at your disk through five tools. It never deletes, moves or changes files, and it runs separately from this app."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Code, Claude Desktop veya Codex gibi asistanların beş araçla diskinize bakmasını sağlayan isteğe bağlı bir yardımcı. Dosyaları asla silmez, taşımaz veya değiştirmez; bu uygulamadan ayrı çalışır."
+          }
+        }
+      }
+    },
+    "Anthropic API": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anthropic API"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anthropic API"
+          }
+        }
+      }
+    },
+    "Apple Foundation Models": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Foundation Models"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Foundation Models"
+          }
+        }
+      }
+    },
+    "Apple Intelligence is still preparing the model. Try again later.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence is still preparing the model. Try again later."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence modeli hâlâ hazırlıyor. Daha sonra yeniden deneyin."
+          }
+        }
+      }
+    },
+    "Apple on-device model": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple on-device model"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple cihaz içi model"
+          }
+        }
+      }
+    },
+    "Apple’s on-device model isn’t available right now.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple’s on-device model isn’t available right now."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple’ın cihaz içi modeli şu anda kullanılamıyor."
+          }
+        }
+      }
+    },
+    "Ask AI provider": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask AI provider"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask AI sağlayıcısı"
+          }
+        }
+      }
+    },
+    "Ask AI sends this item’s metadata to %@. File contents stay unread.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask AI sends this item’s metadata to %@. File contents stay unread."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask AI bu öğenin üst verisini %@ hizmetine gönderir. Dosya içerikleri okunmaz."
+          }
+        }
+      }
+    },
+    "Ask AI shows Lucid Disk’s deterministic explanation: matched safety rule, size, type, dates and associated app.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask AI shows Lucid Disk’s deterministic explanation: matched safety rule, size, type, dates and associated app."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask AI, Lucid Disk’in kural tabanlı açıklamasını gösterir: eşleşen güvenlik kuralı, boyut, tür, tarihler ve ilişkili uygulama."
+          }
+        }
+      }
+    },
+    "Ask AI uses the provider chosen in Settings: Apple’s on-device model (default), a local Ollama model, the Claude API, or rules only. No provider reads file contents. If a provider fails, the rule-based explanation is shown; Lucid Disk never switches to another provider on its own. AI cannot authorize deletion or lower a safety restriction.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask AI uses the provider chosen in Settings: Apple’s on-device model (default), a local Ollama model, the Claude API, or rules only. No provider reads file contents. If a provider fails, the rule-based explanation is shown; Lucid Disk never switches to another provider on its own. AI cannot authorize deletion or lower a safety restriction."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask AI, Ayarlar’da seçilen sağlayıcıyı kullanır: Apple’ın cihaz içi modeli (varsayılan), yerel bir Ollama modeli, Claude API veya yalnızca kurallar. Hiçbir sağlayıcı dosya içeriğini okumaz. Bir sağlayıcı başarısız olursa kural tabanlı açıklama gösterilir; Lucid Disk kendiliğinden başka bir sağlayıcıya geçmez. AI silmeye izin veremez veya bir güvenlik kısıtlamasını gevşetemez."
+          }
+        }
+      }
+    },
+    "Available on this Mac.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Available on this Mac."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu Mac’te kullanılabilir."
+          }
+        }
+      }
+    },
+    "Built with Swift, SwiftUI and AppKit. Optional explanations use Apple Foundation Models, a local Ollama model, or the Claude API — your choice in Settings.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Built with Swift, SwiftUI and AppKit. Optional explanations use Apple Foundation Models, a local Ollama model, or the Claude API — your choice in Settings."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swift, SwiftUI ve AppKit ile geliştirildi. İsteğe bağlı açıklamalar Apple Foundation Models, yerel bir Ollama modeli veya Claude API ile yapılır; seçim Ayarlar’da sizde."
+          }
+        }
+      }
+    },
+    "Choose a model": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a model"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir model seçin"
+          }
+        }
+      }
+    },
+    "Choose a model in Settings.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a model in Settings."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayarlar’da bir model seçin."
+          }
+        }
+      }
+    },
+    "Choose the mcp folder inside the Lucid Disk repository.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the mcp folder inside the Lucid Disk repository."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lucid Disk deposundaki mcp klasörünü seçin."
+          }
+        }
+      }
+    },
+    "Choose the repository’s mcp folder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose the repository’s mcp folder"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deponun mcp klasörünü seçin"
+          }
+        }
+      }
+    },
+    "Choose who answers when you press Ask AI. Nothing is sent until you press it, and AI never changes a safety decision.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose who answers when you press Ask AI. Nothing is sent until you press it, and AI never changes a safety decision."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask AI’a bastığınızda kimin yanıt vereceğini seçin. Siz basana kadar hiçbir şey gönderilmez ve AI hiçbir güvenlik kararını değiştirmez."
+          }
+        }
+      }
+    },
+    "Choose…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seç…"
+          }
+        }
+      }
+    },
+    "Claude API": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude API"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude API"
+          }
+        }
+      }
+    },
+    "Claude Code": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Code"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Code"
+          }
+        }
+      }
+    },
+    "Claude Desktop — claude_desktop_config.json": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Desktop — claude_desktop_config.json"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Desktop — claude_desktop_config.json"
+          }
+        }
+      }
+    },
+    "Cloud": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cloud"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bulut"
+          }
+        }
+      }
+    },
+    "Cloud is opt-in": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cloud is opt-in"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bulut isteğe bağlı"
+          }
+        }
+      }
+    },
+    "Codex": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Codex"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Codex"
+          }
+        }
+      }
+    },
+    "Connect": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bağlan"
+          }
+        }
+      }
+    },
+    "Connect an assistant": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connect an assistant"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir asistan bağlayın"
+          }
+        }
+      }
+    },
+    "Connected · %lld models": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connected · %lld models"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bağlandı · %lld model"
+          }
+        }
+      }
+    },
+    "Copied": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copied"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kopyalandı"
+          }
+        }
+      }
+    },
+    "Copy": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kopyala"
+          }
+        }
+      }
+    },
+    "Could not reach the provider: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not reach the provider: %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sağlayıcıya ulaşılamadı: %@"
+          }
+        }
+      }
+    },
+    "Create a key in the Claude Console": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Create a key in the Claude Console"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Console’da anahtar oluşturun"
+          }
+        }
+      }
+    },
+    "Disk scans run on your Mac. There is no telemetry or analytics, and nothing is sent to a cloud service unless you choose one. Selecting a file does not invoke AI.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk scans run on your Mac. There is no telemetry or analytics, and nothing is sent to a cloud service unless you choose one. Selecting a file does not invoke AI."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk taramaları Mac’inizde çalışır. Telemetri veya analitik yoktur ve siz seçmedikçe hiçbir şey bir bulut hizmetine gönderilmez. Dosya seçmek AI’ı çalıştırmaz."
+          }
+        }
+      }
+    },
+    "Enter an http:// or https:// address, for example http://127.0.0.1:11434.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter an http:// or https:// address, for example http://127.0.0.1:11434."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "http:// veya https:// ile başlayan bir adres girin, örneğin http://127.0.0.1:11434."
+          }
+        }
+      }
+    },
+    "Explanations come from local rules. Change this in Settings.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explanations come from local rules. Change this in Settings."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açıklamalar yerel kurallardan gelir. Bunu Ayarlar’da değiştirebilirsiniz."
+          }
+        }
+      }
+    },
+    "External": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "External"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Harici"
+          }
+        }
+      }
+    },
+    "File": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dosya"
+          }
+        }
+      }
+    },
+    "Finds the largest files below a folder on the same volume, counting hard links once.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Finds the largest files below a folder on the same volume, counting hard links once."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir klasörün altındaki en büyük dosyaları aynı birimde bulur; sabit bağlantıları bir kez sayar."
+          }
+        }
+      }
+    },
+    "Folder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Folder"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klasör"
+          }
+        }
+      }
+    },
+    "Get Ollama": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Get Ollama"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ollama’yı indirin"
+          }
+        }
+      }
+    },
+    "Group": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Group"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grup"
+          }
+        }
+      }
+    },
+    "Groups chosen paths by risk and lists blockers and questions to answer before removing anything.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Groups chosen paths by risk and lists blockers and questions to answer before removing anything."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçilen yolları riske göre gruplar; bir şey kaldırmadan önce engelleri ve yanıtlanması gereken soruları listeler."
+          }
+        }
+      }
+    },
+    "Internal": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Internal"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dahili"
+          }
+        }
+      }
+    },
+    "Invalid URL": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid URL"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geçersiz URL"
+          }
+        }
+      }
+    },
+    "Items": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Items"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öğe"
+          }
+        }
+      }
+    },
+    "Key saved in Keychain ••••%@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Key saved in Keychain ••••%@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anahtar Anahtar Zinciri’nde kayıtlı ••••%@"
+          }
+        }
+      }
+    },
+    "Key works": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Key works"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anahtar çalışıyor"
+          }
+        }
+      }
+    },
+    "Kind": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kind"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tür"
+          }
+        }
+      }
+    },
+    "Local rules only": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local rules only"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yalnızca yerel kurallar"
+          }
+        }
+      }
+    },
+    "Logical": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logical"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mantıksal"
+          }
+        }
+      }
+    },
+    "MCP": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MCP"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MCP"
+          }
+        }
+      }
+    },
+    "MCP server": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MCP server"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MCP sunucusu"
+          }
+        }
+      }
+    },
+    "Measures and ranks the direct children of a folder by allocated size.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measures and ranks the direct children of a folder by allocated size."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir klasörün doğrudan alt öğelerini ölçer ve ayrılan boyuta göre sıralar."
+          }
+        }
+      }
+    },
+    "Measures common space-heavy places such as Xcode DerivedData, caches, logs, Downloads and Trash, with each location’s risk.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measures common space-heavy places such as Xcode DerivedData, caches, logs, Downloads and Trash, with each location’s risk."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode DerivedData, önbellekler, günlükler, İndirilenler ve Çöp Kutusu gibi çok yer kaplayan yaygın konumları, her birinin riskiyle birlikte ölçer."
+          }
+        }
+      }
+    },
+    "Model": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model"
+          }
+        }
+      }
+    },
+    "Model name (for example llama3.2)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model name (for example llama3.2)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model adı (örneğin llama3.2)"
+          }
+        }
+      }
+    },
+    "Models": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Models"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modeller"
+          }
+        }
+      }
+    },
+    "Modified": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modified"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Değiştirilme"
+          }
+        }
+      }
+    },
+    "No key": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No key"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anahtar yok"
+          }
+        }
+      }
+    },
+    "No model": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No model"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model yok"
+          }
+        }
+      }
+    },
+    "No model. Explanations come from Lucid Disk's safety rules.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No model. Explanations come from Lucid Disk's safety rules."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model yok. Açıklamalar Lucid Disk’in güvenlik kurallarından gelir."
+          }
+        }
+      }
+    },
+    "No models installed. Run: ollama pull llama3.2": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No models installed. Run: ollama pull llama3.2"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yüklü model yok. Çalıştırın: ollama pull llama3.2"
+          }
+        }
+      }
+    },
+    "Not available. Turn on Apple Intelligence in System Settings on a supported Mac.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not available. Turn on Apple Intelligence in System Settings on a supported Mac."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kullanılamıyor. Desteklenen bir Mac’te Sistem Ayarları’ndan Apple Intelligence’ı açın."
+          }
+        }
+      }
+    },
+    "Not reachable. Is Ollama running?": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not reachable. Is Ollama running?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ulaşılamıyor. Ollama çalışıyor mu?"
+          }
+        }
+      }
+    },
+    "Ollama (local)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ollama (local)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ollama (yerel)"
+          }
+        }
+      }
+    },
+    "Ollama server": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ollama server"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ollama sunucusu"
+          }
+        }
+      }
+    },
+    "Only when you press Ask AI: the item’s name, full path, size, type, dates, associated app and safety rule. File contents are never read or sent. Anthropic’s data policies apply.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Only when you press Ask AI: the item’s name, full path, size, type, dates, associated app and safety rule. File contents are never read or sent. Anthropic’s data policies apply."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yalnızca Ask AI’a bastığınızda: öğenin adı, tam yolu, boyutu, türü, tarihleri, ilişkili uygulaması ve güvenlik kuralı. Dosya içerikleri asla okunmaz veya gönderilmez. Anthropic’in veri politikaları geçerlidir."
+          }
+        }
+      }
+    },
+    "Partial": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partial"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kısmi"
+          }
+        }
+      }
+    },
+    "Private": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Private"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gizli"
+          }
+        }
+      }
+    },
+    "Rate limit reached. Try again shortly.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rate limit reached. Try again shortly."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İstek sınırına ulaşıldı. Birazdan yeniden deneyin."
+          }
+        }
+      }
+    },
+    "Read-only": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read-only"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salt okunur"
+          }
+        }
+      }
+    },
+    "Remove": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaldır"
+          }
+        }
+      }
+    },
+    "Reports size, accuracy, warnings and cleanup risk for up to 50 paths, checking symlink targets too.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reports size, accuracy, warnings and cleanup risk for up to 50 paths, checking symlink targets too."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En fazla 50 yol için boyut, doğruluk, uyarılar ve temizlik riskini raporlar; sembolik bağlantı hedeflerini de denetler."
+          }
+        }
+      }
+    },
+    "Request failed (%lld): %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request failed (%lld): %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İstek başarısız oldu (%lld): %@"
+          }
+        }
+      }
+    },
+    "Request failed with status %lld.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request failed with status %lld."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İstek %lld durum koduyla başarısız oldu."
+          }
+        }
+      }
+    },
+    "Requests go only to this server. Keep it on this Mac or a network you trust; a remote address receives the item’s metadata.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requests go only to this server. Keep it on this Mac or a network you trust; a remote address receives the item’s metadata."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İstekler yalnızca bu sunucuya gider. Onu bu Mac’te veya güvendiğiniz bir ağda tutun; uzak bir adres öğenin üst verisini alır."
+          }
+        }
+      }
+    },
+    "Requires macOS 26 or later with Apple Intelligence.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Requires macOS 26 or later with Apple Intelligence."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Intelligence ile macOS 26 veya sonrası gerekir."
+          }
+        }
+      }
+    },
+    "Runs a model you installed with Ollama on this Mac or your network.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runs a model you installed with Ollama on this Mac or your network."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ollama ile bu Mac’te veya ağınızda kurduğunuz bir modeli çalıştırır."
+          }
+        }
+      }
+    },
+    "Runs on this Mac with Apple Foundation Models (macOS 26 or later).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runs on this Mac with Apple Foundation Models (macOS 26 or later)."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple Foundation Models ile bu Mac’te çalışır (macOS 26 veya sonrası)."
+          }
+        }
+      }
+    },
+    "Save": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydet"
+          }
+        }
+      }
+    },
+    "Select a file for its size and safety notes. Press Space for Quick Look. Ask AI is optional: only that button requests an explanation, based on metadata, not file contents. Choose the AI provider in Settings (⌘,).": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a file for its size and safety notes. Press Space for Quick Look. Ask AI is optional: only that button requests an explanation, based on metadata, not file contents. Choose the AI provider in Settings (⌘,)."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boyutunu ve güvenlik notlarını görmek için bir dosya seçin. Hızlı Bakış için Boşluk tuşuna basın. Ask AI isteğe bağlıdır: yalnızca bu düğme, dosya içeriğine değil üst veriye dayalı bir açıklama ister. AI sağlayıcısını Ayarlar’dan (⌘,) seçin."
+          }
+        }
+      }
+    },
+    "Sends the selected item's metadata to Anthropic with your API key.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sends the selected item's metadata to Anthropic with your API key."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçili öğenin üst verisini API anahtarınızla Anthropic’e gönderir."
+          }
+        }
+      }
+    },
+    "Server URL": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server URL"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunucu URL’si"
+          }
+        }
+      }
+    },
+    "Settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayarlar"
+          }
+        }
+      }
+    },
+    "Test": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sına"
+          }
+        }
+      }
+    },
+    "The API key was rejected. Check it in Settings.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The API key was rejected. Check it in Settings."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API anahtarı reddedildi. Ayarlar’da kontrol edin."
+          }
+        }
+      }
+    },
+    "The Claude API is used only after you add your own key and allow sending metadata. Then only the selected item’s name, path, size, type, dates, associated app and safety rule are sent when you press Ask AI. The key is stored in your Keychain.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The Claude API is used only after you add your own key and allow sending metadata. Then only the selected item’s name, path, size, type, dates, associated app and safety rule are sent when you press Ask AI. The key is stored in your Keychain."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude API yalnızca kendi anahtarınızı ekleyip üst veri gönderimine izin verdikten sonra kullanılır. Ask AI’a bastığınızda yalnızca seçili öğenin adı, yolu, boyutu, türü, tarihleri, ilişkili uygulaması ve güvenlik kuralı gönderilir. Anahtar Anahtar Zinciri’nizde saklanır."
+          }
+        }
+      }
+    },
+    "The model declined to answer this request.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The model declined to answer this request."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model bu isteği yanıtlamayı reddetti."
+          }
+        }
+      }
+    },
+    "The model returned a response Lucid Disk could not read.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The model returned a response Lucid Disk could not read."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model, Lucid Disk’in okuyamadığı bir yanıt döndürdü."
+          }
+        }
+      }
+    },
+    "The model returned an empty answer.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The model returned an empty answer."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model boş bir yanıt döndürdü."
+          }
+        }
+      }
+    },
+    "The optional MCP server runs outside this app; Settings → MCP lists its five read-only tools and setup commands. Its tools can expose metadata to the model you connect; review that client’s privacy settings before sharing anything.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The optional MCP server runs outside this app; Settings → MCP lists its five read-only tools and setup commands. Its tools can expose metadata to the model you connect; review that client’s privacy settings before sharing anything."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İsteğe bağlı MCP sunucusu bu uygulamanın dışında çalışır; Ayarlar → MCP beş salt okunur aracını ve kurulum komutlarını listeler. Araçları, bağladığınız modele üst veri gösterebilir; bir şey paylaşmadan önce o istemcinin gizlilik ayarlarını inceleyin."
+          }
+        }
+      }
+    },
+    "The selected model was not found.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The selected model was not found."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçilen model bulunamadı."
+          }
+        }
+      }
+    },
+    "The service is temporarily overloaded. Try again shortly.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The service is temporarily overloaded. Try again shortly."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hizmet geçici olarak aşırı yüklü. Birazdan yeniden deneyin."
+          }
+        }
+      }
+    },
+    "This API key does not have access to the selected model.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This API key does not have access to the selected model."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu API anahtarının seçilen modele erişimi yok."
+          }
+        }
+      }
+    },
+    "This folder has no pyproject.toml for luciddisk-mcp.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This folder has no pyproject.toml for luciddisk-mcp."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu klasörde luciddisk-mcp için pyproject.toml yok."
+          }
+        }
+      }
+    },
+    "Tool results include paths, names, sizes and dates. Your assistant sends them to the model it uses, so approve each call and connect only services you trust.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tool results include paths, names, sizes and dates. Your assistant sends them to the model it uses, so approve each call and connect only services you trust."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Araç sonuçları yolları, adları, boyutları ve tarihleri içerir. Asistanınız bunları kullandığı modele gönderir; bu yüzden her çağrıyı onaylayın ve yalnızca güvendiğiniz hizmetleri bağlayın."
+          }
+        }
+      }
+    },
+    "When the model is unavailable, Ask AI shows the rule-based explanation instead.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When the model is unavailable, Ask AI shows the rule-based explanation instead."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model kullanılamadığında Ask AI bunun yerine kural tabanlı açıklamayı gösterir."
+          }
+        }
+      }
+    },
+    "%lld more warnings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld more warnings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld uyarı daha"
+          }
+        }
+      }
+    },
+    "uv was not found. Install it from docs.astral.sh/uv, then restart your assistant.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "uv was not found. Install it from docs.astral.sh/uv, then restart your assistant."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "uv bulunamadı. docs.astral.sh/uv adresinden kurun, ardından asistanınızı yeniden başlatın."
+          }
+        }
+      }
+    },
+    "Settings pane": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Settings pane"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayarlar bölmesi"
+          }
+        }
+      }
+    },
+    "This Ollama model runs in Ollama’s cloud. Choose a model installed on your Mac.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This Ollama model runs in Ollama’s cloud. Choose a model installed on your Mac."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu Ollama modeli Ollama’nın bulutunda çalışır. Mac’inizde kurulu bir model seçin."
+          }
+        }
+      }
+    },
+    "%lld Ollama cloud models are hidden because they would send data to ollama.com.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld Ollama cloud models are hidden because they would send data to ollama.com."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veriyi ollama.com’a göndereceği için %lld Ollama bulut modeli gizlendi."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

@@ -1,6 +1,6 @@
 [project]
 name = "luciddisk-mcp"
-version = "0.1.0"
+version = "0.2.0"
 description = "Read-only macOS disk cleanup assessment tools for Lucid Disk"
 readme = "README.md"
 license = "Apache-2.0"

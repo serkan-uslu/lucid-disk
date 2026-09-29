@@ -1,5 +1,5 @@
 import XCTest
-@testable import LucidDisk
+@testable import LucidDiskCore
 
 final class DeletionSafetyTests: XCTestCase {
     private let home = "/Users/example"
@@ -185,5 +185,28 @@ final class DeletionSafetyTests: XCTestCase {
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
         try! FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
+    }
+}
+
+final class SharedSafetyFixtureTests: XCTestCase {
+    /// The MCP server runs the same fixture, keeping both rule sets in sync.
+    func testSharedDeletionSafetyFixture() throws {
+        let url = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Fixtures/deletion-safety.json")
+        let cases = try JSONDecoder().decode([FixtureCase].self, from: Data(contentsOf: url))
+        XCTAssertFalse(cases.isEmpty)
+        for item in cases {
+            let assessment = DeletionSafety.assess(path: item.path, homePath: item.home)
+            XCTAssertEqual(String(describing: assessment.risk), item.risk, item.path)
+            XCTAssertEqual(assessment.matchedRule, item.rule, item.path)
+        }
+    }
+
+    private struct FixtureCase: Decodable {
+        let path: String
+        let home: String
+        let risk: String
+        let rule: String
     }
 }

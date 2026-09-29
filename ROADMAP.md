@@ -31,4 +31,8 @@ The order reflects product priority, not a promise of dates.
 - Support reusable cleanup recipes and team policies.
 - Explore additional visualizations and themes.
 
-Autonomous cleanup, permanent deletion, destructive MCP tools, cloud AI fallback, and a custom model runtime are not planned.
+Autonomous cleanup, permanent deletion, destructive MCP tools, automatic (unselected) cloud AI fallback, and a custom model runtime are not planned. Cloud AI is available only as an explicitly chosen, opt-in provider.
+
+## Next small steps
+
+- Add an OpenAI-compatible provider (base URL + key) behind the same provider protocol.

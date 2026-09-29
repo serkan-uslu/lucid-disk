@@ -6,7 +6,14 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from luciddisk_mcp.filesystem import assess_path, create_plan, measure_path
+from luciddisk_mcp.filesystem import (
+    EXCLUDED_PATHS,
+    assess_path,
+    create_plan,
+    find_large_files,
+    measure_path,
+    summarize_known_locations,
+)
 from luciddisk_mcp.safety import RiskLevel, classify_path
 
 
@@ -52,6 +59,14 @@ class SafetyClassificationTests(unittest.TestCase):
             with self.subTest(path=case["path"]):
                 result = classify_path(case["path"], home_path=case["home"])
                 self.assertEqual(result.risk.value, case["risk"])
+                self.assertEqual(result.matched_rule, case["rule"])
+
+    def test_rule_text_is_english(self) -> None:
+        # The app ships English by default; MCP output must not mix languages.
+        for path in ("/System", "/Users/example/Downloads/a", "/Users/example/x", "/Volumes/X/y"):
+            result = classify_path(path, home_path=self.home)
+            text = " ".join([result.risk_title, result.recommendation, *result.reasons])
+            self.assertTrue(text.isascii(), text)
 
 
 class FilesystemAssessmentTests(unittest.TestCase):
@@ -87,9 +102,9 @@ class FilesystemAssessmentTests(unittest.TestCase):
             os.link(original, linked)
 
             result = measure_path(directory)
-            directory_info = os.lstat(directory)
             file_info = os.lstat(original)
-            expected = directory_info.st_blocks * 512 + file_info.st_blocks * 512
+            # Like the app scanner, directory entries themselves are not counted.
+            expected = file_info.st_blocks * 512
 
             self.assertEqual(result.allocated_size_bytes, expected)
             self.assertTrue(any("hard-linked" in warning for warning in result.warnings))
@@ -109,6 +124,42 @@ class FilesystemAssessmentTests(unittest.TestCase):
         self.assertEqual(result.counts_by_risk[RiskLevel.PROTECTED.value], 1)
         self.assertTrue(result.blockers)
         self.assertFalse(hasattr(result, "changed_files"))
+
+    def test_case_variant_of_protected_path_is_blocked(self) -> None:
+        result = create_plan(["/applications/Xcode.app"], calculate_size=False, max_entries=10)
+        self.assertEqual(result.paths[0].effective_risk, RiskLevel.PROTECTED)
+
+    def test_excluded_system_locations_match_app_scanner(self) -> None:
+        self.assertIn("/System/Volumes", EXCLUDED_PATHS)
+        self.assertIn("/Volumes", EXCLUDED_PATHS)
+
+    def test_find_large_files_ranks_and_counts_hard_links_once(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "nested").mkdir()
+            (root / "small.bin").write_bytes(b"x" * 10)
+            big = root / "nested" / "big.bin"
+            big.write_bytes(b"x" * 200_000)
+            os.link(big, root / "big-link.bin")
+
+            report = find_large_files(directory, min_size_bytes=100_000, limit=10)
+
+            self.assertEqual(len(report.files), 1)
+            # Either hard-link name may be reported, but the shared inode only once.
+            self.assertIn(report.files[0].name, {"big.bin", "big-link.bin"})
+            self.assertTrue(report.complete)
+
+    def test_find_large_files_rejects_bad_limits(self) -> None:
+        with self.assertRaises(ValueError):
+            find_large_files("/tmp", limit=0)
+
+    def test_known_locations_do_not_nest(self) -> None:
+        report = summarize_known_locations(max_entries=10)
+        paths = [item.path for item in report.locations]
+        for path in paths:
+            for other in paths:
+                if path != other:
+                    self.assertFalse(path.startswith(other + "/"), (path, other))
 
     def test_invalid_shared_entry_budget_is_rejected(self) -> None:
         with self.assertRaises(ValueError):

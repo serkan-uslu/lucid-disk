@@ -1,5 +1,5 @@
 import XCTest
-@testable import LucidDisk
+@testable import LucidDiskCore
 
 final class UIContractTests: XCTestCase {
     func testQuickLookItemKeepsSelectedURL() {
@@ -12,7 +12,7 @@ final class UIContractTests: XCTestCase {
 
     func testTurkishCatalogCoversCriticalCleanupFlow() throws {
         let catalogURL = repositoryRoot()
-            .appendingPathComponent("Sources/LucidDisk/Resources/Localizable.xcstrings")
+            .appendingPathComponent("Sources/LucidDiskCore/Resources/Localizable.xcstrings")
         let data = try Data(contentsOf: catalogURL)
         let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
         let strings = try XCTUnwrap(json["strings"] as? [String: Any])
@@ -30,7 +30,7 @@ final class UIContractTests: XCTestCase {
     }
 
     func testKeyboardAndVoiceOverContractsRemainDeclared() throws {
-        let root = repositoryRoot().appendingPathComponent("Sources/LucidDisk")
+        let root = repositoryRoot().appendingPathComponent("Sources/LucidDiskCore")
         let content = try String(contentsOf: root.appendingPathComponent("Views/ContentView.swift"), encoding: .utf8)
         let chart = try String(contentsOf: root.appendingPathComponent("Sunburst/SunburstView.swift"), encoding: .utf8)
 

@@ -1,3 +1,10 @@
+"""Deterministic cleanup-risk rules.
+
+These rules mirror `Sources/LucidDisk/Safety/DeletionSafety.swift`. Both
+implementations are checked against `Tests/Fixtures/deletion-safety.json`, so a
+rule change must be made on both sides.
+"""
+
 from __future__ import annotations
 
 import os
@@ -23,10 +30,10 @@ class SafetyClassification(BaseModel):
 
 
 RISK_TITLES = {
-    RiskLevel.REBUILDABLE: "Yeniden oluşturulabilir",
-    RiskLevel.REVIEW: "Önce incele",
-    RiskLevel.SENSITIVE: "Hassas veri",
-    RiskLevel.PROTECTED: "Korumalı",
+    RiskLevel.REBUILDABLE: "Rebuildable",
+    RiskLevel.REVIEW: "Review first",
+    RiskLevel.SENSITIVE: "Sensitive data",
+    RiskLevel.PROTECTED: "Protected",
 }
 
 RISK_PRIORITY = {
@@ -36,6 +43,8 @@ RISK_PRIORITY = {
     RiskLevel.PROTECTED: 3,
 }
 
+PROTECTED_RECOMMENDATION = "Do not remove it with Lucid Disk; use macOS or the owning management tool."
+
 
 def normalize_path(path: str) -> str:
     expanded = os.path.expanduser(path.strip())
@@ -44,11 +53,18 @@ def normalize_path(path: str) -> str:
     return os.path.normpath(os.path.abspath(expanded))
 
 
+def _fold(path: str) -> str:
+    # APFS and HFS+ are case-insensitive by default: "/applications" is "/Applications".
+    return path.lower()
+
+
+def is_same(path: str, other: str) -> bool:
+    return _fold(path) == _fold(other)
+
+
 def is_within(path: str, root: str) -> bool:
-    try:
-        return os.path.commonpath([path, root]) == root
-    except ValueError:
-        return False
+    path, root = _fold(path), _fold(root)
+    return path == root or path.startswith(root if root.endswith("/") else root + "/")
 
 
 def _classification(
@@ -70,78 +86,71 @@ def classify_path(path: str, home_path: str | None = None) -> SafetyClassificati
     normalized = normalize_path(path)
     home = normalize_path(home_path or str(Path.home()))
 
-    blocked_roots = {"/", home, "/Applications", "/Library", "/Users", "/private", "/etc", "/opt", "/usr/local"}
-    if normalized in blocked_roots:
+    if any(is_same(normalized, root) for root in ("/", home, "/Users")):
         return _classification(
             RiskLevel.PROTECTED,
-            "root_location",
-            "Disk, user, or machine-wide roots must not be handled as a single cleanup item.",
-            "Alt öğeleri ayrı ayrı inceleyin; bu yolu silmeyin.",
+            "protected.root",
+            "This is a filesystem, users, or home root.",
+            PROTECTED_RECOMMENDATION,
         )
 
-    if is_within(normalized, "/usr/local"):
-        return _classification(
-            RiskLevel.SENSITIVE,
-            "machine_wide_software",
-            "Bu konum makine genelindeki araçları ve paket yöneticisi verilerini içerebilir.",
-            "Dosyayı oluşturan paket yöneticisi veya uygulama ile kaldırın.",
-        )
-
-    protected_roots = (
-        "/System", "/bin", "/sbin", "/usr", "/var", "/private/var",
-        "/Applications", "/Library",
-    )
-    if any(is_within(normalized, root) for root in protected_roots):
+    if any(is_same(normalized, root) for root in ("/private", "/etc", "/opt", "/usr/local")):
         return _classification(
             RiskLevel.PROTECTED,
-            "macos_protected_system",
-            "Bu yol macOS'in korunan sistem alanlarından birinde.",
-            "Silme işlemi yapmayın; macOS veya ilgili yönetim aracını kullanın.",
+            "protected.machine-wide-root",
+            "This is a machine-wide application or configuration root.",
+            PROTECTED_RECOMMENDATION,
         )
 
-    derived_data = f"{home}/Library/Developer/Xcode/DerivedData"
-    if is_within(normalized, derived_data):
+    protected_roots = ("/System", "/bin", "/sbin", "/var", "/private/var", "/Applications", "/Library")
+    if any(is_within(normalized, root) for root in protected_roots) or (
+        is_within(normalized, "/usr") and not is_within(normalized, "/usr/local")
+    ):
+        return _classification(
+            RiskLevel.PROTECTED,
+            "protected.system",
+            "This location is part of a protected or machine-wide macOS area.",
+            PROTECTED_RECOMMENDATION,
+        )
+
+    if is_within(normalized, f"{home}/Library/Developer/Xcode/DerivedData"):
         return _classification(
             RiskLevel.REBUILDABLE,
-            "xcode_derived_data",
-            "Xcode derleme ve indeks önbelleği gerektiğinde yeniden üretilir.",
-            "Xcode kapalıyken ve aktif derleme çıktısına ihtiyacınız yokken temizlenebilir.",
+            "rebuildable.xcode-derived-data",
+            "Xcode can rebuild this build and index cache.",
+            "Close Xcode and confirm that no active build needs it before moving it to the Trash.",
         )
 
-    xcode_archives = f"{home}/Library/Developer/Xcode/Archives"
-    if is_within(normalized, xcode_archives):
+    if is_within(normalized, f"{home}/Library/Developer/Xcode/Archives"):
         return _classification(
             RiskLevel.SENSITIVE,
-            "xcode_archives",
-            "Arşivler dağıtılmış sürümleri ve hata sembolizasyonunda kullanılan dSYM dosyalarını içerebilir.",
-            "Önce Xcode Organizer'da sürümü ve dSYM ihtiyacını doğrulayın.",
+            "sensitive.xcode-archives",
+            "Archives can contain shipped builds and symbol files.",
+            "Verify the release and dSYM requirements in Xcode Organizer first.",
         )
 
-    xcode_user_data = f"{home}/Library/Developer/Xcode/UserData"
-    if is_within(normalized, xcode_user_data):
+    if is_within(normalized, f"{home}/Library/Developer/Xcode/UserData"):
         return _classification(
             RiskLevel.SENSITIVE,
-            "xcode_user_data",
-            "Kod parçacıkları, breakpoint'ler ve kişisel Xcode ayarları bulunabilir.",
-            "İçeriğini ve yedeğini doğrulamadan silmeyin.",
+            "sensitive.xcode-user-data",
+            "This can contain snippets, breakpoints, and personal Xcode settings.",
+            "Verify its contents and backup before moving it to the Trash.",
         )
 
-    simulator_devices = f"{home}/Library/Developer/CoreSimulator/Devices"
-    if is_within(normalized, simulator_devices):
+    if is_within(normalized, f"{home}/Library/Developer/CoreSimulator/Devices"):
         return _classification(
             RiskLevel.SENSITIVE,
-            "simulator_devices",
-            "Simülatör uygulama verileri ve cihaz durumları bulunabilir.",
-            "Ham klasör silmek yerine Xcode veya simctl ile kullanılmayan simülatörleri yönetin.",
+            "sensitive.simulator-data",
+            "This can contain simulator app data and device state.",
+            "Manage unused simulators with Xcode or simctl instead of deleting the raw folder.",
         )
 
-    device_support = f"{home}/Library/Developer/Xcode/iOS DeviceSupport"
-    if is_within(normalized, device_support):
+    if is_within(normalized, f"{home}/Library/Developer/Xcode/iOS DeviceSupport"):
         return _classification(
             RiskLevel.REVIEW,
-            "xcode_device_support",
-            "Bağlanan iOS sürümleri için destek ve sembol verileri içerir.",
-            "Eski cihaz sürümlerini doğrulayın; ihtiyaç halinde Xcode yeniden oluşturabilir.",
+            "review.ios-device-support",
+            "This contains support and symbol data for connected iOS versions.",
+            "Confirm that the device versions are old; Xcode can recreate needed support data.",
         )
 
     review_roots = (
@@ -153,9 +162,9 @@ def classify_path(path: str, home_path: str | None = None) -> SafetyClassificati
     if any(is_within(normalized, root) for root in review_roots):
         return _classification(
             RiskLevel.REVIEW,
-            "reviewable_user_storage",
-            "Bu konum genellikle temizlenebilir öğeler içerir, ancak kullanıcı verisi de bulunabilir.",
-            "Dosya adını, oluşturan uygulamayı ve tekrar gerekli olup olmadığını doğrulayın.",
+            "review.user-cleanup",
+            "This location often contains removable items, but it can also contain user data.",
+            "Verify the file name, owning app, and whether you still need it.",
         )
 
     sensitive_user_roots = (
@@ -175,39 +184,38 @@ def classify_path(path: str, home_path: str | None = None) -> SafetyClassificati
     if any(is_within(normalized, root) for root in sensitive_user_roots):
         return _classification(
             RiskLevel.SENSITIVE,
-            "persistent_user_data",
-            "Bu konum kişisel, bulutla eşitlenen veya uygulamaya ait kalıcı veri içerebilir.",
-            "İlgili uygulamadan yönetin veya doğrulanmış bir yedek aldıktan sonra karar verin.",
+            "sensitive.user-data",
+            "This location can contain personal, synced, or persistent app data.",
+            "Prefer the owning app, or verify a backup before moving it to the Trash.",
         )
 
-    machine_wide_roots = ("/Applications", "/Library", "/private", "/etc", "/opt")
-    if any(is_within(normalized, root) for root in machine_wide_roots):
+    if any(is_within(normalized, root) for root in ("/private", "/etc", "/opt", "/usr/local")):
         return _classification(
             RiskLevel.SENSITIVE,
-            "machine_wide_data",
-            "Bu makine genelindeki bir uygulama ya da yapılandırma alanı.",
-            "Dosyayı oluşturan uygulamayı belirleyip kendi kaldırma veya yönetim akışını tercih edin.",
+            "sensitive.machine-wide",
+            "This is a machine-wide application or configuration area.",
+            "Identify the owning app and prefer its uninstall or management flow.",
         )
 
     if is_within(normalized, "/Users") and not is_within(normalized, home):
         return _classification(
             RiskLevel.SENSITIVE,
-            "other_user_data",
-            "Bu konum başka bir kullanıcı hesabına ait veri içerebilir.",
-            "Hesap sahibinin onayı ve doğrulanmış bir yedek olmadan silmeyin.",
+            "sensitive.other-user",
+            "This location can contain another user's data.",
+            "Do not move it to the Trash without the account owner's approval and a verified backup.",
         )
 
     if is_within(normalized, home):
         return _classification(
             RiskLevel.REVIEW,
-            "unknown_user_data",
-            "Kullanıcı klasöründeki bu öğe için otomatik güvenli kararı verilemiyor.",
-            "İçeriği, oluşturan uygulamayı, son kullanım zamanını ve yedeğini kontrol edin.",
+            "review.home",
+            "Lucid Disk cannot automatically determine whether this user item is safe to remove.",
+            "Open it and verify what created it and whether it is backed up.",
         )
 
     return _classification(
         RiskLevel.REVIEW,
-        "unknown_location",
-        "Bu konum bilinen güvenli-temizleme kalıplarından biri değil.",
-        "Silmeden önce kaynağını, içeriğini ve yedeğini doğrulayın.",
+        "review.unknown",
+        "This location does not match a known cleanup rule.",
+        "Verify its source, contents, and backup before moving it to the Trash.",
     )

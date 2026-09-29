@@ -1,7 +1,7 @@
 import XCTest
 import AppKit
 import SwiftUI
-@testable import LucidDisk
+@testable import LucidDiskCore
 
 final class InteractionTests: XCTestCase {
     @MainActor

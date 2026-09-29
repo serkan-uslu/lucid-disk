@@ -19,16 +19,20 @@ jobs:
           left="disk"
           right="$(printf '\144\141\151\163\171')"
           pattern="${left}([[:space:]_-]?${right})|${right}([[:space:]_-]?${left})"
-          if rg --hidden --ignore-case --line-number \
-            --glob '!.git/**' \
-            --glob '!.build/**' \
-            --glob '!.swiftpm/**' \
-            --glob '!build/**' \
-            --glob '!graphify-out/**' \
-            --glob '!**/.venv/**' \
-            --glob '!**/__pycache__/**' \
-            --glob '!**/.pytest_cache/**' \
-            --glob '!**/.ruff_cache/**' \
+          # grep ships with the runner image; ripgrep does not.
+          if grep -rEIin \
+            --exclude-dir=.git \
+            --exclude-dir=.build \
+            --exclude-dir=.swiftpm \
+            --exclude-dir=build \
+            --exclude-dir=graphify-out \
+            --exclude-dir=.venv \
+            --exclude-dir=__pycache__ \
+            --exclude-dir=.pytest_cache \
+            --exclude-dir=.ruff_cache \
+            --exclude-dir=node_modules \
+            --exclude-dir=.next \
+            --exclude-dir=out \
             "$pattern" .; then
             echo "Legacy or third-party identity found." >&2
             exit 1
@@ -60,4 +64,4 @@ jobs:
       - name: Build MCP distributions
         run: |
           uv build --project mcp
-          unzip -l mcp/dist/*.whl | rg 'licenses/LICENSE'
+          unzip -l mcp/dist/*.whl | grep 'licenses/LICENSE'

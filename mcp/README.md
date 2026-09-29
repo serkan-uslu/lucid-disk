@@ -1,10 +1,16 @@
 # Lucid Disk Safety MCP
 
-A local, read-only MCP server for reviewing disk cleanup candidates found by Lucid Disk. It exposes three tools and never deletes, moves, or modifies files:
+A local, read-only MCP server for reviewing disk cleanup candidates found by Lucid Disk. It exposes five tools and never deletes, moves, or modifies files:
 
+- `summarize_known_locations` measures common space-heavy locations in the home folder (Xcode DerivedData, Archives, DeviceSupport, simulator devices, caches, logs, Downloads, Trash, npm and Gradle caches) and reports each one's risk.
 - `inventory_directory` measures and ranks a directory's direct children.
+- `find_large_files` walks one volume below a directory and returns the largest regular files with their risk.
 - `assess_paths` reports file metadata, size accuracy, warnings, and cleanup risk.
 - `create_cleanup_plan` groups selected paths by risk and returns blockers and review questions.
+
+A typical assistant flow: start with `summarize_known_locations` or `inventory_directory`, narrow down with `find_large_files`, then run `assess_paths` or `create_cleanup_plan` on the items the user is considering. The app's **Settings → MCP** tab shows the same list and generates the setup commands below with your paths filled in.
+
+Risk rules are the same as the app's (`Tests/Fixtures/deletion-safety.json` is checked by both test suites), compare paths case-insensitively, and all output is in English. Measurements stay on one volume and skip `/System/Volumes` and `/Volumes`, so firmlinked data is not counted twice.
 
 `effective_risk` is the stricter classification of the normalized lexical path and its resolved path. Even `rebuildable` is not permission to delete an item.
 
@@ -19,6 +25,27 @@ uv run --project mcp luciddisk-mcp
 ```
 
 The final command waits for an MCP client over standard input/output, so no terminal output is expected.
+
+## Connect to Claude Code
+
+```bash
+claude mcp add luciddisk -- uv run --project "$(pwd)/mcp" luciddisk-mcp
+```
+
+## Connect to Claude Desktop
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (use the absolute path of `uv`, for example `/opt/homebrew/bin/uv`):
+
+```json
+{
+  "mcpServers": {
+    "luciddisk": {
+      "command": "/opt/homebrew/bin/uv",
+      "args": ["run", "--project", "/path/to/lucid-disk/mcp", "luciddisk-mcp"]
+    }
+  }
+}
+```
 
 ## Connect to Codex
 

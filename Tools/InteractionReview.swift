@@ -1,4 +1,4 @@
-// Standalone AppKit review harness. Compile with the app sources except LucidDiskApp.swift.
+// Standalone AppKit review harness. Compile with the LucidDiskCore sources (not the app target).
 // It exercises the real macOS event loop; XCTest's non-running NSApplication cannot do that.
 import AppKit
 import SwiftUI
@@ -51,7 +51,13 @@ final class ReviewDelegate: NSObject, NSApplicationDelegate {
             let expected = language.hasPrefix("tr") ? "Nasıl Kullanılır" : "How to Use"
             check(String(localized: "How to Use") == expected, "Requested app language is rendered: \(language)")
         }
-        guard let table = contentsTable(rows: 6) else { failures.append("Contents table missing"); return }
+        for _ in 0..<20 where contentsTable(rows: 6) == nil { try await pause() }
+        guard let table = contentsTable(rows: 6) else {
+            let tables = descendants(window.contentView!).compactMap { $0 as? NSTableView }
+            print("TABLES \(tables.map { "rows=\($0.numberOfRows) width=\($0.bounds.width)" })")
+            capture("contents-missing")
+            failures.append("Contents table missing"); return
+        }
         let row = table.rect(ofRow: 1)
         let point = table.convert(NSPoint(x: row.minX + 90, y: row.midY), to: nil)
         postClick(at: point, count: 1)
@@ -119,7 +125,9 @@ final class ReviewDelegate: NSObject, NSApplicationDelegate {
             }
         }
         AppSupport.shared.window?.close()
+        try await reviewSettings()
         window.makeKeyAndOrderFront(nil)
+        try await reviewExtensionSlots(root)
         check(model.focusedNode?.id == selectedBeforeHelp, "Help leaves disk navigation intact")
         model.rootNode = nil
         model.focusedNode = nil
@@ -153,6 +161,52 @@ final class ReviewDelegate: NSObject, NSApplicationDelegate {
             }
         } else { failures.append("10,000-entry directory did not load") }
         try await reviewRealFileWorkflow()
+    }
+
+    /// Installs a throwaway edition to prove the open-core slots render, then removes it.
+    func reviewExtensionSlots(_ root: FileNode) async throws {
+        let extensions = LucidDiskExtensions.shared
+        extensions.setEdition(EditionInfo(badge: "Preview"))
+        extensions.addSidebarSection(SidebarContribution(id: "review.sidebar", title: "Extension slot") { context in
+            AnyView(Label("\(context.rootNode?.name ?? "—") · \(context.reviewQueue.count) queued", systemImage: "puzzlepiece"))
+        })
+        extensions.addInspectorSection(InspectorContribution(id: "review.inspector") { node, _ in
+            AnyView(Label("Extension card for \(node.name)", systemImage: "puzzlepiece").card())
+        })
+        model.selectedNode = root.children[0].children[0]
+        try await pause(); try await pause()
+        capture("extension-slots")
+        check(extensions.sidebarSections.count == 1 && extensions.inspectorSections.count == 1, "Extension slots accept contributions")
+        extensions.reset()
+        model.selectedNode = nil
+        try await pause()
+        check(extensions.edition == .community, "Extension registry resets to Community")
+    }
+
+    func reviewSettings() async throws {
+        // The harness has its own defaults domain, so this never changes the app's settings.
+        let settings = InsightSettings.shared
+        let previous = settings.provider
+        defer { settings.provider = previous }
+        let panes: [(String, InsightProviderKind?, AnyView)] = [
+            ("settings-ai-claude", .claude, AnyView(InsightSettingsPane())),
+            ("settings-ai-ollama", .ollama, AnyView(InsightSettingsPane())),
+            ("settings-mcp", nil, AnyView(MCPSettingsPane()))
+        ]
+        for (name, provider, pane) in panes {
+            if let provider { settings.provider = provider }
+            let settingsWindow = NSWindow(contentRect: NSRect(x: 180, y: 140, width: 660, height: 640),
+                                          styleMask: [.titled, .closable], backing: .buffered, defer: false)
+            settingsWindow.isReleasedWhenClosed = false
+            settingsWindow.title = "Settings"
+            settingsWindow.contentView = NSHostingView(rootView: pane.frame(width: 660, height: 640)
+                .preferredColorScheme(.dark).tint(Theme.accent))
+            settingsWindow.makeKeyAndOrderFront(nil)
+            try await pause(); try await pause()
+            check(settingsWindow.isVisible, "Settings pane renders: \(name)")
+            capture(name, in: settingsWindow)
+            settingsWindow.close()
+        }
     }
 
     func reviewSearch(_ root: FileNode) async throws {

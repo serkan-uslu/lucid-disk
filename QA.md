@@ -1,5 +1,7 @@
 # Desktop regression review — 0.2.1
 
+> **0.3.0 note:** 0.3.0 adds selectable AI providers (Apple on-device, Ollama, Claude API, rules only), a Settings window with AI and MCP tabs, a visual refresh, case-insensitive safety rules shared with the MCP server through one fixture, and two new read-only MCP tools. Automated coverage: `swift test` and `pytest mcp/tests`. The desktop review below predates 0.3.0; re-run `Tools/review_ui.sh` on an otherwise idle desktop (keyboard checks fail if another app takes focus) and exercise real Ollama and Claude API requests manually before a release.
+
 Reviewed on 2026-09-29 on Apple Silicon, macOS 26.4. This is a local development build, not a notarized release sign-off.
 
 ## Automated evidence

@@ -10,8 +10,8 @@ The project is licensed under the [Apache License 2.0](LICENSE).
 - Reports logical and allocated sizes, hard-link deduplication, and incomplete or estimated measurements.
 - Provides searchable and sortable file views, Quick Look, keyboard navigation, and VoiceOver labels.
 - Builds a review queue before any cleanup and blocks protected system locations.
-- Produces local Lucid Insight explanations only when you press **Ask AI**; ordinary selection never invokes a model. Supported systems can use Apple Foundation Models; a deterministic local explanation remains available otherwise.
-- Includes an optional, read-only MCP server with path assessment, directory inventory, and cleanup-plan tools.
+- Produces Lucid Insight explanations only when you press **Ask AI**; ordinary selection never invokes a model. In **Settings → AI** choose Apple's on-device model (default), a local [Ollama](https://ollama.com) model, the Claude API with your own key, or rules only. The model only suggests a probable purpose; safety decisions stay deterministic.
+- Includes an optional, read-only MCP server with five tools; **Settings → MCP** lists them and generates setup commands for Claude Code, Claude Desktop, and Codex.
 
 Lucid Disk does not perform automatic cleanup or permanent deletion. Administrator scanning, snapshot cleanup, direct cloud connectors, and duplicate detection are not part of the first release. See [ROADMAP.md](ROADMAP.md).
 
@@ -58,9 +58,28 @@ In the browser, a single click selects a row, double-click or Return opens a fol
 
 Open **Help → How to Use** or the toolbar’s question mark for the four-step guide, keyboard shortcuts, size-estimate explanations, Full Disk Access guidance, and privacy/safety details. **Lucid Disk → About Lucid Disk** shows the installed version, credits, and bundled Apache license. Help is a separate, non-modal window, so a scan continues while you read.
 
-Use **⌘O** to choose a folder, **⌘R** to scan again, **⌘F** to focus search, and **⌘←** to go up. A cancelled or failed rescan retains the last completed snapshot. A successful Trash operation reports its outcome and provides **Show in Trash**; reclaimable space is not guaranteed, and Lucid Disk never empties Trash.
+Use **⌘O** to choose a folder, **⌘R** to scan again, **⌘F** to focus search, **⌘←** to go up, and **⌘,** for Settings. A cancelled or failed rescan retains the last completed snapshot. A successful Trash operation reports its outcome and provides **Show in Trash**; reclaimable space is not guaranteed, and Lucid Disk never empties Trash.
+
+## AI providers
+
+| Provider | Setup | Leaves the Mac |
+|---|---|---|
+| Apple on-device | macOS 26+ with Apple Intelligence | Nothing |
+| Ollama | Install Ollama, `ollama pull llama3.2`, pick the model in Settings | Nothing (unless the server URL is another machine) |
+| Claude API | Paste an API key from the Claude Console (stored in Keychain), allow metadata sharing | Selected item's metadata, never contents |
+| Rules only | — | Nothing |
+
+The default Claude model is `claude-opus-5-5` at low effort; any model ID can be entered. Provider failures fall back to the rule-based explanation. See [PRIVACY.md](PRIVACY.md).
 
 ## Optional MCP server
+
+| Tool | Purpose |
+|---|---|
+| `summarize_known_locations` | Sizes of common space hogs (Xcode DerivedData, caches, logs, Downloads, Trash, npm/Gradle caches) with risk |
+| `inventory_directory` | Ranks a folder's direct children by allocated size |
+| `find_large_files` | Largest files below a folder, one volume, hard links counted once |
+| `assess_paths` | Size, accuracy, warnings, and risk for up to 50 paths |
+| `create_cleanup_plan` | Groups paths by risk with blockers and review questions |
 
 ```bash
 uv sync --project mcp
@@ -69,8 +88,13 @@ uv run --project mcp --with pytest pytest mcp/tests
 
 The server never deletes or moves files. Its client may send paths and derived metadata to the model or service configured by that client, so enable it only when that disclosure is acceptable. See [mcp/README.md](mcp/README.md) and [PRIVACY.md](PRIVACY.md).
 
+## Editions and architecture
+
+This repository is the open-source Community edition. The app lives in the `LucidDiskCore` library; `Sources/LucidDisk` is a thin `@main` app on top of it. Other editions, such as a planned paid Pro app, depend on the library and add features through documented extension points — see [EDITIONS.md](EDITIONS.md) for the architecture and the promises the Community edition keeps.
+
 ## Project policies
 
+- [Editions](EDITIONS.md)
 - [Privacy](PRIVACY.md)
 - [Security](SECURITY.md)
 - [Contributing](CONTRIBUTING.md)

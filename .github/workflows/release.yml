@@ -9,10 +9,38 @@ permissions:
   contents: write
 
 jobs:
+  # A version tag also marks a LucidDiskCore release for other editions to pin.
+  # Until Developer ID secrets exist, tags must not produce a failed release run.
+  signing-ready:
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      - id: check
+        env:
+          P12_BASE64: ${{ secrets.DEVELOPER_ID_P12_BASE64 }}
+        run: |
+          if [ -n "$P12_BASE64" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Developer ID secrets are not configured; skipping the signed DMG."
+          fi
+
   signed-dmg:
+    needs: signing-ready
+    if: needs.signing-ready.outputs.ready == 'true'
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
+
+      - name: Test before signing
+        run: swift test
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Test MCP server
+        run: uv run --project mcp --with pytest pytest mcp/tests
 
       - name: Import signing identity
         env:

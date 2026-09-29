@@ -1,5 +1,5 @@
 import XCTest
-@testable import LucidDisk
+@testable import LucidDiskCore
 
 #if canImport(FoundationModels)
 import FoundationModels

@@ -37,6 +37,11 @@ class ServerSmokeTests(unittest.IsolatedAsyncioTestCase):
                         "create_cleanup_plan",
                         {"paths": [str(candidate)], "calculate_size": False},
                     )
+                    large = await session.call_tool(
+                        "find_large_files",
+                        {"path": directory, "min_size_bytes": 0, "limit": 5},
+                    )
+                    known = await session.call_tool("summarize_known_locations", {"max_entries": 1_000})
 
             self.assertEqual(candidate.read_bytes(), before)
             self.assertEqual([path.name for path in Path(directory).iterdir()], ["candidate.bin"])
@@ -44,7 +49,13 @@ class ServerSmokeTests(unittest.IsolatedAsyncioTestCase):
         tools = {tool.name: tool for tool in result.tools}
         self.assertEqual(
             set(tools),
-            {"assess_paths", "inventory_directory", "create_cleanup_plan"},
+            {
+                "assess_paths",
+                "inventory_directory",
+                "create_cleanup_plan",
+                "find_large_files",
+                "summarize_known_locations",
+            },
         )
         for tool in tools.values():
             self.assertTrue(tool.annotations.readOnlyHint)
@@ -58,6 +69,13 @@ class ServerSmokeTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("changed_files", assessment.structuredContent)
         self.assertNotIn("changed_files", inventory.structuredContent)
         self.assertNotIn("changed_files", plan.structuredContent)
+        self.assertFalse(large.isError)
+        self.assertEqual(
+            [item["name"] for item in large.structuredContent["files"]],
+            ["candidate.bin"],
+        )
+        self.assertFalse(known.isError)
+        self.assertIn("locations", known.structuredContent)
 
 
 if __name__ == "__main__":
