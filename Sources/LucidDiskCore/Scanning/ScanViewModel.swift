@@ -145,6 +145,16 @@ final class ScanViewModel: ObservableObject {
         }
     }
 
+    /// Review tooling shows sample volumes instead of the reviewer's own disks.
+    func showSampleVolumes(_ volumes: [ScanVolume]) {
+        mountedVolumes = volumes
+    }
+
+    /// Review tooling shows a fixed space breakdown instead of this Mac's real numbers.
+    func showSampleSpaceBreakdown(_ breakdown: SpaceBreakdown?) {
+        spaceBreakdown = breakdown
+    }
+
     func isCurrentScan(_ id: UUID) -> Bool {
         activeScanID == id
     }

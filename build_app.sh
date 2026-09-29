@@ -4,8 +4,8 @@ set -euo pipefail
 APP_NAME="Lucid Disk"
 EXECUTABLE="LucidDisk"
 BUNDLE_ID="com.serkanuslu.luciddisk"
-APP_VERSION="${APP_VERSION:-0.4.0}"
-APP_BUILD="${APP_BUILD:-5}"
+APP_VERSION="${APP_VERSION:-1.0.0}"
+APP_BUILD="${APP_BUILD:-6}"
 SIGN_IDENTITY="${CODE_SIGN_IDENTITY:--}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
@@ -76,11 +76,21 @@ PLIST
 
 plutil -lint "$APP_DIR/Contents/Info.plist"
 
-sign_args=(--force --deep --sign "$SIGN_IDENTITY")
+# The bundle has one executable and a code-free resource bundle, so the app is signed
+# once from the outside. Never sign with --deep; it is only for verification.
+sign_args=(--force --sign "$SIGN_IDENTITY")
 if [[ "$SIGN_IDENTITY" != "-" ]]; then
+    # Hardened Runtime and a secure timestamp are required for notarization.
     sign_args+=(--options runtime --timestamp)
 fi
 codesign "${sign_args[@]}" "$APP_DIR"
-codesign --verify --deep --strict "$APP_DIR"
+codesign --verify --deep --strict --verbose=2 "$APP_DIR"
+if [[ "$SIGN_IDENTITY" != "-" ]]; then
+    # A release must never carry the debugging entitlement.
+    if codesign --display --entitlements - --xml "$APP_DIR" 2>/dev/null | grep -q "get-task-allow"; then
+        echo "Release signature must not include get-task-allow." >&2
+        exit 1
+    fi
+fi
 
 echo "Created: $APP_DIR"
