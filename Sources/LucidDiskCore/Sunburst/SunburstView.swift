@@ -96,27 +96,8 @@ struct SunburstView: View {
                     })
                     .accessibilityHidden(true)
 
-                    Button(action: onZoomOut) {
-                        VStack(spacing: 6) {
-                            if focusedNode.parent != nil {
-                                Label("Parent Folder", systemImage: "arrow.up")
-                                    .font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
-                                    .lineLimit(1).minimumScaleFactor(0.65)
-                            }
-                            Text(ByteCountFormatter.string(fromByteCount: focusedNode.size, countStyle: .file))
-                                .font(.system(size: 24, weight: .semibold, design: .rounded))
-                                .lineLimit(1).minimumScaleFactor(0.5)
-                            Text(focusedNode.name).font(.caption).foregroundStyle(.secondary)
-                                .lineLimit(1).truncationMode(.middle)
-                        }
-                        .frame(width: geometry.centerRadius * 1.65, height: geometry.centerRadius * 1.65)
-                        .contentShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .allowsHitTesting(false)
-                    .help("Back to parent folder")
-                    .accessibilityLabel("Back to parent folder")
-                    .position(geometry.center)
+                    centerContent(geometry)
+                        .position(geometry.center)
                 }
             }
             let shown = hovered ?? selectedNode ?? focusedNode
@@ -143,6 +124,45 @@ struct SunburstView: View {
             .card(padding: 12)
         }
         .onChange(of: focusedNode.id) { _, _ in hoveredNodeID = nil }
+    }
+
+    @ViewBuilder
+    private func centerContent(_ geometry: SunburstGeometry) -> some View {
+        if focusedNode.parent != nil {
+            Button(action: onZoomOut) { centerMeasurement(geometry) }
+                .buttonStyle(.plain)
+                .allowsHitTesting(false)
+                .help("Back to parent folder")
+                .accessibilityLabel(Text("Measured allocation for \(ScanMeasurementPresentation.scopeName(for: focusedNode))"))
+                .accessibilityValue(ByteCountFormatter.string(fromByteCount: focusedNode.size, countStyle: .file))
+                .accessibilityHint("Back to parent folder")
+        } else {
+            centerMeasurement(geometry)
+                .allowsHitTesting(false)
+                .help(ScanMeasurementPresentation.allocationHelp)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text("Measured allocation for \(focusedNode.name)"))
+                .accessibilityValue(ByteCountFormatter.string(fromByteCount: focusedNode.size, countStyle: .file))
+        }
+    }
+
+    private func centerMeasurement(_ geometry: SunburstGeometry) -> some View {
+        VStack(spacing: 3) {
+            Text("Measured").font(.caption2).foregroundStyle(.secondary)
+                .lineLimit(1).minimumScaleFactor(0.8)
+            Text(ByteCountFormatter.string(fromByteCount: focusedNode.size, countStyle: .file))
+                .font(.system(size: min(24, max(11, geometry.centerRadius * 0.38)), weight: .semibold, design: .rounded))
+                .lineLimit(1).minimumScaleFactor(0.5).layoutPriority(1)
+            if focusedNode.parent != nil {
+                Text("Parent Folder").font(.caption2).foregroundStyle(Theme.accent)
+                    .lineLimit(1).minimumScaleFactor(0.8)
+            } else {
+                Text(focusedNode.name).font(.caption2).foregroundStyle(.secondary)
+                    .lineLimit(1).truncationMode(.middle)
+            }
+        }
+        .frame(width: geometry.centerRadius * 1.65, height: geometry.centerRadius * 1.65)
+        .contentShape(Circle())
     }
 
     private func activate(_ node: FileNode) {

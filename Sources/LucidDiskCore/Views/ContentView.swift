@@ -15,8 +15,9 @@ struct ContentView: View {
     private let volumeRefresh = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
 
     @MainActor
-    init(viewModel: ScanViewModel? = nil) {
+    init(viewModel: ScanViewModel? = nil, showingDetails: Bool = false) {
         _viewModel = StateObject(wrappedValue: viewModel ?? ScanViewModel(scanStore: .shared))
+        _showingDetails = State(initialValue: showingDetails)
     }
 
     var body: some View {
@@ -391,27 +392,19 @@ struct ContentView: View {
         } else if let focused = viewModel.focusedNode, !showingHome {
             GeometryReader { area in
               let inspectorWidth = min(460, max(340, area.size.width * 0.43))
+              let hasDetails = showingDetails && !viewModel.selectedNodes.isEmpty
+              // At compact heights the inspector needs the map's space. Closing
+              // details restores the map, without squeezing its center to zero.
+              let showsDiskMap = !hasDetails || area.size.height >= 850
               HStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 0) {
                     VStack(alignment: .leading, spacing: 8) {
-                        HStack(alignment: .center, spacing: 12) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(focused.name).font(.title2.weight(.semibold)).lineLimit(1)
-                                PathBar(chain: ancestorChain(from: focused)) { viewModel.focus(on: $0) }
-                            }
-                            Spacer(minLength: 0)
-                            if area.size.width > 1_000 {
-                                HStack(spacing: 18) {
-                                    StatView(title: String(localized: "Allocated"),
-                                             value: ByteCountFormatter.string(fromByteCount: focused.allocatedSizeBytes, countStyle: .file))
-                                    StatView(title: String(localized: "Items"),
-                                             value: (focused.isAggregate ? focused.aggregatedChildren.count : focused.children.count).formatted())
-                                    if focused.measurementAccuracy == .incomplete {
-                                        Pill(title: String(localized: "Partial"), systemImage: "exclamationmark.triangle", color: .orange)
-                                    }
-                                }
-                            }
-                        }
+                        Text(focused.name).font(.title2.weight(.semibold)).lineLimit(1)
+                        PathBar(chain: ancestorChain(from: focused)) { viewModel.focus(on: $0) }
+                        ScanMeasurementSummary(measurement: ScanMeasurementPresentation(
+                            focused: focused, root: viewModel.rootNode ?? focused,
+                            wasStopped: viewModel.lastScanResult?.wasStopped ?? false,
+                            savedAt: viewModel.snapshotDate))
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), alignment: .leading)], alignment: .leading, spacing: 6) {
                             Button { viewModel.zoomOut() } label: {
                                 Label("Parent Folder", systemImage: "chevron.left")
@@ -435,21 +428,23 @@ struct ContentView: View {
                         }
                     }
                     .padding(.horizontal, 20).padding(.top, 18).padding(.bottom, 6)
-                    SunburstView(
-                        focusedNode: focused,
-                        wedges: wedges,
-                        selectedNode: viewModel.selectedNode,
-                        selectedIDs: Set(viewModel.selectedNodes.map(\.id)),
-                        onZoomOut: { viewModel.zoomOut() },
-                        onSelect: { node in viewModel.select(node.map { [$0] } ?? [], primary: node) },
-                        onFocus: { node in viewModel.focus(on: node) },
-                        onToggleSelection: { node in viewModel.toggleSelection(node) }
-                    )
-                    .padding(.horizontal, 20).padding(.vertical, 12)
-                    Text("Select an item, then choose View Details. Double-click a folder to open it. ⌘-click to select several.")
-                        .font(.caption).foregroundStyle(.tertiary)
-                        .frame(maxWidth: .infinity).padding(.bottom, 14)
-                    if showingDetails, !viewModel.selectedNodes.isEmpty {
+                    if showsDiskMap {
+                        SunburstView(
+                            focusedNode: focused,
+                            wedges: wedges,
+                            selectedNode: viewModel.selectedNode,
+                            selectedIDs: Set(viewModel.selectedNodes.map(\.id)),
+                            onZoomOut: { viewModel.zoomOut() },
+                            onSelect: { node in viewModel.select(node.map { [$0] } ?? [], primary: node) },
+                            onFocus: { node in viewModel.focus(on: node) },
+                            onToggleSelection: { node in viewModel.toggleSelection(node) }
+                        )
+                        .padding(.horizontal, 20).padding(.vertical, 12)
+                        Text("Select an item, then choose View Details. Double-click a folder to open it. ⌘-click to select several.")
+                            .font(.caption).foregroundStyle(.tertiary)
+                            .frame(maxWidth: .infinity).padding(.bottom, 14)
+                    }
+                    if hasDetails {
                         Divider()
                         HStack {
                             Text("Details").font(.headline)
@@ -468,7 +463,8 @@ struct ContentView: View {
                                     .id("\(selected.id)-\(viewModel.treeRevision)")
                             }
                         }
-                        .frame(height: min(300, area.size.height * 0.44))
+                        .frame(height: showsDiskMap ? min(300, area.size.height * 0.44) : nil)
+                        .frame(maxHeight: showsDiskMap ? nil : .infinity)
                     }
                 }
                 .frame(width: max(0, area.size.width - inspectorWidth - 1), height: area.size.height)

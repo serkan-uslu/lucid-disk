@@ -19,6 +19,10 @@ final class UIContractTests: XCTestCase {
 
         for key in [
             "Scan Startup Disk", "Lucid Insight", "Add to Review Queue",
+            "Measured allocation", "Measured", "Measured allocation for %@", "Other items in %@",
+            "Partial scan", "Scan stopped", "Saved scan",
+            "This scan is incomplete. Some locations were unreadable or skipped; see Scan Warnings.",
+            "Estimated allocation measured in this scope. Shared APFS blocks can be counted in more than one file, so this is neither total disk usage nor guaranteed space you can reclaim.",
             "Move to Trash", "Scan Warnings", "Quick Look", "About Lucid Disk",
             "How to Use", "Keyboard Shortcuts", "Privacy & Safety", "Scan Again", "Show in Trash",
             "Home", "View Details", "Close details", "Rescan this folder", "Search filters",

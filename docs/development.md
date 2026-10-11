@@ -68,3 +68,5 @@ All user-facing strings live in `Sources/LucidDiskCore/Resources/Localizable.xcs
 ## Continuous integration
 
 `.github/workflows/ci.yml` runs on every push and pull request: identity check, `swift test`, release build, MCP tests, packaging checks (`build_dmg.sh`, architectures, resources, checksum) and MCP distribution build. Signed releases are separate; see [releasing.md](releasing.md).
+
+For unattended layout checks with sample data, run `Tools/review_presentations.sh -AppleLanguages '(en)'` (or `'(tr)'`). It renders hidden windows into `build/presentation-review` and never activates the app. Set `LUCID_PRESENTATION_SNAPSHOTS` to keep language-specific output folders. Inspect the images; a successful render alone does not validate layout. Native window chrome and some layer-backed sidebar content are not captured reliably, so this supplements the interactive `review_ui.sh` checks rather than replacing them.

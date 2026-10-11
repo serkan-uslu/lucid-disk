@@ -8507,7 +8507,6 @@
       }
     },
     "Saved scan": {
-      "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
@@ -9549,6 +9548,134 @@
           "stringUnit": {
             "state": "translated",
             "value": "Güncel kullanılan depolama"
+          }
+        }
+      }
+    },
+    "Measured allocation": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measured allocation"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ölçülen dosya alanı"
+          }
+        }
+      }
+    },
+    "Measured": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measured"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ölçülen"
+          }
+        }
+      }
+    },
+    "Measured allocation for %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measured allocation for %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ için ölçülen dosya alanı"
+          }
+        }
+      }
+    },
+    "Other items in %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other items in %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ içindeki diğer öğeler"
+          }
+        }
+      }
+    },
+    "Partial scan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partial scan"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kısmi tarama"
+          }
+        }
+      }
+    },
+    "Scan stopped": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan stopped"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarama durduruldu"
+          }
+        }
+      }
+    },
+    "This scan is incomplete. Some locations were unreadable or skipped; see Scan Warnings.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This scan is incomplete. Some locations were unreadable or skipped; see Scan Warnings."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu tarama eksik. Bazı konumlar okunamadı veya atlandı; Tarama Uyarıları bölümüne bakın."
+          }
+        }
+      }
+    },
+    "Estimated allocation measured in this scope. Shared APFS blocks can be counted in more than one file, so this is neither total disk usage nor guaranteed space you can reclaim.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimated allocation measured in this scope. Shared APFS blocks can be counted in more than one file, so this is neither total disk usage nor guaranteed space you can reclaim."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kapsamda ölçülen tahmini dosya alanı. Paylaşılan APFS blokları birden fazla dosyada sayılabilir; bu değer toplam disk kullanımı veya kesin olarak boşaltılabilecek alan değildir."
           }
         }
       }
