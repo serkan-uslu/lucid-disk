@@ -66,6 +66,7 @@ struct VolumeCapacity: Equatable, Sendable {
 struct DiskInfo: Equatable, Sendable {
     let containerReference: String?
     let deviceIdentifier: String?
+    var volumeGroupID: UUID? = nil
 }
 
 /// Read-only system queries, injectable so tests use fixtures.
@@ -158,7 +159,8 @@ enum SpaceParsing {
         guard let dictionary = plist(data) else { return nil }
         return DiskInfo(
             containerReference: dictionary["APFSContainerReference"] as? String,
-            deviceIdentifier: dictionary["DeviceIdentifier"] as? String
+            deviceIdentifier: dictionary["DeviceIdentifier"] as? String,
+            volumeGroupID: (dictionary["APFSVolumeGroupID"] as? String).flatMap(UUID.init(uuidString:))
         )
     }
 
@@ -200,12 +202,8 @@ enum SpaceAnalyzer {
 
         let purgeable = capacity.availableForImportantUsage.map { max(0, $0 - capacity.available) }
         let snapshots = probe.localSnapshotCount(forMountPoint: rootPath)
-        var items = [SpaceBreakdown.Item(
-            id: "scanned", kind: .scanned,
-            title: String(localized: "Scanned by Lucid Disk"),
-            bytes: scannedBytes,
-            detail: String(localized: "Everything the scan could open and measure.")
-        )]
+        var items: [SpaceBreakdown.Item] = []
+        var hasUnclassifiedVolumes = false
 
         let info = probe.diskInfo(forMountPoint: rootPath)
         let container = info?.containerReference.flatMap { reference in
@@ -222,12 +220,27 @@ enum SpaceAnalyzer {
             used = max(0, total - free)
             let device = info?.deviceIdentifier ?? ""
             let isStartup = rootPath == "/"
+            let sourceVolume = container.volumes.first {
+                device == $0.deviceIdentifier || device.hasPrefix($0.deviceIdentifier + "s")
+            }
+            let dataDevice = isStartup
+                ? startupDataDevice(in: container, rootGroupID: info?.volumeGroupID, probe: probe) : nil
             for volume in container.volumes {
-                // The startup scan reaches the System volume directly and the Data volume through firmlinks.
-                let id = volume.deviceIdentifier
-                let covered = device == id || device.hasPrefix(id + "s")
-                    || (isStartup && (volume.roles.contains("System") || volume.roles.contains("Data")))
+                // Only the booted System/snapshot and its mounted Data volume are
+                // covered. Other installations can have the same roles in this container.
+                let covered = volume.deviceIdentifier == sourceVolume?.deviceIdentifier
+                    || volume.deviceIdentifier == dataDevice
                 guard !covered, volume.capacityInUse > 0 else { continue }
+                let uncertain = isStartup
+                    ? (dataDevice == nil && volume.roles.contains("Data"))
+                        || (sourceVolume == nil && volume.roles.contains("System"))
+                    : sourceVolume == nil
+                if uncertain {
+                    // Do not add an amount that may already be in the scan. Leave
+                    // attribution unresolved, preserving the physical used/free totals.
+                    hasUnclassifiedVolumes = true
+                    continue
+                }
                 otherVolumesBytes += volume.capacityInUse
                 items.append(otherVolumeItem(volume, swap: probe.swapUsage()))
             }
@@ -236,6 +249,16 @@ enum SpaceAnalyzer {
             free = capacity.available
             used = max(0, total - free)
         }
+
+        var scannedDetail = String(localized: "Everything the scan could open and measure.")
+        if hasUnclassifiedVolumes {
+            scannedDetail += " " + String(localized: "Some volumes could not be matched to this scan. Their separate amounts are omitted because they may overlap the scan.")
+        }
+        items.insert(SpaceBreakdown.Item(
+            id: "scanned", kind: .scanned,
+            title: String(localized: "Scanned by Lucid Disk"),
+            bytes: scannedBytes, detail: scannedDetail
+        ), at: 0)
 
         let remainder = used - scannedBytes - otherVolumesBytes
         if remainder > 0 {
@@ -265,6 +288,21 @@ enum SpaceAnalyzer {
             localSnapshotCount: snapshots,
             unreadableFolderCount: unreadableFolderCount
         )
+    }
+
+    private static func startupDataDevice(in container: APFSContainerInfo, rootGroupID: UUID?,
+                                          probe: SpaceProbe) -> String? {
+        let path = "/System/Volumes/Data"
+        guard probe.isMountPoint(path), let dataInfo = probe.diskInfo(forMountPoint: path),
+              dataInfo.containerReference == container.reference,
+              let device = dataInfo.deviceIdentifier,
+              container.volumes.contains(where: { $0.deviceIdentifier == device && $0.roles.contains("Data") }) else {
+            return nil
+        }
+        if let rootGroupID, let dataGroupID = dataInfo.volumeGroupID, rootGroupID != dataGroupID { return nil }
+        // Older or incomplete diskutil output may omit group IDs. The canonical
+        // mounted Data device in the same container still identifies the booted Data volume.
+        return device
     }
 
     private static func otherVolumeItem(_ volume: APFSVolumeInfo, swap: (total: Int64, used: Int64)?) -> SpaceBreakdown.Item {

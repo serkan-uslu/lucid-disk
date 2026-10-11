@@ -5,6 +5,14 @@ final class SpaceBreakdownTests: XCTestCase {
     /// Mirrors a real startup disk: System + Data are covered, the rest is outside the scan.
     private struct FixtureProbe: SpaceProbe {
         var mounted = true
+        var dataMounted = true
+        var rootInfo: DiskInfo? = DiskInfo(containerReference: "disk3", deviceIdentifier: "disk3s1s1",
+                                          volumeGroupID: UUID(uuidString: "00000000-0000-0000-0000-000000000001"))
+        var dataInfo: DiskInfo? = DiskInfo(containerReference: "disk3", deviceIdentifier: "disk3s5",
+                                          volumeGroupID: UUID(uuidString: "00000000-0000-0000-0000-000000000001"))
+        var externalInfo: DiskInfo? = DiskInfo(containerReference: "disk3", deviceIdentifier: "disk3s10")
+        var capacity = VolumeCapacity(name: "Macintosh HD", total: 1_000_000, available: 100_000,
+                                      availableForImportantUsage: 130_000)
         var containers: [APFSContainerInfo] = [APFSContainerInfo(
             reference: "disk3", capacityCeiling: 1_000_000, capacityFree: 100_000,
             volumes: [
@@ -18,12 +26,12 @@ final class SpaceBreakdownTests: XCTestCase {
             ])]
         var snapshots: Int? = 2
 
-        func isMountPoint(_ path: String) -> Bool { mounted }
-        func volumeCapacity(at path: String) -> VolumeCapacity? {
-            VolumeCapacity(name: "Macintosh HD", total: 1_000_000, available: 100_000, availableForImportantUsage: 130_000)
-        }
+        func isMountPoint(_ path: String) -> Bool { mounted && (path != "/System/Volumes/Data" || dataMounted) }
+        func volumeCapacity(at path: String) -> VolumeCapacity? { capacity }
         func diskInfo(forMountPoint path: String) -> DiskInfo? {
-            DiskInfo(containerReference: "disk3", deviceIdentifier: path == "/" ? "disk3s1s1" : "disk3s10")
+            if path == "/" { return rootInfo }
+            if path == "/System/Volumes/Data" { return dataInfo }
+            return externalInfo
         }
         func apfsContainers() -> [APFSContainerInfo] { containers }
         func localSnapshotCount(forMountPoint path: String) -> Int? { snapshots }
@@ -59,6 +67,107 @@ final class SpaceBreakdownTests: XCTestCase {
         let ids = breakdown.items.map(\.id)
         XCTAssertTrue(ids.contains("volume-disk3s1"))
         XCTAssertFalse(ids.contains("volume-disk3s10"))
+    }
+
+    func testSecondInstallationIsSeparateFromTheBootedSystemAndData() throws {
+        let breakdown = try analyze(twoInstallations())
+        let other = breakdown.items.filter { $0.kind == .otherVolume }
+        XCTAssertEqual(Set(other.map(\.id)), ["volume-disk3s7", "volume-disk3s8", "volume-disk3s2"])
+        XCTAssertEqual(other.filter { $0.id != "volume-disk3s2" }.reduce(0) { $0 + $1.bytes }, 300)
+        XCTAssertEqual(breakdown.items.first { $0.kind == .notVisible }?.bytes, 150)
+        XCTAssertEqual(breakdown.items.reduce(0) { $0 + $1.bytes }, 800)
+        XCTAssertEqual(breakdown.capacityBytes, 1_000)
+        XCTAssertEqual(breakdown.freeBytes, 200)
+        XCTAssertEqual(breakdown.usedBytes, 800)
+        XCTAssertFalse(try XCTUnwrap(breakdown.items.first).detail.contains(uncertaintyDetail))
+    }
+
+    func testCanonicalMountedDataRemainsAuthoritativeWithoutGroupIDs() throws {
+        for missingRoot in [false, true] {
+            for missingData in [false, true] {
+                var probe = twoInstallations()
+                if missingRoot { probe.rootInfo?.volumeGroupID = nil }
+                if missingData { probe.dataInfo?.volumeGroupID = nil }
+                let breakdown = try analyze(probe)
+                XCTAssertFalse(breakdown.items.contains { $0.id == "volume-disk3s5" })
+                XCTAssertEqual(breakdown.items.first { $0.kind == .notVisible }?.bytes, 150)
+                XCTAssertFalse(try XCTUnwrap(breakdown.items.first).detail.contains(uncertaintyDetail))
+            }
+        }
+    }
+
+    func testUnverifiedDataAmountsAreNotAddedToTheScan() throws {
+        var cases: [(String, FixtureProbe)] = []
+        var probe = twoInstallations()
+        probe.dataMounted = false
+        cases.append(("not a mountpoint", probe))
+        probe = twoInstallations()
+        probe.dataInfo = nil
+        cases.append(("missing disk info", probe))
+        probe = twoInstallations()
+        probe.dataInfo = DiskInfo(containerReference: "disk9", deviceIdentifier: "disk3s5")
+        cases.append(("different container", probe))
+        probe = twoInstallations()
+        probe.dataInfo = DiskInfo(containerReference: "disk3", deviceIdentifier: "disk3s50")
+        cases.append(("unknown device", probe))
+        probe = twoInstallations()
+        probe.dataInfo = DiskInfo(containerReference: "disk3", deviceIdentifier: "disk3s1")
+        cases.append(("wrong role", probe))
+        probe = twoInstallations()
+        probe.dataInfo?.volumeGroupID = UUID(uuidString: "00000000-0000-0000-0000-000000000002")
+        cases.append(("conflicting volume group", probe))
+
+        for (name, probe) in cases {
+            let breakdown = try analyze(probe)
+            XCTAssertEqual(Set(breakdown.items.filter { $0.kind == .otherVolume }.map(\.id)),
+                           ["volume-disk3s7", "volume-disk3s2"], name)
+            XCTAssertEqual(breakdown.items.first { $0.kind == .notVisible }?.bytes, 350, name)
+            XCTAssertEqual(breakdown.items.reduce(0) { $0 + $1.bytes }, 800, name)
+            XCTAssertTrue(try XCTUnwrap(breakdown.items.first).detail.contains(uncertaintyDetail), name)
+        }
+    }
+
+    func testUncertaintyRemainsVisibleWithZeroOrNegativeRemainder() throws {
+        var probe = twoInstallations()
+        probe.dataInfo = nil
+        for scanned in [Int64(650), 900] {
+            let breakdown = try analyze(probe, scanned: scanned)
+            XCTAssertTrue(try XCTUnwrap(breakdown.items.first).detail.contains(uncertaintyDetail))
+            XCTAssertNil(breakdown.items.first { $0.kind == .notVisible })
+            XCTAssertEqual(breakdown.scannedBytes, scanned)
+            XCTAssertEqual(breakdown.usedBytes, 800)
+            XCTAssertEqual(breakdown.freeBytes, 200)
+            if scanned == 900 {
+                XCTAssertEqual(breakdown.items.first { $0.kind == .sharedBlocks }?.bytes, 250)
+            } else {
+                XCTAssertNil(breakdown.items.first { $0.kind == .sharedBlocks })
+            }
+        }
+    }
+
+    func testUnknownStartupDeviceDoesNotDoubleCountSystemVolumes() throws {
+        var probe = twoInstallations()
+        probe.rootInfo = DiskInfo(containerReference: "disk3", deviceIdentifier: nil)
+        probe.dataInfo = nil
+        let breakdown = try analyze(probe)
+        XCTAssertEqual(breakdown.items.filter { $0.kind == .otherVolume }.map(\.id), ["volume-disk3s2"])
+        XCTAssertEqual(breakdown.items.first { $0.kind == .notVisible }?.bytes, 450)
+        XCTAssertTrue(try XCTUnwrap(breakdown.items.first).detail.contains(uncertaintyDetail))
+    }
+
+    func testExternalSystemVolumeDoesNotClaimItsDataOrTheBootedInstallation() throws {
+        var probe = twoInstallations()
+        probe.externalInfo = DiskInfo(containerReference: "disk3", deviceIdentifier: "disk3s7")
+        let breakdown = try analyze(probe, rootPath: "/Volumes/Other macOS", scanned: 50)
+        XCTAssertEqual(Set(breakdown.items.filter { $0.kind == .otherVolume }.map(\.id)),
+                       ["volume-disk3s1", "volume-disk3s5", "volume-disk3s8", "volume-disk3s2"])
+        XCTAssertEqual(breakdown.items.first { $0.kind == .notVisible }?.bytes, 50)
+
+        probe.externalInfo = DiskInfo(containerReference: "disk3", deviceIdentifier: nil)
+        let unknown = try analyze(probe, rootPath: "/Volumes/Other macOS", scanned: 50)
+        XCTAssertFalse(unknown.items.contains { $0.kind == .otherVolume })
+        XCTAssertEqual(unknown.items.first { $0.kind == .notVisible }?.bytes, 750)
+        XCTAssertTrue(try XCTUnwrap(unknown.items.first).detail.contains(uncertaintyDetail))
     }
 
     func testOvercountingIsExplainedNotHidden() throws {
@@ -108,10 +217,43 @@ final class SpaceBreakdownTests: XCTestCase {
         <plist version="1.0"><dict>
           <key>APFSContainerReference</key><string>disk3</string>
           <key>DeviceIdentifier</key><string>disk3s1s1</string>
+          <key>APFSVolumeGroupID</key><string>00000000-0000-0000-0000-000000000001</string>
         </dict></plist>
         """
-        XCTAssertEqual(SpaceParsing.diskInfo(Data(info.utf8)), DiskInfo(containerReference: "disk3", deviceIdentifier: "disk3s1s1"))
+        XCTAssertEqual(SpaceParsing.diskInfo(Data(info.utf8)), DiskInfo(containerReference: "disk3", deviceIdentifier: "disk3s1s1",
+                                                                      volumeGroupID: UUID(uuidString: "00000000-0000-0000-0000-000000000001")))
         XCTAssertEqual(SpaceParsing.snapshotCount("Snapshots for disk /:\ncom.apple.TimeMachine.2026-09-29-101010.local\ncom.apple.TimeMachine.2026-09-29-111010.local\n"), 2)
+    }
+
+    func testOptionalVolumeGroupMetadataUsesTheDiskInfoFieldName() throws {
+        for metadata: [String: Any] in [[:], ["APFSVolumeGroupID": ""], ["APFSVolumeGroupID": "invalid"],
+                                      ["APFSVolumeGroupUUID": "00000000-0000-0000-0000-000000000001"]] {
+            var plist: [String: Any] = ["APFSContainerReference": "disk3", "DeviceIdentifier": "disk3s5"]
+            plist.merge(metadata) { _, new in new }
+            let data = try PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0)
+            XCTAssertEqual(SpaceParsing.diskInfo(data), DiskInfo(containerReference: "disk3", deviceIdentifier: "disk3s5"))
+        }
+    }
+
+    private var uncertaintyDetail: String {
+        String(localized: "Some volumes could not be matched to this scan. Their separate amounts are omitted because they may overlap the scan.")
+    }
+
+    private func analyze(_ probe: FixtureProbe, rootPath: String = "/", scanned: Int64 = 300) throws -> SpaceBreakdown {
+        try XCTUnwrap(SpaceAnalyzer.breakdown(rootPath: rootPath, scannedBytes: scanned, unreadableFolderCount: 0, probe: probe))
+    }
+
+    private func twoInstallations() -> FixtureProbe {
+        var probe = FixtureProbe()
+        probe.capacity = VolumeCapacity(name: "Macintosh HD", total: 1_000, available: 200, availableForImportantUsage: nil)
+        probe.containers = [APFSContainerInfo(reference: "disk3", capacityCeiling: 1_000, capacityFree: 200, volumes: [
+            APFSVolumeInfo(name: "Active System", roles: ["System"], capacityInUse: 100, deviceIdentifier: "disk3s1"),
+            APFSVolumeInfo(name: "Active Data", roles: ["Data"], capacityInUse: 350, deviceIdentifier: "disk3s5"),
+            APFSVolumeInfo(name: "Second System", roles: ["System"], capacityInUse: 100, deviceIdentifier: "disk3s7"),
+            APFSVolumeInfo(name: "Second Data", roles: ["Data"], capacityInUse: 200, deviceIdentifier: "disk3s8"),
+            APFSVolumeInfo(name: "Preboot", roles: ["Preboot"], capacityInUse: 50, deviceIdentifier: "disk3s2")
+        ])]
+        return probe
     }
 
     /// Runs the real macOS tools. On any Mac, the parts must add up to the used space.

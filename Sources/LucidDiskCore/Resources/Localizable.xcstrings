@@ -5252,6 +5252,22 @@
         }
       }
     },
+    "Some volumes could not be matched to this scan. Their separate amounts are omitted because they may overlap the scan.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some volumes could not be matched to this scan. Their separate amounts are omitted because they may overlap the scan."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bazı birimler bu taramayla eşleştirilemedi. Taramayla örtüşebilecekleri için bu birimlerin boyutları ayrıca gösterilmiyor."
+          }
+        }
+      }
+    },
     "File-system metadata and hidden system folders on this volume.": {
       "localizations": {
         "en": {
