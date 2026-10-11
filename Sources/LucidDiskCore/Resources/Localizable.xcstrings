@@ -9248,6 +9248,22 @@
           }
         }
       }
+    },
+    "The batch total counts each observed file or symlink allocation once, so it may be smaller than the sum of individual path sizes. It is not a guaranteed amount of reclaimable space.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The batch total counts each observed file or symlink allocation once, so it may be smaller than the sum of individual path sizes. It is not a guaranteed amount of reclaimable space."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toplam, ölçülen her dosya veya sembolik bağlantının ayrılmış alanını bir kez sayar; bu nedenle tek tek yol boyutlarının toplamından küçük olabilir. Kesin olarak boşaltılabilecek alanı göstermez."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

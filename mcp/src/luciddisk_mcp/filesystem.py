@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import stat
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -96,6 +97,23 @@ def _allocated_bytes(info: os.stat_result) -> int:
     return int(blocks * 512) if blocks is not None else int(info.st_size)
 
 
+@dataclass
+class _UniqueAllocatedSize:
+    """Accumulate observed identities without changing any per-path measurement."""
+
+    allocated_size_bytes: int = 0
+    seen: set[tuple[int, int]] = field(default_factory=set)
+    has_duplicates: bool = False
+
+    def add(self, info: os.stat_result) -> None:
+        identity = (int(info.st_dev), int(info.st_ino))
+        if identity not in self.seen:
+            self.seen.add(identity)
+            self.allocated_size_bytes += _allocated_bytes(info)
+        else:
+            self.has_duplicates = True
+
+
 def _kind(info: os.stat_result) -> str:
     mode = info.st_mode
     if stat.S_ISLNK(mode):
@@ -117,7 +135,12 @@ def _classifications(path: str) -> tuple[str, SafetyClassification, SafetyClassi
     )
 
 
-def measure_path(path: str, max_entries: int = 200_000) -> SizeMeasurement:
+def measure_path(
+    path: str,
+    max_entries: int = 200_000,
+    *,
+    _batch_size: _UniqueAllocatedSize | None = None,
+) -> SizeMeasurement:
     if max_entries < 1:
         raise ValueError("max_entries must be at least 1")
 
@@ -153,6 +176,8 @@ def measure_path(path: str, max_entries: int = 200_000) -> SizeMeasurement:
             root_device = int(info.st_dev)
 
         if stat.S_ISREG(info.st_mode):
+            if _batch_size is not None:
+                _batch_size.add(info)
             saw_regular_file = True
             result.logical_size_bytes += int(info.st_size)
             identity = (int(info.st_dev), int(info.st_ino))
@@ -165,6 +190,8 @@ def measure_path(path: str, max_entries: int = 200_000) -> SizeMeasurement:
             continue
 
         if stat.S_ISLNK(info.st_mode):
+            if _batch_size is not None:
+                _batch_size.add(info)
             result.allocated_size_bytes += _allocated_bytes(info)
             result.logical_size_bytes += int(info.st_size)
             continue
@@ -230,7 +257,13 @@ def measure_path(path: str, max_entries: int = 200_000) -> SizeMeasurement:
     return result
 
 
-def assess_path(path: str, calculate_size: bool = True, max_entries: int = 200_000) -> PathAssessment:
+def assess_path(
+    path: str,
+    calculate_size: bool = True,
+    max_entries: int = 200_000,
+    *,
+    _batch_size: _UniqueAllocatedSize | None = None,
+) -> PathAssessment:
     normalized = normalize_path(path)
     resolved, lexical_classification, classification = _classifications(normalized)
     path_warnings: list[str] = []
@@ -281,7 +314,9 @@ def assess_path(path: str, calculate_size: bool = True, max_entries: int = 200_0
             matched_rule="sensitive.unreadable-path",
         )
 
-    measurement = measure_path(normalized, max_entries=max_entries) if calculate_size else None
+    measurement = measure_path(normalized, max_entries=max_entries, _batch_size=_batch_size) if calculate_size else None
+    if not calculate_size and _batch_size is not None and not stat.S_ISDIR(info.st_mode):
+        _batch_size.add(info)
     modified_at = datetime.fromtimestamp(info.st_mtime, tz=timezone.utc).isoformat()
     symlink_target = os.readlink(normalized) if stat.S_ISLNK(info.st_mode) else None
     warnings = [*path_warnings, *(measurement.warnings if measurement else ["Recursive size measurement was not requested."])]
@@ -325,25 +360,36 @@ def assess_many(paths: list[str], calculate_size: bool, max_entries: int) -> Ass
 
     remaining = max_entries
     assessments: list[PathAssessment] = []
+    batch_size = _UniqueAllocatedSize()
     for path in paths:
         if calculate_size and remaining <= 0:
+            # Metadata still supports a safety assessment, but this entry was
+            # outside the measurement budget and must not contribute to its total.
             assessment = assess_path(path, calculate_size=False, max_entries=1)
             assessment.size_complete = False
             assessment.size_accuracy = "incomplete"
             assessment.warnings.append("Shared entry budget was exhausted before this path could be measured.")
         else:
-            assessment = assess_path(path, calculate_size=calculate_size, max_entries=max(1, remaining))
+            assessment = assess_path(
+                path, calculate_size=calculate_size, max_entries=max(1, remaining), _batch_size=batch_size,
+            )
         assessments.append(assessment)
         remaining = max(0, remaining - assessment.entries_scanned)
 
+    warnings = list(dict.fromkeys(warning for item in assessments for warning in item.warnings))
+    if batch_size.has_duplicates:
+        warnings.append(
+            "The batch total counts each observed file or symlink allocation once, so it may be smaller than the sum of individual path sizes. It is not a guaranteed amount of reclaimable space."
+        )
+
     return AssessmentBatch(
         assessments=assessments,
-        total_allocated_size_bytes=sum(item.allocated_size_bytes or 0 for item in assessments),
+        total_allocated_size_bytes=batch_size.allocated_size_bytes,
         all_sizes_complete=all(item.size_complete for item in assessments),
         size_accuracy="incomplete" if any(not item.size_complete for item in assessments) else (
             "estimated" if calculate_size else "metadata-only"
         ),
-        warnings=list(dict.fromkeys(warning for item in assessments for warning in item.warnings)),
+        warnings=warnings,
     )
 
 
