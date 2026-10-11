@@ -8,6 +8,7 @@ struct ContentView: View {
     @ObservedObject private var extensions = LucidDiskExtensions.shared
     @State private var wedges: [Wedge] = []
     @State private var quickLookItem: QuickLookItem?
+    @State private var warningPresentation: ScanWarningsPresentation?
     @State private var showingSpaceBreakdown = false
     @State private var showingHome = false
     @State private var showingDetails = false
@@ -166,6 +167,7 @@ struct ContentView: View {
                 }
             }
         }
+        .sheet(item: $warningPresentation) { ScanWarningsSheet(presentation: $0) }
         .sheet(item: $quickLookItem) { item in
             VStack(spacing: 0) {
                 QuickLookPreview(url: item.url)
@@ -361,9 +363,12 @@ struct ContentView: View {
                         }
                         .font(.caption)
                     }
-                    if viewModel.scanWarnings.count > 5 {
-                        Text("\(viewModel.scanWarnings.count - 5) more warnings")
-                            .font(.caption).foregroundStyle(.secondary)
+                    ScanWarningsButton(count: viewModel.scanWarnings.count) {
+                        guard let root = viewModel.rootNode else { return }
+                        warningPresentation = ScanWarningsPresentation(
+                            root: root, warnings: viewModel.scanWarnings,
+                            wasStopped: viewModel.lastScanResult?.wasStopped ?? false,
+                            savedAt: viewModel.snapshotDate)
                     }
                 }
             }

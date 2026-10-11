@@ -25,6 +25,25 @@ struct PresentationReview {
         try render(WelcomeView(volumes: [volume], onScan: { _ in }, onChooseFolder: {}).environment(\.locale, locale),
                    size: NSSize(width: 920, height: 1350), to: output.appendingPathComponent("welcome-capacity.png"))
         let root = FileNode(name: "Macintosh HD", path: "/", isDirectory: true, size: 925_790_000_000, measurementAccuracy: .incomplete)
+        var warnings = (0..<1073).map { index in
+            ScanWarning(path: "/Users/demo/Library/Application Support/Creative Studio/Project Archives/Folder-\(index)",
+                        message: index.isMultiple(of: 2) ? String(localized: "This directory could not be read.")
+                            : String(localized: "This directory was already visited through another path and was not counted again."))
+        }
+        warnings[1] = ScanWarning(path: warnings[0].path, message: warnings[1].message)
+        warnings[1072] = ScanWarning(path: "/Users/demo/Library/Application Support/Creative Studio/Project Archives/Long project name/Previous versions/Final-warning-location",
+                                    message: String(localized: "This directory could not be read."))
+        let warningSnapshot = ScanWarningsPresentation(root: root, warnings: warnings, wasStopped: false,
+                                                       savedAt: Date(timeIntervalSince1970: 1_790_000_000))
+        try render(ScanWarningsButton(count: warnings.count, onOpen: {}).padding(12).environment(\.locale, locale),
+                   size: NSSize(width: 180, height: 80), to: output.appendingPathComponent("warnings-sidebar-180.png"))
+        for (name, query) in [("warnings-all", ""), ("warnings-last", "Final-warning-location"), ("warnings-no-match", "no-such-warning")] {
+            try render(ScanWarningsSheet(presentation: warningSnapshot, query: query).environment(\.locale, locale),
+                       size: NSSize(width: 740, height: 590), to: output.appendingPathComponent(name + ".png"))
+        }
+        let stoppedWarnings = ScanWarningsPresentation(root: root, warnings: warnings, wasStopped: true, savedAt: nil)
+        try render(ScanWarningsSheet(presentation: stoppedWarnings).environment(\.locale, locale),
+                   size: NSSize(width: 740, height: 590), to: output.appendingPathComponent("warnings-stopped.png"))
         let folder = FileNode(name: "Projects", path: "/Users/demo/Projects", isDirectory: true, size: 160_000_000_000)
         folder.parent = root
         root.children = [folder]

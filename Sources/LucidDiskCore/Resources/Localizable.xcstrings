@@ -9775,6 +9775,198 @@
           }
         }
       }
+    },
+    "Show All Warnings (%lld)": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show All Warnings (%lld)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tüm Uyarıları Göster (%lld)"
+          }
+        }
+      }
+    },
+    "Search warning paths or messages": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search warning paths or messages"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uyarı yollarında veya iletilerinde ara"
+          }
+        }
+      }
+    },
+    "%lld of %lld warnings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld of %lld warnings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld / %lld uyarı"
+          }
+        }
+      }
+    },
+    "Warnings include unreadable locations and intentionally skipped items. Full Disk Access may help with permission errors, but does not remove deliberate exclusions.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Warnings include unreadable locations and intentionally skipped items. Full Disk Access may help with permission errors, but does not remove deliberate exclusions."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uyarılar, okunamayan konumları ve bilerek atlanan öğeleri kapsar. Tam Disk Erişimi izin hatalarında yardımcı olabilir; bilerek uygulanan dışlamaları kaldırmaz."
+          }
+        }
+      }
+    },
+    "No scan warnings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No scan warnings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarama uyarısı yok"
+          }
+        }
+      }
+    },
+    "This scan has no recorded warnings.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This scan has no recorded warnings."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu taramada kayıtlı uyarı yok."
+          }
+        }
+      }
+    },
+    "No matching warnings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No matching warnings"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eşleşen uyarı yok"
+          }
+        }
+      }
+    },
+    "Try another path or message, or clear the search.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try another path or message, or clear the search."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başka bir yol veya ileti arayın ya da aramayı temizleyin."
+          }
+        }
+      }
+    },
+    "Copy Path": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy Path"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yolu Kopyala"
+          }
+        }
+      }
+    },
+    "Copy path for %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy path for %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ yolunu kopyala"
+          }
+        }
+      }
+    },
+    "Path copied.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Path copied."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yol kopyalandı."
+          }
+        }
+      }
+    },
+    "The path could not be copied.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The path could not be copied."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yol kopyalanamadı."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
