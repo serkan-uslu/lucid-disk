@@ -47,7 +47,7 @@ enum InsightProviderKind: String, CaseIterable, Identifiable, Sendable {
 
 struct InsightConfiguration: Sendable {
     var provider: InsightProviderKind = .appleOnDevice
-    var ollamaBaseURL = URL(string: "http://127.0.0.1:11434")!
+    var ollamaBaseURL: URL? = URL(string: "http://127.0.0.1:11434")!
     var ollamaModel = ""
     var claudeModel = ClaudeClient.defaultModel
     var claudeAPIKey: String?
@@ -78,6 +78,7 @@ enum InsightProviderError: LocalizedError, Equatable {
     case http(status: Int, message: String?)
     case unreachable(String)
     case remoteOllamaModel
+    case invalidOllamaURL
 
     var errorDescription: String? {
         switch self {
@@ -113,6 +114,8 @@ enum InsightProviderError: LocalizedError, Equatable {
             String(localized: "Could not reach the provider: \(detail)")
         case .remoteOllamaModel:
             String(localized: "This Ollama model runs in Ollama’s cloud. Choose a model installed on your Mac.")
+        case .invalidOllamaURL:
+            String(localized: "Enter a valid HTTP or HTTPS Ollama server address in Settings.")
         }
     }
 }
@@ -525,7 +528,7 @@ final class InsightSettings: ObservableObject {
     var ollamaBaseURL: URL? {
         let trimmed = ollamaURLString.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let url = URL(string: trimmed), let scheme = url.scheme?.lowercased(),
-              ["http", "https"].contains(scheme), url.host != nil else { return nil }
+              ["http", "https"].contains(scheme), let host = url.host, !host.isEmpty else { return nil }
         return url
     }
 
@@ -571,7 +574,8 @@ final class InsightSettings: ObservableObject {
     func configuration() -> InsightConfiguration {
         var configuration = InsightConfiguration()
         configuration.provider = provider
-        if let url = ollamaBaseURL { configuration.ollamaBaseURL = url }
+        // Preserve invalid input as nil; never substitute a different server.
+        configuration.ollamaBaseURL = ollamaBaseURL
         configuration.ollamaModel = ollamaModel
         configuration.claudeModel = claudeModel.trimmingCharacters(in: .whitespacesAndNewlines)
         configuration.cloudConsent = cloudConsent

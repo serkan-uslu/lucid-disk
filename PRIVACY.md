@@ -34,6 +34,8 @@ The OpenAI API has its own **Allow sending metadata to OpenAI** permission, off 
 
 If a provider fails or declines, Lucid Disk shows the rule-based explanation. It never falls back to a different network provider on its own.
 
+An invalid or empty Ollama server address sends no request. The app reports the configuration problem and uses local rules; it does not substitute the default localhost server.
+
 Full Disk Access is optional and controlled in macOS System Settings. Without it, protected locations can remain unreadable and are reported as incomplete.
 
 ## Optional MCP server

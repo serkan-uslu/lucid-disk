@@ -9376,6 +9376,22 @@
           }
         }
       }
+    },
+    "Enter a valid HTTP or HTTPS Ollama server address in Settings.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a valid HTTP or HTTPS Ollama server address in Settings."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayarlara geçerli bir HTTP veya HTTPS Ollama sunucu adresi girin."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
