@@ -57,6 +57,19 @@ struct PresentationReview {
         model.showSampleVolumes([volume])
         try render(ContentView(viewModel: model, showingDetails: true).environment(\.locale, locale),
                    size: NSSize(width: 1050, height: 640), to: output.appendingPathComponent("details-minimum.png"))
+        for (name, scanned) in [("outside", Int64(925_790_000_000)), ("matching", 972_550_000_000), ("excess", 1_500_000_000_000)] {
+            let sample = SpaceBreakdown(volumeName: breakdown.volumeName, capacityBytes: breakdown.capacityBytes,
+                usedBytes: breakdown.usedBytes, freeBytes: breakdown.freeBytes, scannedBytes: scanned,
+                items: [], purgeableBytes: nil, localSnapshotCount: nil, unreadableFolderCount: 0)
+            try render(ScanNavigationActions(canGoToParent: true,
+                       diskSpace: DiskSpacePresentation(breakdown: sample, scanRootPath: "/"), onParent: {}, onBreakdown: {})
+                       .padding(16).environment(\.locale, locale), size: NSSize(width: 320, height: 170),
+                       to: output.appendingPathComponent("navigation-" + name + ".png"))
+        }
+        model.snapshotDate = nil; model.showSampleSpaceBreakdown(breakdown)
+        model.focus(on: folder)
+        try render(ContentView(viewModel: model).environment(\.locale, locale),
+                   size: NSSize(width: 1050, height: 640), to: output.appendingPathComponent("folder-disk-scope-minimum.png"))
         print("Rendered \(output.path) without displaying a window")
     }
     static func render<V: View>(_ view: V, size: NSSize, to url: URL) throws {

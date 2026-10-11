@@ -19,6 +19,9 @@ final class UIContractTests: XCTestCase {
 
         for key in [
             "Scan Startup Disk", "Lucid Insight", "Add to Review Queue",
+            "Disk Space Breakdown", "Whole disk: %@", "%@ used outside this scan",
+            "Measured allocation matches reported used space", "Allocation estimate exceeds used space by %@",
+            "Disk totals for %@, compared with the root scan at %@. These figures keep the whole-disk scope when you open a folder.",
             "Measured allocation", "Measured", "Measured allocation for %@", "Other items in %@",
             "Partial scan", "Scan stopped", "Saved scan",
             "This scan is incomplete. Some locations were unreadable or skipped; see Scan Warnings.",

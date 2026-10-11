@@ -9679,6 +9679,102 @@
           }
         }
       }
+    },
+    "Disk Space Breakdown": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk Space Breakdown"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk Alanı Dağılımı"
+          }
+        }
+      }
+    },
+    "Whole disk: %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Whole disk: %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diskin tamamı: %@"
+          }
+        }
+      }
+    },
+    "%@ used outside this scan": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ used outside this scan"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu taramanın dışında kullanılan alan: %@"
+          }
+        }
+      }
+    },
+    "Measured allocation matches reported used space": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Measured allocation matches reported used space"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ölçülen dosya alanı, bildirilen kullanılan alanla eşleşiyor"
+          }
+        }
+      }
+    },
+    "Allocation estimate exceeds used space by %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allocation estimate exceeds used space by %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tahmini dosya alanı, kullanılan alanı %@ aşıyor"
+          }
+        }
+      }
+    },
+    "Disk totals for %@, compared with the root scan at %@. These figures keep the whole-disk scope when you open a folder.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk totals for %@, compared with the root scan at %@. These figures keep the whole-disk scope when you open a folder."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ disk toplamlarının %@ kök taramasıyla karşılaştırması. Bir klasörü açtığınızda bu değerler diskin tamamını kapsamaya devam eder."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

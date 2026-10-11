@@ -405,27 +405,13 @@ struct ContentView: View {
                             focused: focused, root: viewModel.rootNode ?? focused,
                             wasStopped: viewModel.lastScanResult?.wasStopped ?? false,
                             savedAt: viewModel.snapshotDate))
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), alignment: .leading)], alignment: .leading, spacing: 6) {
-                            Button { viewModel.zoomOut() } label: {
-                                Label("Parent Folder", systemImage: "chevron.left")
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            .buttonStyle(.bordered).controlSize(.small)
-                            .disabled(focused.parent == nil)
-                            .help("Back to parent folder")
-                            .keyboardShortcut(.leftArrow, modifiers: .command)
-                            if let breakdown = viewModel.spaceBreakdown {
-                                Button { showingSpaceBreakdown = true } label: {
-                                    Label(spaceButtonTitle(breakdown), systemImage: "chart.bar.doc.horizontal")
-                                        .font(.caption.weight(.semibold))
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                                .buttonStyle(.bordered).controlSize(.small)
-                                .tint(breakdown.outsideScanBytes > breakdown.usedBytes / 20 ? .orange : Theme.accent)
-                                .help("See where this disk's used space goes, including what a scan cannot see")
-                                .accessibilityIdentifier("space-breakdown")
-                            }
-                        }
+                        ScanNavigationActions(
+                            canGoToParent: focused.parent != nil,
+                            diskSpace: viewModel.spaceBreakdown.map {
+                                DiskSpacePresentation(breakdown: $0, scanRootPath: viewModel.rootNode?.path ?? focused.path)
+                            },
+                            onParent: { viewModel.zoomOut() },
+                            onBreakdown: { showingSpaceBreakdown = true })
                     }
                     .padding(.horizontal, 20).padding(.top, 18).padding(.bottom, 6)
                     if showsDiskMap {
@@ -663,11 +649,6 @@ struct ContentView: View {
         return "\(pending.assessment.risk.title)\n\n\(pending.node.name) • \(size)\n\(pending.node.path)\n\n\(pending.assessment.summary)\n\(pending.assessment.recommendation)"
     }
 
-    private func spaceButtonTitle(_ breakdown: SpaceBreakdown) -> String {
-        let outside = breakdown.outsideScanBytes
-        guard outside > 0 else { return String(localized: "Space breakdown") }
-        return String(localized: "\(ByteCountFormatter.string(fromByteCount: outside, countStyle: .file)) outside the scan")
-    }
 
     private var batchDialogTitle: String {
         guard let pending = viewModel.pendingBatchDeletion else { return "" }

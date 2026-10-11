@@ -94,24 +94,27 @@ struct DetailPanel: View {
 
     private var actions: some View {
         VStack(spacing: 8) {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 138), alignment: .leading)], alignment: .leading, spacing: 8) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 180), alignment: .leading)], alignment: .leading, spacing: 8) {
                 Button { onQuickLook(URL(fileURLWithPath: node.path)) } label: {
-                    Label("Quick Look", systemImage: "eye").frame(maxWidth: .infinity, alignment: .leading)
+                    Label("Quick Look", systemImage: "eye").fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .accessibilityIdentifier("quick-look")
                 Button { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: node.path)]) } label: {
                     Label("Show in Finder", systemImage: "folder")
+                        .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .help("Show in Finder").accessibilityLabel("Show in Finder")
                 if node.isDirectory {
                     Button { viewModel.focus(on: node) } label: {
                         Label("Open Folder", systemImage: "arrow.down.right.and.arrow.up.left")
+                            .fixedSize(horizontal: false, vertical: true)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .help("Open Folder").accessibilityLabel("Open Folder")
                     Button { viewModel.rescanFolder(node) } label: {
                         Label("Rescan Folder", systemImage: "arrow.clockwise")
+                            .fixedSize(horizontal: false, vertical: true)
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .help("Rescan this folder").accessibilityLabel("Rescan this folder")

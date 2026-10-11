@@ -27,7 +27,7 @@ struct SpaceBreakdownView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Where your space goes").font(.title2.weight(.semibold))
+                Text("Disk Space Breakdown").font(.title2.weight(.semibold))
                 Text("\(breakdown.volumeName) · \(format(breakdown.usedBytes)) used of \(format(breakdown.capacityBytes)) · \(format(breakdown.freeBytes)) free")
                     .foregroundStyle(.secondary)
                 if let measuredAt {
@@ -109,11 +109,13 @@ struct SpaceBreakdownView: View {
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
                 Button("Done", action: onDone).keyboardShortcut(.defaultAction)
+                    .accessibilityIdentifier("close-space-breakdown")
             }
             .padding(16)
         }
         .frame(width: 640, height: 600)
         .accessibilityIdentifier("space-breakdown-sheet")
+        .onExitCommand(perform: onDone)
     }
 
     private func color(for item: SpaceBreakdown.Item) -> Color {
