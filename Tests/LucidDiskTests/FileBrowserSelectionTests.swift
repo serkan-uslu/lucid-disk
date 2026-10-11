@@ -131,6 +131,99 @@ final class FileBrowserSelectionTests: XCTestCase {
         XCTAssertFalse(fixture.window.isVisible)
     }
 
+    func testCopyMetadataButtonClickKeepsTheNativeSelectionAndDoesNotOpenTheFolder() throws {
+        let fixture = try Fixture()
+        defer { fixture.close() }
+        fixture.click(0)
+        fixture.click(3, modifiers: .command)
+        let selectionChanges = fixture.selectionChanges
+        try fixture.clickCopyMetadataButton(row: 0)
+        XCTAssertEqual(fixture.copied.map(\.id), [fixture.nodes[0].id])
+        XCTAssertEqual(fixture.table.selectedRowIndexes, IndexSet([0, 3]))
+        XCTAssertEqual(fixture.model.selectedNode?.id, fixture.nodes[3].id)
+        XCTAssertEqual(fixture.selectionChanges, selectionChanges)
+        XCTAssertTrue(fixture.opened.isEmpty)
+        XCTAssertTrue(fixture.previewed.isEmpty)
+    }
+
+    func testCopyMetadataUsesClickedSelectedItemWithoutChangingThePrimaryOrNavigating() throws {
+        let fixture = try Fixture()
+        defer { fixture.close() }
+        fixture.click(1) // A real file.
+        fixture.click(3, modifiers: .command) // The other selected item becomes primary.
+        let selectedRows = fixture.table.selectedRowIndexes
+        let selectedIDs = Set(fixture.model.selectedNodes.map(\.id))
+        let selectionChanges = fixture.selectionChanges
+        XCTAssertEqual(fixture.model.selectedNode?.id, fixture.nodes[3].id)
+
+        // No SwiftUI synchronization: native selection must already authorize the action.
+        fixture.copyMetadata(fixture.nodes[1].id)
+        fixture.copyMetadata(fixture.nodes[3].id)
+
+        XCTAssertEqual(fixture.copied.map(\.id), [fixture.nodes[1].id, fixture.nodes[3].id])
+        XCTAssertEqual(fixture.table.selectedRowIndexes, selectedRows)
+        XCTAssertEqual(Set(fixture.model.selectedNodes.map(\.id)), selectedIDs)
+        XCTAssertEqual(fixture.model.selectedNode?.id, fixture.nodes[3].id)
+        XCTAssertEqual(fixture.selectionChanges, selectionChanges)
+        XCTAssertTrue(fixture.opened.isEmpty)
+        XCTAssertTrue(fixture.previewed.isEmpty)
+    }
+
+    func testCopyMetadataResolvesTheCurrentNodeAfterSortingAndScanRevision() throws {
+        let fixture = try Fixture()
+        defer { fixture.close() }
+        fixture.model.select([fixture.nodes[0]], primary: fixture.nodes[0])
+        fixture.sync()
+        let updated = fixture.nodes[0].copyForRevision()
+        updated.allocatedSizeBytes = 42_000
+        updated.logicalSizeBytes = 39_000
+        fixture.contents = BrowserContents(nodes: [fixture.nodes[3], updated, fixture.nodes[1]])
+        fixture.sync()
+
+        // A queued action carries identity, not an old row number or captured scan node.
+        fixture.copyMetadata(fixture.nodes[0].id)
+
+        let copied = try XCTUnwrap(fixture.copied.last)
+        XCTAssertTrue(copied === updated)
+        XCTAssertFalse(copied === fixture.nodes[0])
+        XCTAssertEqual(copied.allocatedSizeBytes, 42_000)
+        XCTAssertEqual(copied.logicalSizeBytes, 39_000)
+        XCTAssertEqual(fixture.table.selectedRowIndexes, IndexSet(integer: 1))
+    }
+
+    func testCopyMetadataRejectsHiddenDeselectedAndUnknownRows() throws {
+        let fixture = try Fixture()
+        defer { fixture.close() }
+        fixture.click(0)
+        fixture.copyMetadata(fixture.nodes[1].id)
+        fixture.copyMetadata(UUID())
+        XCTAssertTrue(fixture.copied.isEmpty)
+
+        fixture.contents = BrowserContents(nodes: [fixture.nodes[1], fixture.nodes[3]])
+        fixture.sync()
+        fixture.copyMetadata(fixture.nodes[0].id)
+        XCTAssertTrue(fixture.copied.isEmpty, "An action from a filtered-out row must not copy a replacement row")
+
+        fixture.click(1)
+        fixture.copyMetadata(fixture.nodes[3].id)
+        XCTAssertEqual(fixture.copied.map(\.id), [fixture.nodes[3].id])
+        fixture.model.select([], primary: nil)
+        fixture.sync()
+        fixture.copyMetadata(fixture.nodes[3].id)
+        XCTAssertEqual(fixture.copied.count, 1, "Deselecting an item invalidates its old copy action")
+    }
+
+    func testCopyMetadataRejectsSyntheticAggregateRows() throws {
+        let fixture = try Fixture()
+        defer { fixture.close() }
+        fixture.click(4)
+        XCTAssertTrue(fixture.nodes[4].isAggregate)
+        fixture.copyMetadata(fixture.nodes[4].id)
+        XCTAssertTrue(fixture.copied.isEmpty)
+        XCTAssertEqual(fixture.model.selectedNode?.id, fixture.nodes[4].id)
+        XCTAssertTrue(fixture.opened.isEmpty)
+    }
+
     /// Uses the production table and AppKit's selection handling in an unordered window.
     /// Mouse-up is queued for NSTableView's tracking loop; no app activation is needed.
     @MainActor
@@ -140,6 +233,7 @@ final class FileBrowserSelectionTests: XCTestCase {
         var contents: BrowserContents
         var opened: [UUID] = []
         var previewed: [UUID] = []
+        var copied: [FileNode] = []
         var selectionChanges = 0
         let window: NSWindow
         var coordinator: FileBrowserTable.Coordinator!
@@ -173,10 +267,13 @@ final class FileBrowserSelectionTests: XCTestCase {
                                  self?.selectionChanges += 1
                                  self?.model.select(nodes, primary: primary)
                              }, onOpen: { [weak self] in self?.opened.append($0.id) },
-                             onPreview: { [weak self] in self?.previewed.append($0.id) })
+                             onPreview: { [weak self] in self?.previewed.append($0.id) },
+                             onCopyMetadata: { [weak self] in self?.copied.append($0) })
         }
 
         func sync() { representation.updateTable(in: scroll, coordinator: coordinator) }
+
+        func copyMetadata(_ id: UUID) { coordinator.copyMetadata(for: id, in: table) }
 
         func click(_ row: Int, modifiers: NSEvent.ModifierFlags = [], count: Int = 1) {
             let point = table.convert(NSPoint(x: 80, y: table.rect(ofRow: row).midY), to: nil)
@@ -188,6 +285,28 @@ final class FileBrowserSelectionTests: XCTestCase {
             }
             NSApp.postEvent(event(.leftMouseUp), atStart: true)
             table.mouseDown(with: event(.leftMouseDown))
+        }
+
+        func clickCopyMetadataButton(row: Int) throws {
+            // Dispatch through the actual hit view in the production row. This also
+            // exercises native selection-triggered host refresh before SwiftUI sync.
+            for _ in 0..<5 {
+                window.contentView?.layoutSubtreeIfNeeded()
+                RunLoop.current.run(until: Date().addingTimeInterval(0.02))
+            }
+            let host = try XCTUnwrap(table.view(atColumn: 0, row: row, makeIfNecessary: true))
+            // In a selected folder's trailing column, Copy Metadata is above Open Folder.
+            let point = host.convert(NSPoint(x: host.bounds.maxX - 60, y: host.bounds.midY - 10), to: nil)
+            let target = try XCTUnwrap(window.contentView?.hitTest(point))
+            func event(_ type: NSEvent.EventType) -> NSEvent {
+                NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
+                                   timestamp: ProcessInfo.processInfo.systemUptime,
+                                   windowNumber: window.windowNumber, context: nil,
+                                   eventNumber: 0, clickCount: 1, pressure: 1)!
+            }
+            NSApp.postEvent(event(.leftMouseUp), atStart: true)
+            target.mouseDown(with: event(.leftMouseDown))
+            for _ in 0..<5 { RunLoop.current.run(until: Date().addingTimeInterval(0.02)) }
         }
 
         func key(_ code: UInt16, modifiers: NSEvent.ModifierFlags = []) {

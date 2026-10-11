@@ -46,6 +46,18 @@ struct PresentationReview {
                    size: NSSize(width: 740, height: 590), to: output.appendingPathComponent("warnings-stopped.png"))
         let folder = FileNode(name: "Projects", path: "/Users/demo/Projects", isDirectory: true, size: 160_000_000_000)
         folder.parent = root
+        let selectedFile = FileNode(name: "Project notes.txt", path: folder.path + "/Project notes.txt", isDirectory: false, size: 41_280)
+        try render(VStack(spacing: 2) {
+            FileBrowserRow(node: folder, colorSeed: folder.path, total: root.size, showPath: false,
+                           canCopyMetadata: true, onOpen: {}, onCopyMetadata: {})
+            Divider()
+            FileBrowserRow(node: selectedFile, colorSeed: selectedFile.path, total: root.size, showPath: true,
+                           canCopyMetadata: true, onOpen: {}, onCopyMetadata: {})
+            Divider()
+            FileBrowserRow(node: folder, colorSeed: folder.path, total: root.size, showPath: false,
+                           canCopyMetadata: true, metadataCopied: true, onOpen: {}, onCopyMetadata: {})
+        }.padding(.horizontal, 12).environment(\.locale, locale), size: NSSize(width: 340, height: 200),
+                   to: output.appendingPathComponent("copy-metadata-rows-minimum.png"))
         root.children = [folder]
         folder.children = (0..<8).map { index in
             let child = FileNode(name: "Folder \(index)", path: folder.path + "/Folder-\(index)", isDirectory: true, size: Int64(8 - index) * 3_000_000_000)

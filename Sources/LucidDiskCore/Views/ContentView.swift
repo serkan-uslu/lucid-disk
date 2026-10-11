@@ -12,6 +12,8 @@ struct ContentView: View {
     @State private var showingSpaceBreakdown = false
     @State private var showingHome = false
     @State private var showingDetails = false
+    @State private var copiedMetadataID: UUID?
+    @State private var metadataCopyFailed = false
     @State private var sidebarVisibility: NavigationSplitViewVisibility = .all
     private let volumeRefresh = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
 
@@ -22,6 +24,17 @@ struct ContentView: View {
     }
 
     var body: some View {
+        mainContent
+            .onChange(of: viewModel.treeRevision) { _, _ in copiedMetadataID = nil }
+            .onChange(of: viewModel.selectedNode?.id) { _, _ in copiedMetadataID = nil }
+            .alert("Metadata could not be copied", isPresented: $metadataCopyFailed) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Try copying again. You can also export the item metadata as a report.")
+            }
+    }
+
+    private var mainContent: some View {
       VStack(spacing: 0) {
         NavigationSplitView(columnVisibility: $sidebarVisibility) {
             sidebar
@@ -154,12 +167,7 @@ struct ContentView: View {
         .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didUnmountNotification)) { _ in
             viewModel.refreshMountedVolumes()
         }
-        .onKeyPress(.space) {
-            guard !showingHome, !viewModel.isScanning,
-                  let node = viewModel.selectedNode, !node.isAggregate else { return .ignored }
-            quickLookItem = QuickLookItem(url: URL(fileURLWithPath: node.path))
-            return .handled
-        }
+        .onKeyPress(.space, action: previewSelectedItem)
         .sheet(isPresented: $showingSpaceBreakdown) {
             if let breakdown = viewModel.spaceBreakdown {
                 SpaceBreakdownView(breakdown: breakdown, measuredAt: viewModel.spaceObservation?.measuredAt) {
@@ -471,6 +479,8 @@ struct ContentView: View {
                         onSelect: { nodes, primary in viewModel.select(nodes, primary: primary) },
                         onFocus: { node in viewModel.focus(on: node) },
                         onPreview: { node in quickLookItem = QuickLookItem(url: URL(fileURLWithPath: node.path)) },
+                        onCopyMetadata: copyMetadata,
+                        copiedMetadataID: copiedMetadataID,
                         treeRevision: viewModel.treeRevision,
                         snapshotDate: viewModel.snapshotDate,
                         wasStopped: viewModel.lastScanResult?.wasStopped ?? false
@@ -531,6 +541,14 @@ struct ContentView: View {
                 }
                 .accessibilityIdentifier("view-details")
                 if viewModel.selectedNodes.count == 1, !node.isAggregate {
+                    Button { copyMetadata(node) } label: {
+                        Label(copiedMetadataID == node.id ? String(localized: "Copied") : String(localized: "Copy Metadata"),
+                              systemImage: copiedMetadataID == node.id ? "checkmark" : "doc.on.doc")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .help("Copy this item's path and scan metadata for Codex or Claude. No file contents are copied.")
+                    .accessibilityLabel("Copy Metadata")
+                    .accessibilityIdentifier("copy-selected-metadata")
                     Button { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: node.path)]) } label: {
                         Label("Show in Finder", systemImage: "folder")
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -570,6 +588,31 @@ struct ContentView: View {
         }
         .padding(14)
         .disabled(viewModel.isMovingToTrash || viewModel.isScanning)
+    }
+
+    private func copyMetadata(_ requestedNode: FileNode) {
+        // A previous table revision can briefly remain visible during a refresh.
+        // Resolve against the current selection before pairing it with scan context.
+        guard let node = viewModel.selectedNodes.first(where: { $0.id == requestedNode.id }),
+              let root = viewModel.rootNode,
+              let metadata = SelectedItemMetadata(node: node, rootPath: root.path,
+                    rootAccuracy: root.measurementAccuracy, savedAt: viewModel.snapshotDate,
+                    wasStopped: viewModel.lastScanResult?.wasStopped ?? false) else { return }
+        do {
+            let text = try SelectedMetadataClipboard.text(for: metadata)
+            guard SelectedMetadataClipboard.copy(text, to: .general) else { throw CocoaError(.fileWriteUnknown) }
+            copiedMetadataID = node.id
+        } catch {
+            copiedMetadataID = nil
+            metadataCopyFailed = true
+        }
+    }
+
+    private func previewSelectedItem() -> KeyPress.Result {
+        guard !showingHome, !viewModel.isScanning,
+              let node = viewModel.selectedNode, !node.isAggregate else { return .ignored }
+        quickLookItem = QuickLookItem(url: URL(fileURLWithPath: node.path))
+        return .handled
     }
 
     private var statusBar: some View {
