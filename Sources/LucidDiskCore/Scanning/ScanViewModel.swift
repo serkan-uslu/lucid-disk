@@ -118,6 +118,25 @@ final class ScanViewModel: ObservableObject {
         beginScan(path: path, replacing: nil)
     }
 
+    /// Chart-only Other groups share their containing folder's path, but are not
+    /// directories. Walk to the real folder instead of trying to scan the group.
+    var focusedRescanTarget: FileNode? {
+        var target = focusedNode
+        var visited: Set<UUID> = []
+        while let node = target, node.isAggregate {
+            guard visited.insert(node.id).inserted else { return nil }
+            target = node.parent
+        }
+        guard let target, target.isDirectory, let rootNode,
+              ScanTreeRevision.contains(target.path, in: rootNode.path) else { return nil }
+        return target
+    }
+
+    func rescanFocusedFolder() {
+        guard let target = focusedRescanTarget else { return }
+        rescanFolder(target)
+    }
+
     /// Refreshes only this folder. Historical snapshots become a separate fresh
     /// folder scan, so no unscanned portion of a saved tree gains Trash access.
     func rescanFolder(_ node: FileNode) {

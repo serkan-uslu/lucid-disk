@@ -63,14 +63,19 @@ struct ContentView: View {
                 .disabled(viewModel.isScanning || viewModel.isMovingToTrash)
                 Button {
                     showingHome = false
-                    if let node = viewModel.focusedNode { viewModel.rescanFolder(node) }
+                    viewModel.rescanFocusedFolder()
                 } label: {
-                    Label("Scan Again", systemImage: "arrow.clockwise")
+                    Label(viewModel.focusedNode?.isAggregate == true
+                          ? String(localized: "Scan Containing Folder") : String(localized: "Scan Again"),
+                          systemImage: "arrow.clockwise")
                 }
                 .labelStyle(.titleAndIcon)
+                .accessibilityIdentifier("rescan-focused-folder")
                 .keyboardShortcut("r", modifiers: .command)
-                .help("Scan the current folder again")
-                .disabled(viewModel.rootNode == nil || viewModel.isScanning || viewModel.isMovingToTrash)
+                .help(viewModel.focusedNode?.isAggregate == true
+                      ? String(localized: "Scan the folder containing this Other group again")
+                      : String(localized: "Scan the current folder again"))
+                .disabled(viewModel.focusedRescanTarget == nil || viewModel.isScanning || viewModel.isMovingToTrash)
               }
                 Menu {
                     Button {
