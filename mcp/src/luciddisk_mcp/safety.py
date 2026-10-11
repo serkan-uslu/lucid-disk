@@ -47,9 +47,10 @@ PROTECTED_RECOMMENDATION = "Do not remove it with Lucid Disk; use macOS or the o
 
 
 def normalize_path(path: str) -> str:
-    expanded = os.path.expanduser(path.strip())
-    if not expanded:
+    # Spaces, tabs and newlines can be significant filename characters.
+    if not path:
         raise ValueError("path must not be empty")
+    expanded = os.path.expanduser(path)
     return os.path.normpath(os.path.abspath(expanded))
 
 

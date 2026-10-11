@@ -41,5 +41,6 @@
   {"path": "/Users/example/Library/Group Containers", "home": "/Users/example", "risk": "sensitive", "rule": "sensitive.user-data"},
   {"path": "/Users/example/Library/Preferences/com.example.plist", "home": "/Users/example", "risk": "sensitive", "rule": "sensitive.user-data"},
   {"path": "/Users/example/Library/Developer/Xcode/DerivedData", "home": "/Users/example", "risk": "rebuildable", "rule": "rebuildable.xcode-derived-data"},
-  {"path": "/Users/example/Projects/app", "home": "/Users/example", "risk": "review", "rule": "review.home"}
+  {"path": "/Users/example/Projects/app", "home": "/Users/example", "risk": "review", "rule": "review.home"},
+  {"path": "/Users/example/Documents ", "home": "/Users/example", "risk": "review", "rule": "review.home"}
 ]
