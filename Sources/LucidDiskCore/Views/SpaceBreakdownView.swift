@@ -1,24 +1,27 @@
 import AppKit
 import SwiftUI
 
+/// Only the physical capacity determines this bar. Per-file allocation estimates
+/// can overlap on APFS and must not change the visible proportion of free space.
+struct SpaceCapacityBarMetrics {
+    let usedFraction: Double
+    let freeFraction: Double
+
+    init(breakdown: SpaceBreakdown) {
+        guard breakdown.capacityBytes > 0 else {
+            usedFraction = 0
+            freeFraction = 0
+            return
+        }
+        usedFraction = min(1, max(0, Double(breakdown.usedBytes) / Double(breakdown.capacityBytes)))
+        freeFraction = 1 - usedFraction
+    }
+}
+
 /// Explains a volume's used space, including what a scan cannot see.
 struct SpaceBreakdownView: View {
     let breakdown: SpaceBreakdown
     let onDone: () -> Void
-
-    private struct Segment: Identifiable {
-        let id: String
-        let bytes: Int64
-        let color: Color
-    }
-
-    private var segments: [Segment] {
-        var segments = breakdown.items.filter { $0.kind != .sharedBlocks }.map {
-            Segment(id: $0.id, bytes: $0.bytes, color: color(for: $0))
-        }
-        segments.append(Segment(id: "free", bytes: breakdown.freeBytes, color: Color.primary.opacity(0.08)))
-        return segments
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -29,19 +32,29 @@ struct SpaceBreakdownView: View {
             }
             .padding([.horizontal, .top], 24)
 
-            GeometryReader { geo in
-                let total = max(1, Double(segments.reduce(0) { $0 + $1.bytes }))
-                HStack(spacing: 2) {
-                    ForEach(segments) { segment in
-                        Rectangle().fill(segment.color)
-                            .frame(width: max(3, (geo.size.width - CGFloat(segments.count * 2)) * Double(segment.bytes) / total))
+            VStack(spacing: 8) {
+                GeometryReader { geo in
+                    let metrics = SpaceCapacityBarMetrics(breakdown: breakdown)
+                    HStack(spacing: 0) {
+                        Rectangle().fill(Theme.accent)
+                            .frame(width: geo.size.width * metrics.usedFraction)
+                        Rectangle().fill(Color.primary.opacity(0.08))
+                            .frame(width: geo.size.width * metrics.freeFraction)
                     }
+                    .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .frame(height: 22)
+                .accessibilityHidden(true)
+                HStack {
+                    Label("Used space", systemImage: "circle.fill")
+                        .foregroundStyle(Theme.accent)
+                    Spacer()
+                    Label("Free space", systemImage: "circle")
+                        .foregroundStyle(.secondary)
+                }
+                .font(.caption)
             }
-            .frame(height: 22)
             .padding(24)
-            .accessibilityHidden(true)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {

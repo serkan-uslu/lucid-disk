@@ -23,11 +23,14 @@ struct ScanProgressView: View {
                 VStack(alignment: .leading, spacing: 5) {
                     Text(ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file))
                         .font(.system(size: 30, weight: .semibold, design: .rounded)).monospacedDigit()
-                    Text("Space mapped").font(.caption).foregroundStyle(.secondary)
+                    Text("Estimated file allocation").font(.caption).foregroundStyle(.secondary)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .card(padding: 20)
+            Text("File allocations are estimates. Shared APFS blocks can make their sum exceed disk capacity; this is not reclaimable space.")
+                .font(.caption).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             Text(path).font(.caption).foregroundStyle(.secondary).lineLimit(2)
                 .truncationMode(.middle).frame(height: 36, alignment: .topLeading)
             Button("Stop Scan", action: onCancel).buttonStyle(.bordered).controlSize(.large)
@@ -37,6 +40,7 @@ struct ScanProgressView: View {
 }
 
 struct WelcomeView: View {
+    @Environment(\.openSettings) private var openSettings
     let volumes: [ScanVolume]
     var savedScans: [SavedScanInfo] = []
     var isOpeningSavedScan = false
@@ -89,6 +93,23 @@ struct WelcomeView: View {
                                                startPoint: .topLeading, endPoint: .bottomTrailing),
                                 in: RoundedRectangle(cornerRadius: 20, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Theme.cardStroke))
+
+                    assistantIntroduction
+
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 230), spacing: 14)], alignment: .leading, spacing: 14) {
+                        featureCard("See where space goes", systemImage: "chart.pie", description: "Explore folders in the disk map, find large files and search your scan.")
+                        featureCard("Review before removing", systemImage: "checkmark.shield", description: "Add items to the review queue, check their risks and confirm before moving them to Trash.")
+                        VStack(alignment: .leading, spacing: 10) {
+                            Label("Ask about your files", systemImage: "sparkles")
+                                .font(.headline).foregroundStyle(Theme.accent)
+                            Text("Get explanations from local rules, an on-device model or a cloud provider you choose.")
+                                .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                            Button("Choose AI Provider") { showSettings("ai") }
+                                .buttonStyle(.link).help("Open AI provider settings")
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        .card(padding: 18)
+                    }
 
                     if !savedScans.isEmpty {
                         VStack(alignment: .leading, spacing: 14) {
@@ -144,6 +165,39 @@ struct WelcomeView: View {
             }
         }
         .background(Color(nsColor: .windowBackgroundColor))
+    }
+
+    private var assistantIntroduction: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                Label("Your disk, connected to your assistant", systemImage: "point.3.connected.trianglepath.dotted")
+                    .font(.headline)
+                Pill(title: String(localized: "Read-only"), systemImage: "lock", color: .green)
+            }
+            Text("Connect Claude Desktop or Codex through MCP to find large files, understand storage and prepare a cleanup plan. The companion server only reads metadata; you stay in control of changes.")
+                .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            Button { showSettings("mcp") } label: {
+                Label("Connect Claude or Codex", systemImage: "arrow.up.forward.app")
+            }
+            .buttonStyle(.bordered).help("Open MCP setup and assistant shortcuts")
+            .accessibilityIdentifier("welcome-mcp-setup")
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .card(padding: 20)
+    }
+
+    private func featureCard(_ title: LocalizedStringKey, systemImage: String, description: LocalizedStringKey) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label(title, systemImage: systemImage).font(.headline).foregroundStyle(Theme.accent)
+            Text(description).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .card(padding: 18)
+    }
+
+    private func showSettings(_ tab: String) {
+        SettingsNavigation.shared.selectedTab = tab
+        openSettings()
     }
 }
 

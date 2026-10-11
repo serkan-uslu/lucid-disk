@@ -8,6 +8,7 @@ enum InsightProviderKind: String, CaseIterable, Identifiable, Sendable {
     case appleOnDevice
     case ollama
     case claude
+    case openAI
     case rulesOnly
 
     var id: Self { self }
@@ -17,6 +18,7 @@ enum InsightProviderKind: String, CaseIterable, Identifiable, Sendable {
         case .appleOnDevice: String(localized: "Apple on-device model")
         case .ollama: String(localized: "Ollama (local)")
         case .claude: String(localized: "Claude API")
+        case .openAI: String(localized: "OpenAI API")
         case .rulesOnly: String(localized: "Local rules only")
         }
     }
@@ -26,6 +28,7 @@ enum InsightProviderKind: String, CaseIterable, Identifiable, Sendable {
         case .appleOnDevice: String(localized: "Runs on this Mac with Apple Foundation Models (macOS 26 or later).")
         case .ollama: String(localized: "Runs a model you installed with Ollama on this Mac or your network.")
         case .claude: String(localized: "Sends the selected item's metadata to Anthropic with your API key.")
+        case .openAI: String(localized: "Sends the selected item's metadata to OpenAI with your API key.")
         case .rulesOnly: String(localized: "No model. Explanations come from Lucid Disk's safety rules.")
         }
     }
@@ -34,12 +37,12 @@ enum InsightProviderKind: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .appleOnDevice: "apple.logo"
         case .ollama: "desktopcomputer"
-        case .claude: "cloud"
+        case .claude, .openAI: "cloud"
         case .rulesOnly: "list.bullet.rectangle"
         }
     }
 
-    var sendsDataOffDevice: Bool { self == .claude }
+    var sendsDataOffDevice: Bool { self == .claude || self == .openAI }
 }
 
 struct InsightConfiguration: Sendable {
@@ -49,6 +52,9 @@ struct InsightConfiguration: Sendable {
     var claudeModel = ClaudeClient.defaultModel
     var claudeAPIKey: String?
     var cloudConsent = false
+    var openAIModel = OpenAIClient.defaultModel
+    var openAIAPIKey: String?
+    var openAIConsent = false
 }
 
 typealias HTTPTransport = @Sendable (URLRequest) async throws -> (Data, URLResponse)
@@ -63,6 +69,9 @@ enum InsightProviderError: LocalizedError, Equatable {
     case missingAPIKey
     case missingModel
     case consentRequired
+    case missingOpenAIKey
+    case openAIConsentRequired
+    case incompleteResponse
     case refusal
     case emptyResponse
     case invalidResponse
@@ -78,6 +87,12 @@ enum InsightProviderError: LocalizedError, Equatable {
             String(localized: "Choose a model in Settings.")
         case .consentRequired:
             String(localized: "Allow sending metadata to Anthropic in Settings first.")
+        case .missingOpenAIKey:
+            String(localized: "Add an OpenAI API key in Settings.")
+        case .openAIConsentRequired:
+            String(localized: "Allow sending metadata to OpenAI in Settings first.")
+        case .incompleteResponse:
+            String(localized: "The model did not finish its answer. Try again.")
         case .refusal:
             String(localized: "The model declined to answer this request.")
         case .emptyResponse:
@@ -203,6 +218,91 @@ struct ClaudeClient: Sendable {
         request.setValue("application/json", forHTTPHeaderField: "content-type")
         request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
         request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+    }
+
+    private func send(_ request: URLRequest) async throws -> (Data, URLResponse) {
+        do { return try await transport(request) }
+        catch let error as URLError { throw InsightProviderError.unreachable(error.localizedDescription) }
+    }
+}
+
+// MARK: - OpenAI API
+
+/// A metadata-only Responses request. No files, tools, conversation state or response storage.
+struct OpenAIClient: Sendable {
+    static let defaultModel = "gpt-6-luna"
+    static let suggestedModels = ["gpt-6-luna", "gpt-6.1-sol", "gpt-4.1-mini"]
+    static let responsesURL = URL(string: "https://api.openai.com/v1/responses")!
+    static let modelsURL = URL(string: "https://api.openai.com/v1/models")!
+
+    let apiKey: String
+    let model: String
+    var transport: HTTPTransport = HTTPTransports.urlSession
+
+    func responsesRequest(system: String, prompt: String) throws -> URLRequest {
+        guard !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw InsightProviderError.missingOpenAIKey
+        }
+        guard !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw InsightProviderError.missingModel
+        }
+        var request = URLRequest(url: Self.responsesURL, timeoutInterval: 90)
+        request.httpMethod = "POST"
+        applyHeaders(to: &request)
+        var body: [String: Any] = [
+            "model": model,
+            "instructions": system,
+            "input": prompt,
+            "store": false,
+            "max_output_tokens": 4096
+        ]
+        // The default model supports low reasoning; leave custom models' defaults intact.
+        if model == Self.defaultModel {
+            body["reasoning"] = ["effort": "low"]
+        }
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        return request
+    }
+
+    func explain(system: String, prompt: String) async throws -> String {
+        let (data, response) = try await send(responsesRequest(system: system, prompt: prompt))
+        try ClaudeClient.check(response, data: data)
+        return try Self.parseResponse(data)
+    }
+
+    /// Checks the saved key without inference or file metadata.
+    func verify() async throws {
+        var request = URLRequest(url: Self.modelsURL, timeoutInterval: 20)
+        applyHeaders(to: &request)
+        let (data, response) = try await send(request)
+        try ClaudeClient.check(response, data: data)
+    }
+
+    static func parseResponse(_ data: Data) throws -> String {
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let output = json["output"] as? [[String: Any]] else {
+            throw InsightProviderError.invalidResponse
+        }
+        let content = output.filter { $0["type"] as? String == "message" && $0["role"] as? String == "assistant" }
+            .flatMap { $0["content"] as? [[String: Any]] ?? [] }
+        if content.contains(where: { $0["type"] as? String == "refusal" }) {
+            throw InsightProviderError.refusal
+        }
+        guard json["status"] as? String == "completed" else {
+            throw InsightProviderError.incompleteResponse
+        }
+        // Reasoning/tool entries can precede messages. Only assistant output_text is an answer.
+        let text = content.filter { $0["type"] as? String == "output_text" }
+            .compactMap { $0["text"] as? String }
+            .joined(separator: "\n")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { throw InsightProviderError.emptyResponse }
+        return text
+    }
+
+    private func applyHeaders(to request: inout URLRequest) {
+        request.setValue("application/json", forHTTPHeaderField: "content-type")
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "authorization")
     }
 
     private func send(_ request: URLRequest) async throws -> (Data, URLResponse) {
@@ -383,6 +483,9 @@ final class InsightSettings: ObservableObject {
         static let claudeModel = "insight.claude.model"
         static let cloudConsent = "insight.claude.consent"
         static let keyHint = "insight.claude.keyHint"
+        static let openAIModel = "insight.openai.model"
+        static let openAIConsent = "insight.openai.consent"
+        static let openAIKeyHint = "insight.openai.keyHint"
     }
 
     @Published var provider: InsightProviderKind { didSet { defaults.set(provider.rawValue, forKey: Key.provider) } }
@@ -392,22 +495,32 @@ final class InsightSettings: ObservableObject {
     @Published var cloudConsent: Bool { didSet { defaults.set(cloudConsent, forKey: Key.cloudConsent) } }
     /// Last four characters only, so the UI can confirm a key is stored without reading Keychain.
     @Published private(set) var claudeKeyHint: String?
+    @Published var openAIModel: String { didSet { defaults.set(openAIModel, forKey: Key.openAIModel) } }
+    @Published var openAIConsent: Bool { didSet { defaults.set(openAIConsent, forKey: Key.openAIConsent) } }
+    @Published private(set) var openAIKeyHint: String?
 
     private let defaults: UserDefaults
     private let secrets: SecretStore
+    private let openAISecrets: SecretStore
 
-    init(defaults: UserDefaults = .standard, secrets: SecretStore = KeychainSecretStore()) {
+    init(defaults: UserDefaults = .standard, secrets: SecretStore = KeychainSecretStore(),
+         openAISecrets: SecretStore = KeychainSecretStore(account: "openai-api-key")) {
         self.defaults = defaults
         self.secrets = secrets
+        self.openAISecrets = openAISecrets
         provider = defaults.string(forKey: Key.provider).flatMap(InsightProviderKind.init(rawValue:)) ?? .appleOnDevice
         ollamaURLString = defaults.string(forKey: Key.ollamaURL) ?? "http://127.0.0.1:11434"
         ollamaModel = defaults.string(forKey: Key.ollamaModel) ?? ""
         claudeModel = defaults.string(forKey: Key.claudeModel) ?? ClaudeClient.defaultModel
         cloudConsent = defaults.bool(forKey: Key.cloudConsent)
         claudeKeyHint = defaults.string(forKey: Key.keyHint)
+        openAIModel = defaults.string(forKey: Key.openAIModel) ?? OpenAIClient.defaultModel
+        openAIConsent = defaults.bool(forKey: Key.openAIConsent)
+        openAIKeyHint = defaults.string(forKey: Key.openAIKeyHint)
     }
 
     var hasClaudeKey: Bool { claudeKeyHint != nil }
+    var hasOpenAIKey: Bool { openAIKeyHint != nil }
 
     var ollamaBaseURL: URL? {
         let trimmed = ollamaURLString.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -435,7 +548,26 @@ final class InsightSettings: ObservableObject {
         return ClaudeClient(apiKey: key, model: claudeModel, transport: transport)
     }
 
-    /// A snapshot for one request. Keychain is read only when Claude is the active provider.
+    func saveOpenAIKey(_ rawKey: String) throws {
+        let key = rawKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !key.isEmpty else { return }
+        try openAISecrets.save(key)
+        openAIKeyHint = String(key.suffix(4))
+        defaults.set(openAIKeyHint, forKey: Key.openAIKeyHint)
+    }
+
+    func removeOpenAIKey() throws {
+        try openAISecrets.delete()
+        openAIKeyHint = nil
+        defaults.removeObject(forKey: Key.openAIKeyHint)
+    }
+
+    func openAIClient(transport: @escaping HTTPTransport = HTTPTransports.urlSession) -> OpenAIClient? {
+        guard let key = openAISecrets.read(), !key.isEmpty else { return nil }
+        return OpenAIClient(apiKey: key, model: openAIModel, transport: transport)
+    }
+
+    /// A snapshot for one request. Only the active provider's Keychain entry is read.
     func configuration() -> InsightConfiguration {
         var configuration = InsightConfiguration()
         configuration.provider = provider
@@ -444,6 +576,9 @@ final class InsightSettings: ObservableObject {
         configuration.claudeModel = claudeModel.trimmingCharacters(in: .whitespacesAndNewlines)
         configuration.cloudConsent = cloudConsent
         if provider == .claude { configuration.claudeAPIKey = secrets.read() }
+        configuration.openAIModel = openAIModel.trimmingCharacters(in: .whitespacesAndNewlines)
+        configuration.openAIConsent = openAIConsent
+        if provider == .openAI { configuration.openAIAPIKey = openAISecrets.read() }
         return configuration
     }
 
@@ -453,6 +588,7 @@ final class InsightSettings: ObservableObject {
         case .appleOnDevice, .rulesOnly: provider.title
         case .ollama: ollamaModel.isEmpty ? provider.title : "\(provider.title) · \(ollamaModel)"
         case .claude: "\(provider.title) · \(claudeModel)"
+        case .openAI: "\(provider.title) · \(openAIModel)"
         }
     }
 }

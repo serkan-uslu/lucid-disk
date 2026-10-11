@@ -3,18 +3,23 @@ import SwiftUI
 
 struct SettingsView: View {
     @ObservedObject private var extensions = LucidDiskExtensions.shared
+    @ObservedObject private var navigation = SettingsNavigation.shared
 
     var body: some View {
-        TabView {
+        TabView(selection: $navigation.selectedTab) {
             GeneralSettingsPane()
                 .tabItem { Label("General", systemImage: "gearshape") }
+                .tag("general")
             InsightSettingsPane()
                 .tabItem { Label("AI", systemImage: "sparkles") }
+                .tag("ai")
             MCPSettingsPane()
                 .tabItem { Label("MCP", systemImage: "point.3.connected.trianglepath.dotted") }
+                .tag("mcp")
             ForEach(extensions.settingsTabs) { tab in
                 tab.content()
                     .tabItem { Label(tab.title, systemImage: tab.systemImage) }
+                    .tag("extension:" + tab.id)
             }
         }
         .frame(width: 660, height: 640)
@@ -86,11 +91,14 @@ struct GeneralSettingsPane: View {
 struct InsightSettingsPane: View {
     @ObservedObject private var settings = InsightSettings.shared
     @State private var keyDraft = ""
+    @State private var openAIKeyDraft = ""
     @State private var ollamaModels: [String] = []
     @State private var hiddenCloudModels = 0
     @State private var ollamaStatus: ConnectionStatus = .idle
     @State private var claudeStatus: ConnectionStatus = .idle
+    @State private var openAIStatus: ConnectionStatus = .idle
     @State private var keyError: String?
+    @State private var openAIKeyError: String?
 
     var body: some View {
         ScrollView {
@@ -112,6 +120,7 @@ struct InsightSettingsPane: View {
                     case .appleOnDevice: appleSection
                     case .ollama: ollamaSection
                     case .claude: claudeSection
+                    case .openAI: openAISection
                     case .rulesOnly: rulesSection
                     }
                 }
@@ -229,6 +238,86 @@ struct InsightSettingsPane: View {
             }
             .toggleStyle(.checkbox)
             .accessibilityIdentifier("claude-consent")
+        }
+    }
+
+    private var openAISection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Label("OpenAI API", systemImage: "key").font(.headline)
+                Spacer()
+                StatusText(status: openAIStatus)
+            }
+            if let hint = settings.openAIKeyHint {
+                HStack {
+                    Image(systemName: "lock.fill").foregroundStyle(.green)
+                    Text("Key saved in Keychain ••••\(hint)")
+                    Spacer()
+                    Button("Test") { Task { await testOpenAI() } }
+                        .disabled(openAIStatus == .checking)
+                    Button("Remove", role: .destructive) {
+                        do {
+                            try settings.removeOpenAIKey()
+                            openAIStatus = .idle
+                            openAIKeyError = nil
+                        } catch { openAIKeyError = error.localizedDescription }
+                    }
+                }
+            } else {
+                HStack {
+                    SecureField("OpenAI API key (sk-…)", text: $openAIKeyDraft)
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit(saveOpenAIKey)
+                    Button("Save", action: saveOpenAIKey)
+                        .disabled(openAIKeyDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+                Link("Create an OpenAI API key", destination: URL(string: "https://platform.openai.com/api-keys")!)
+                    .font(.caption)
+            }
+            if let openAIKeyError { Text(openAIKeyError).font(.caption).foregroundStyle(.red) }
+            HStack {
+                TextField("Model", text: $settings.openAIModel).textFieldStyle(.roundedBorder)
+                Menu("Models") {
+                    ForEach(OpenAIClient.suggestedModels, id: \.self) { model in
+                        Button(model) { settings.openAIModel = model }
+                    }
+                }
+                .fixedSize()
+            }
+            Text("Uses your OpenAI API account. A ChatGPT subscription does not include API usage.")
+                .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            Divider()
+            Toggle(isOn: $settings.openAIConsent) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Allow sending metadata to OpenAI")
+                    Text("Only when you press Ask AI: the item’s name, full path, size, type, dates, associated app and safety rule. File contents are never read or sent. OpenAI’s data policies apply.")
+                        .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .toggleStyle(.checkbox)
+            .accessibilityIdentifier("openai-consent")
+        }
+    }
+
+    private func saveOpenAIKey() {
+        do {
+            try settings.saveOpenAIKey(openAIKeyDraft)
+            openAIKeyDraft = ""
+            openAIKeyError = nil
+            openAIStatus = .idle
+        } catch {
+            openAIKeyError = error.localizedDescription
+        }
+    }
+
+    private func testOpenAI() async {
+        guard let client = settings.openAIClient() else { openAIStatus = .failed(String(localized: "No key")); return }
+        openAIStatus = .checking
+        do {
+            try await client.verify()
+            openAIStatus = .ok(String(localized: "Key works"))
+        } catch {
+            openAIStatus = .failed(error.localizedDescription)
         }
     }
 
@@ -365,6 +454,8 @@ struct MCPTool: Identifiable {
 struct MCPSettingsPane: View {
     @AppStorage("mcp.projectPath") private var projectPath = MCPSetup.detectedProjectPath() ?? ""
     @State private var copied: String?
+    @State private var assistant: MCPAssistant = .claudeDesktop
+    @State private var launchError: String?
 
     private var setup: MCPSetup { MCPSetup(projectPath: projectPath) }
 
@@ -380,49 +471,29 @@ struct MCPSettingsPane: View {
                         .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 }
 
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(MCPTool.all.enumerated()), id: \.element.id) { index, tool in
-                        if index > 0 { Divider().padding(.leading, 44) }
-                        HStack(alignment: .top, spacing: 12) {
-                            Image(systemName: tool.systemImage).foregroundStyle(Theme.accent)
-                                .frame(width: 30, height: 30)
-                                .background(Theme.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 7))
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(tool.name).font(.system(.callout, design: .monospaced).weight(.semibold))
-                                    .textSelection(.enabled)
-                                Text(tool.summary).font(.callout).foregroundStyle(.secondary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                Text(tool.parameters).font(.system(.caption, design: .monospaced)).foregroundStyle(.tertiary)
+                connectionSection
+
+                DisclosureGroup("Available MCP tools") {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(MCPTool.all.enumerated()), id: \.element.id) { index, tool in
+                            if index > 0 { Divider().padding(.leading, 44) }
+                            HStack(alignment: .top, spacing: 12) {
+                                Image(systemName: tool.systemImage).foregroundStyle(Theme.accent)
+                                    .frame(width: 30, height: 30)
+                                    .background(Theme.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 7))
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(tool.name).font(.system(.callout, design: .monospaced).weight(.semibold))
+                                        .textSelection(.enabled)
+                                    Text(tool.summary).font(.callout).foregroundStyle(.secondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                    Text(tool.parameters).font(.system(.caption, design: .monospaced)).foregroundStyle(.tertiary)
+                                }
                             }
+                            .padding(.vertical, 10)
                         }
-                        .padding(.vertical, 10)
                     }
                 }
                 .card(padding: 12)
-
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Connect an assistant").font(.headline)
-                    HStack {
-                        Image(systemName: "folder")
-                        Text(projectPath.isEmpty ? String(localized: "Choose the repository’s mcp folder") : projectPath)
-                            .lineLimit(1).truncationMode(.middle)
-                            .foregroundStyle(projectPath.isEmpty ? .secondary : .primary)
-                        Spacer()
-                        Button("Choose…", action: chooseFolder)
-                    }
-                    if !projectPath.isEmpty && !setup.isValidProject {
-                        Label("This folder has no pyproject.toml for luciddisk-mcp.", systemImage: "exclamationmark.triangle")
-                            .font(.caption).foregroundStyle(.orange)
-                    }
-                    if setup.uvPath == nil {
-                        Label("uv was not found. Install it from docs.astral.sh/uv, then restart your assistant.", systemImage: "info.circle")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                    snippet(String(localized: "Claude Code"), setup.claudeCodeCommand)
-                    snippet(String(localized: "Claude Desktop — claude_desktop_config.json"), setup.claudeDesktopJSON)
-                    snippet(String(localized: "Codex"), setup.codexCommand)
-                }
-                .card()
 
                 Label("Tool results include paths, names, sizes and dates. Your assistant sends them to the model it uses, so approve each call and connect only services you trust.",
                       systemImage: "hand.raised")
@@ -430,6 +501,70 @@ struct MCPSettingsPane: View {
             }
             .padding(24)
         }
+    }
+
+    private var connectionSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Connect an assistant").font(.headline)
+            Text("Set up the companion once, then open your assistant here whenever you need it.")
+                .font(.callout).foregroundStyle(.secondary)
+            HStack {
+                Button { openAssistant(.claudeDesktop) } label: {
+                    Label("Open Claude Desktop", systemImage: "arrow.up.forward.app")
+                }
+                .help("Launch Claude Desktop. MCP setup below is required before its first use.")
+                .accessibilityIdentifier("open-claude-desktop")
+                Button { openAssistant(.codex) } label: {
+                    Label("Open Codex", systemImage: "arrow.up.forward.app")
+                }
+                .help("Launch Codex. MCP setup below is required before its first use.")
+                .accessibilityIdentifier("open-codex")
+            }
+            .buttonStyle(.bordered)
+            if let launchError {
+                Label(launchError, systemImage: "exclamationmark.triangle")
+                    .font(.caption).foregroundStyle(.orange).fixedSize(horizontal: false, vertical: true)
+            }
+            Text("Opening an assistant only launches the app. It does not install or connect the MCP server.")
+                .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            Divider()
+            HStack {
+                Image(systemName: "folder")
+                Text(projectPath.isEmpty ? String(localized: "Choose the repository’s mcp folder") : projectPath)
+                    .lineLimit(1).truncationMode(.middle)
+                    .foregroundStyle(projectPath.isEmpty ? .secondary : .primary)
+                Spacer()
+                Button("Choose…", action: chooseFolder)
+                    .help("Choose the mcp folder inside the Lucid Disk repository.")
+            }
+            if !projectPath.isEmpty && !setup.isValidProject {
+                Label("This folder has no pyproject.toml for luciddisk-mcp.", systemImage: "exclamationmark.triangle")
+                    .font(.caption).foregroundStyle(.orange)
+            }
+            if setup.uvPath == nil {
+                Label("uv was not found. Install it from docs.astral.sh/uv, then restart your assistant.", systemImage: "info.circle")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Picker("Assistant", selection: $assistant) {
+                Text("Claude Desktop").tag(MCPAssistant.claudeDesktop)
+                Text("Codex").tag(MCPAssistant.codex)
+            }
+            .pickerStyle(.segmented)
+            if assistant == .claudeDesktop {
+                Text("Copy this configuration and merge the luciddisk entry into Claude Desktop’s Settings → Developer → Edit Config. Keep any existing servers, then restart Claude Desktop.")
+                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                snippet(String(localized: "Claude Desktop — claude_desktop_config.json"), setup.claudeDesktopJSON)
+            } else {
+                Text("Copy and run this command in Terminal after installing the Codex CLI. Restart Codex, then check that luciddisk appears in its MCP settings.")
+                    .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                snippet(String(localized: "Codex"), setup.codexCommand)
+            }
+            DisclosureGroup("Claude Code setup") {
+                snippet(String(localized: "Claude Code"), setup.claudeCodeCommand)
+                    .padding(.top, 6)
+            }
+        }
+        .card()
     }
 
     private func snippet(_ title: String, _ text: String) -> some View {
@@ -443,7 +578,8 @@ struct MCPSettingsPane: View {
                     copied = title
                 }
                 .buttonStyle(.borderless).font(.caption)
-                .disabled(projectPath.isEmpty)
+                .disabled(!setup.isValidProject)
+                .help("Copy this assistant’s MCP configuration")
             }
             Text(text)
                 .font(.system(.caption, design: .monospaced))
@@ -454,12 +590,46 @@ struct MCPSettingsPane: View {
         }
     }
 
+    private func openAssistant(_ assistant: MCPAssistant) {
+        launchError = nil
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: assistant.bundleIdentifier) else {
+            launchError = assistant.notInstalledMessage
+            return
+        }
+        NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration()) { _, error in
+            if error != nil {
+                Task { @MainActor in launchError = String(localized: "The assistant could not be opened. Try opening it from Applications.") }
+            }
+        }
+    }
+
     private func chooseFolder() {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = true
         panel.canChooseFiles = false
         panel.message = String(localized: "Choose the mcp folder inside the Lucid Disk repository.")
-        if panel.runModal() == .OK, let url = panel.url { projectPath = url.path }
+        if panel.runModal() == .OK, let url = panel.url {
+            projectPath = url.path
+            copied = nil
+        }
+    }
+}
+
+enum MCPAssistant: String {
+    case claudeDesktop, codex
+
+    var bundleIdentifier: String {
+        switch self {
+        case .claudeDesktop: "com.anthropic.claudefordesktop"
+        case .codex: "com.openai.codex"
+        }
+    }
+
+    var notInstalledMessage: String {
+        switch self {
+        case .claudeDesktop: String(localized: "Claude Desktop is not installed. Install it, then use the setup below to connect the MCP server.")
+        case .codex: String(localized: "Codex is not installed. Install it, then use the setup below to connect the MCP server.")
+        }
     }
 }
 
@@ -478,11 +648,11 @@ struct MCPSetup {
     private var uv: String { uvPath ?? "uv" }
 
     var claudeCodeCommand: String {
-        "claude mcp add luciddisk -- \(uv) run --project \(Self.shellQuoted(path)) luciddisk-mcp"
+        "claude mcp add luciddisk -- \(Self.shellQuoted(uv)) run --project \(Self.shellQuoted(path)) luciddisk-mcp"
     }
 
     var codexCommand: String {
-        "codex mcp add luciddisk -- \(uv) run --project \(Self.shellQuoted(path)) luciddisk-mcp"
+        "codex mcp add luciddisk -- \(Self.shellQuoted(uv)) run --project \(Self.shellQuoted(path)) luciddisk-mcp"
     }
 
     var claudeDesktopJSON: String {

@@ -65,23 +65,20 @@ struct DetailPanel: View {
     }
 
     private var facts: some View {
-        HStack(alignment: .top, spacing: 0) {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 145), alignment: .leading)], alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(ByteCountFormatter.string(fromByteCount: node.size, countStyle: .file))
                     .font(.system(.title2, design: .rounded).weight(.semibold)).monospacedDigit()
                 Text(node.measurementAccuracy == .incomplete ? node.measurementAccuracy.title : String(localized: "Allocated on disk"))
                     .font(.caption2).foregroundStyle(node.measurementAccuracy == .incomplete ? .orange : .secondary)
             }
-            Spacer(minLength: 12)
             if node.logicalSizeBytes != node.allocatedSizeBytes {
                 StatView(title: String(localized: "Logical"),
                          value: ByteCountFormatter.string(fromByteCount: node.logicalSizeBytes, countStyle: .file))
-                Spacer(minLength: 12)
             }
             if let modifiedAt = node.modifiedAt {
                 StatView(title: String(localized: "Modified"),
                          value: modifiedAt.formatted(date: .abbreviated, time: .omitted))
-                Spacer(minLength: 12)
             }
             StatView(title: String(localized: "Kind"), value: kindDescription)
         }
@@ -97,23 +94,30 @@ struct DetailPanel: View {
 
     private var actions: some View {
         VStack(spacing: 8) {
-            HStack(spacing: 8) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 138), alignment: .leading)], alignment: .leading, spacing: 8) {
                 Button { onQuickLook(URL(fileURLWithPath: node.path)) } label: {
-                    Label("Quick Look", systemImage: "eye").frame(maxWidth: .infinity)
+                    Label("Quick Look", systemImage: "eye").frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .accessibilityIdentifier("quick-look")
                 Button { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: node.path)]) } label: {
-                    Image(systemName: "folder").frame(width: 22)
+                    Label("Show in Finder", systemImage: "folder")
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .help("Show in Finder").accessibilityLabel("Show in Finder")
                 if node.isDirectory {
                     Button { viewModel.focus(on: node) } label: {
-                        Image(systemName: "arrow.down.right.and.arrow.up.left").frame(width: 22)
+                        Label("Open Folder", systemImage: "arrow.down.right.and.arrow.up.left")
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .help("Open Folder").accessibilityLabel("Open Folder")
+                    Button { viewModel.rescanFolder(node) } label: {
+                        Label("Rescan Folder", systemImage: "arrow.clockwise")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .help("Rescan this folder").accessibilityLabel("Rescan this folder")
                 }
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.bordered).controlSize(.small)
             let queued = viewModel.isQueued(node)
             Button { viewModel.toggleReview(node: node) } label: {
                 Label(queued ? String(localized: "Remove from Review Queue") : String(localized: "Add to Review Queue"),
@@ -123,14 +127,16 @@ struct DetailPanel: View {
             .buttonStyle(.bordered)
             .tint(queued ? Theme.accent : nil)
             .accessibilityIdentifier("review-queue-toggle")
-            if queued {
-                Button(role: .destructive) { viewModel.requestDeletion(node: node) } label: {
+                Button(role: .destructive) {
+                    if !queued { viewModel.toggleReview(node: node) }
+                    viewModel.requestDeletion(node: node)
+                } label: {
                     Label("Move to Trash", systemImage: "trash").frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .buttonStyle(.bordered)
                 .accessibilityIdentifier("move-to-trash")
                 .disabled(inspection.assessment?.allowsTrash != true)
-            }
+                .help("Add this item to the review queue and review before moving it to Trash")
         }
         .controlSize(.large)
     }
@@ -160,7 +166,7 @@ struct DetailPanel: View {
                     .textSelection(.enabled)
                 HStack(spacing: 6) {
                     Pill(title: insight.source.title,
-                         systemImage: insight.source == .claude ? "cloud" : "lock",
+                         systemImage: [.claude, .openAI].contains(insight.source) ? "cloud" : "lock",
                          color: insight.source == .localRules ? .secondary : Theme.accent)
                     if let model = insight.modelName {
                         Text(model).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
@@ -198,7 +204,7 @@ struct DetailPanel: View {
 
     private var askFootnote: String {
         switch insightSettings.provider {
-        case .claude:
+        case .claude, .openAI:
             String(localized: "Ask AI sends this item’s metadata to \(insightSettings.activeProviderLabel). File contents stay unread.")
         case .rulesOnly:
             String(localized: "Explanations come from local rules. Change this in Settings.")

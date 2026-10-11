@@ -12,7 +12,7 @@ public struct SpaceBreakdown: Equatable, Sendable {
             case otherVolume
             /// Used space on the scanned volumes the scan could not see.
             case notVisible
-            /// The scan counted more than the volume reports, because blocks are shared.
+            /// File allocations exceed reported usage; shared blocks may contribute.
             case sharedBlocks
         }
 
@@ -248,9 +248,9 @@ enum SpaceAnalyzer {
         } else if remainder < 0 {
             items.append(SpaceBreakdown.Item(
                 id: "shared-blocks", kind: .sharedBlocks,
-                title: String(localized: "Counted more than once"),
+                title: String(localized: "Allocation estimate exceeds used space"),
                 bytes: -remainder,
-                detail: String(localized: "The scan adds up files whose blocks are shared on disk, such as APFS clones, so its total is higher than the space actually used.")
+                detail: String(localized: "The measured file allocations exceed the space macOS reports as used. Shared APFS blocks and changes during scanning can contribute. This difference is not reclaimable space."),
             ))
         }
 

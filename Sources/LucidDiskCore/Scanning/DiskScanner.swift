@@ -27,28 +27,55 @@ struct ScanResult {
     let duration: TimeInterval
     let statistics: ScanStatistics
     let warnings: [ScanWarning]
+    /// The user stopped scanning; measured items are still available to browse.
+    var wasStopped = false
 }
 
-/// Recursively builds a physical-allocation tree. Cancellation is entirely
-/// task based; each invocation owns its counters and hard-link set.
+/// Recursively builds a physical-allocation tree. Task cancellation abandons a
+/// superseded scan; a cooperative stop retains the measured portion of the tree.
 final class DiskScanner {
-    static let excludedPaths: Set<String> = [
+    // These root-level macOS path-resolution aliases expose the same filesystem
+    // again. They are not ordinary symlinks: lstat("/.nofollow") even reports a
+    // different inode from lstat("/.nofollow/"). Never descend through them.
+    private static let resolutionAliases: Set<String> = ["/.nofollow", "/.resolve"]
+    static let excludedPaths: Set<String> = Set([
         "/System/Volumes", "/Volumes", "/dev", "/Network", "/.vol",
         "/home", "/cores", "/afs", "/net"
-    ]
+    ]).union(resolutionAliases)
 
-    private let fm = FileManager.default
+    private let readStat: (String) -> FileSystemStat?
+    private let readDirectory: (URL) throws -> [URL]
     private let progressHandler: (ScanProgress) -> Void
     private let maximumItemCount: Int?
     private let entryWillBeRead: ((URL) -> Void)?
+    private let stopLock = NSLock()
+    private var stopRequested = false
+
+    func requestStop() {
+        stopLock.lock()
+        stopRequested = true
+        stopLock.unlock()
+    }
+
+    private var shouldStop: Bool {
+        stopLock.lock()
+        defer { stopLock.unlock() }
+        return stopRequested
+    }
 
     init(
         maximumItemCount: Int? = nil,
         entryWillBeRead: ((URL) -> Void)? = nil,
+        readStat: @escaping (String) -> FileSystemStat? = fileSystemStat(atPath:),
+        readDirectory: @escaping (URL) throws -> [URL] = {
+            try FileManager.default.contentsOfDirectory(at: $0, includingPropertiesForKeys: [], options: [])
+        },
         progressHandler: @escaping (ScanProgress) -> Void
     ) {
         self.maximumItemCount = maximumItemCount
         self.entryWillBeRead = entryWillBeRead
+        self.readStat = readStat
+        self.readDirectory = readDirectory
         self.progressHandler = progressHandler
     }
 
@@ -71,7 +98,7 @@ final class DiskScanner {
             displayName = last.isEmpty ? normalizedRoot : last
         }
 
-        guard let rootStat = fileSystemStat(atPath: normalizedRoot) else {
+        guard let rootStat = readStat(normalizedRoot) else {
             // Preserve access-denied vs. missing-path errors for actionable feedback.
             throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno),
                           userInfo: [NSFilePathErrorKey: normalizedRoot])
@@ -111,16 +138,31 @@ final class DiskScanner {
                 unreadableDirectoryCount: state.unreadableDirectoryCount,
                 duplicateHardLinkCount: state.duplicateHardLinkCount
             ),
-            warnings: state.warnings
+            warnings: state.warnings,
+            wasStopped: state.wasStopped
         )
     }
 
     private func scanDirectory(_ node: FileNode, state: inout ScanState) throws {
         try Task.checkCancellation()
-        if DiskScanner.excludedPaths.contains(node.path) {
+        if stopIfRequested(node, state: &state) { return }
+        if Self.excludedPaths.contains(node.path) || Self.resolutionAliases.contains(where: {
+            node.path.hasPrefix($0 + "/")
+        }) {
             markIncomplete(
                 node,
                 message: String(localized: "This filesystem location was intentionally excluded."),
+                state: &state
+            )
+            return
+        }
+        // Device + inode identifies a directory independently of the path used
+        // to reach it (firmlinks, aliases, or a directory cycle). Register the
+        // root as well, before enumerating, so an alias cannot walk back into it.
+        if let identity = node.fileIdentity, !state.seenDirectories.insert(identity).inserted {
+            markIncomplete(
+                node,
+                message: String(localized: "This directory was already visited through another path and was not counted again."),
                 state: &state
             )
             return
@@ -130,9 +172,7 @@ final class DiskScanner {
         let dirURL = URL(fileURLWithPath: node.path)
         let entries: [URL]
         do {
-            entries = try fm.contentsOfDirectory(
-                at: dirURL, includingPropertiesForKeys: [], options: []
-            )
+            entries = try readDirectory(dirURL)
         } catch {
             state.unreadableDirectoryCount += 1
             markIncomplete(
@@ -145,6 +185,7 @@ final class DiskScanner {
 
         for url in entries {
             try Task.checkCancellation()
+            if stopIfRequested(node, state: &state) { break }
             if let limit = maximumItemCount, state.visitedItemCount >= limit {
                 markIncomplete(
                     node,
@@ -156,7 +197,8 @@ final class DiskScanner {
             state.visitedItemCount += 1
 
             entryWillBeRead?(url)
-            guard let stat = fileSystemStat(atPath: url.path) else {
+            if stopIfRequested(node, state: &state) { break }
+            guard let stat = readStat(url.path) else {
                 let child = FileNode(
                     name: url.lastPathComponent,
                     path: url.path,
@@ -227,6 +269,13 @@ final class DiskScanner {
         }
     }
 
+    private func stopIfRequested(_ node: FileNode, state: inout ScanState) -> Bool {
+        guard shouldStop else { return false }
+        state.wasStopped = true
+        markIncomplete(node, message: String(localized: "Scan stopped. Only items measured so far are shown."), state: &state)
+        return true
+    }
+
     private func markIncomplete(_ node: FileNode, message: String, state: inout ScanState) {
         node.measurementAccuracy = .incomplete
         node.scanWarning = message
@@ -250,12 +299,14 @@ final class DiskScanner {
     private struct ScanState {
         let scanID: UUID
         let rootDevice: UInt64?
+        var wasStopped = false
         var visitedItemCount = 0
         var scannedFileCount = 0
         var scannedDirectoryCount = 0
         var unreadableDirectoryCount = 0
         var duplicateHardLinkCount = 0
         var allocatedBytes: Int64 = 0
+        var seenDirectories: Set<FileIdentity> = []
         var seenHardLinks: Set<FileIdentity> = []
         var warnings: [ScanWarning] = []
         var lastProgressAt = Date.distantPast

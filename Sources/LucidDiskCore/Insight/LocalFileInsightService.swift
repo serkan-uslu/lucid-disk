@@ -26,6 +26,7 @@ enum InsightSource: Equatable {
     case localModel
     case ollama
     case claude
+    case openAI
     case localRules
 
     var title: String {
@@ -33,6 +34,7 @@ enum InsightSource: Equatable {
         case .localModel: String(localized: "On-device AI")
         case .ollama: String(localized: "Ollama (local)")
         case .claude: String(localized: "Claude API")
+        case .openAI: String(localized: "OpenAI API")
         case .localRules: String(localized: "Local rules")
         }
     }
@@ -103,6 +105,20 @@ struct LocalFileInsightService {
                 let text = try await client.explain(system: system, prompt: userPrompt)
                 return modelInsight(probablePurpose: text, fallback: fallback,
                                     source: .ollama, modelName: configuration.ollamaModel)
+            } catch {
+                return noted(fallback, error)
+            }
+        case .openAI:
+            // Consent for Anthropic never authorizes disclosure to OpenAI.
+            guard configuration.openAIConsent else { return noted(fallback, InsightProviderError.openAIConsentRequired) }
+            guard let key = configuration.openAIAPIKey, !key.isEmpty else {
+                return noted(fallback, InsightProviderError.missingOpenAIKey)
+            }
+            let client = OpenAIClient(apiKey: key, model: configuration.openAIModel, transport: transport)
+            do {
+                let text = try await client.explain(system: system, prompt: userPrompt)
+                return modelInsight(probablePurpose: text, fallback: fallback,
+                                    source: .openAI, modelName: configuration.openAIModel)
             } catch {
                 return noted(fallback, error)
             }

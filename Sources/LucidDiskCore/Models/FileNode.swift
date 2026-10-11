@@ -58,9 +58,10 @@ func fileSystemStat(atPath path: String) -> FileSystemStat? {
     )
 }
 
-/// One scanned item. Extensions read nodes; only the scanner mutates them.
+/// One scanned item. Extensions read nodes; scanning and revision builders mutate
+/// only unpublished trees so background readers can retain a stable snapshot.
 public final class FileNode: Identifiable {
-    public let id = UUID()
+    public let id: UUID
     public let name: String
     public let path: String
     public let isDirectory: Bool
@@ -96,6 +97,7 @@ public final class FileNode: Identifiable {
     public internal(set) var aggregatedChildren: [FileNode] = []
 
     init(
+        id: UUID = UUID(),
         name: String,
         path: String,
         isDirectory: Bool,
@@ -110,6 +112,7 @@ public final class FileNode: Identifiable {
         contentTypeIdentifier: String? = nil,
         scanWarning: String? = nil
     ) {
+        self.id = id
         self.name = name
         self.path = path
         self.isDirectory = isDirectory
@@ -123,5 +126,20 @@ public final class FileNode: Identifiable {
         self.scannedContentTypeIdentifier = contentTypeIdentifier
         self.scanWarning = scanWarning
         self.children = []
+    }
+
+    /// A new object graph for a revision, retaining stable IDs and cached scan
+    /// metadata. Published graphs remain immutable for background readers.
+    func copyForRevision(parent: FileNode? = nil) -> FileNode {
+        let copy = FileNode(
+            id: id, name: name, path: path, isDirectory: isDirectory, isSymlink: isSymlink,
+            logicalSizeBytes: logicalSizeBytes, allocatedSizeBytes: allocatedSizeBytes,
+            measurementAccuracy: measurementAccuracy, fileIdentity: fileIdentity,
+            createdAt: createdAt, modifiedAt: modifiedAt,
+            contentTypeIdentifier: scannedContentTypeIdentifier, scanWarning: scanWarning
+        )
+        copy.parent = parent
+        copy.children = children.map { $0.copyForRevision(parent: copy) }
+        return copy
     }
 }

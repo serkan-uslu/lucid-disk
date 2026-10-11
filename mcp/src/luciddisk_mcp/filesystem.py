@@ -10,11 +10,20 @@ from pydantic import BaseModel, Field
 from .safety import RISK_PRIORITY, RISK_TITLES, RiskLevel, SafetyClassification, classify_path, normalize_path
 
 # Same exclusions as the app's DiskScanner. /System/Volumes holds the firmlinked
-# Data volume, so descending into it would count /Users and friends twice.
+# Data volume, while /.nofollow and /.resolve expose alternate filesystem
+# namespaces. Descending into them would count /Users and friends twice.
 EXCLUDED_PATHS = frozenset({
     "/System/Volumes", "/Volumes", "/dev", "/Network", "/.vol",
-    "/home", "/cores", "/afs", "/net",
+    "/home", "/cores", "/afs", "/net", "/.nofollow", "/.resolve",
 })
+RESOLUTION_ALIAS_ROOTS = ("/.nofollow", "/.resolve")
+
+
+def _is_excluded_directory(path: str) -> bool:
+    # Special namespaces remain excluded when the caller starts below their
+    # root. Ordinary mount exclusions stay exact so /Volumes/External can be
+    # explicitly scanned, and nested user folders named .nofollow remain valid.
+    return path in EXCLUDED_PATHS or any(path.startswith(root + "/") for root in RESOLUTION_ALIAS_ROOTS)
 
 
 class SizeMeasurement(BaseModel):
@@ -116,6 +125,8 @@ def measure_path(path: str, max_entries: int = 200_000) -> SizeMeasurement:
     result = SizeMeasurement()
     stack = [normalized]
     seen_files: set[tuple[int, int]] = set()
+    seen_directories: set[tuple[int, int]] = set()
+    duplicate_directories = 0
     duplicate_hard_links = 0
     saw_regular_file = False
     root_device: int | None = None
@@ -166,14 +177,27 @@ def measure_path(path: str, max_entries: int = 200_000) -> SizeMeasurement:
             skipped_volumes += 1
             result.complete = False
             continue
-        if current in EXCLUDED_PATHS:
+        if _is_excluded_directory(current):
             skipped_excluded += 1
             result.complete = False
             continue
+        identity = (int(info.st_dev), int(info.st_ino))
+        if identity in seen_directories:
+            duplicate_directories += 1
+            result.complete = False
+            continue
+        seen_directories.add(identity)
 
         try:
             with os.scandir(current) as entries:
                 for entry in entries:
+                    # Do not materialize millions of siblings when the remaining
+                    # measurement budget can never inspect them.
+                    if result.entries_scanned + len(stack) >= max_entries:
+                        result.complete = False
+                        if "Entry budget reached; reported sizes are incomplete." not in result.warnings:
+                            result.warnings.append("Entry budget reached; reported sizes are incomplete.")
+                        break
                     stack.append(entry.path)
         except OSError as error:
             result.complete = False
@@ -186,7 +210,11 @@ def measure_path(path: str, max_entries: int = 200_000) -> SizeMeasurement:
         )
     if skipped_excluded:
         result.warnings.append(
-            "Skipped system locations such as /System/Volumes and /Volumes to avoid double counting."
+            "Skipped system mount locations and resolution aliases such as /System/Volumes, /Volumes, /.nofollow and /.resolve to avoid double counting."
+        )
+    if duplicate_directories:
+        result.warnings.append(
+            f"Skipped {duplicate_directories} directory aliases already visited (same device and inode)."
         )
     if duplicate_hard_links:
         result.warnings.append(
@@ -479,50 +507,77 @@ def find_large_files(
     if not os.path.isdir(normalized):
         raise ValueError("path must be an existing directory")
 
-    root_device = os.lstat(normalized).st_dev
+    root_info = os.lstat(normalized)
+    root_device = root_info.st_dev
     stack = [normalized]
     seen: set[tuple[int, int]] = set()
+    seen_directories = {(int(root_info.st_dev), int(root_info.st_ino))}
+    duplicate_directories = 0
+    skipped_locations = 0
     found: list[tuple[int, str, os.stat_result]] = []
     entries = 0
     complete = True
     warnings: list[str] = []
     unreadable = 0
+    budget_exhausted = False
 
     while stack:
         if entries >= max_entries:
-            complete = False
-            warnings.append("Entry budget reached; larger files may exist beyond the scanned part.")
+            budget_exhausted = True
             break
         current = stack.pop()
+        if _is_excluded_directory(current):
+            skipped_locations += 1
+            complete = False
+            continue
         try:
-            with os.scandir(current) as iterator:
-                children = list(iterator)
+            with os.scandir(current) as children:
+                for entry in children:
+                    if entries >= max_entries:
+                        budget_exhausted = True
+                        break
+                    entries += 1
+                    try:
+                        info = entry.stat(follow_symlinks=False)
+                    except OSError:
+                        complete = False
+                        continue
+                    if stat.S_ISDIR(info.st_mode):
+                        if info.st_dev != root_device or _is_excluded_directory(entry.path):
+                            skipped_locations += 1
+                            complete = False
+                            continue
+                        identity = (int(info.st_dev), int(info.st_ino))
+                        if identity in seen_directories:
+                            duplicate_directories += 1
+                            complete = False
+                            continue
+                        seen_directories.add(identity)
+                        stack.append(entry.path)
+                    elif stat.S_ISREG(info.st_mode):
+                        identity = (int(info.st_dev), int(info.st_ino))
+                        if info.st_nlink > 1:
+                            if identity in seen:
+                                continue
+                            seen.add(identity)
+                        allocated = _allocated_bytes(info)
+                        if allocated >= min_size_bytes:
+                            found.append((allocated, entry.path, info))
         except OSError:
             unreadable += 1
             complete = False
-            continue
-        for entry in children:
-            entries += 1
-            try:
-                info = entry.stat(follow_symlinks=False)
-            except OSError:
-                complete = False
-                continue
-            if stat.S_ISDIR(info.st_mode):
-                if info.st_dev != root_device or entry.path in EXCLUDED_PATHS:
-                    complete = False
-                    continue
-                stack.append(entry.path)
-            elif stat.S_ISREG(info.st_mode):
-                identity = (int(info.st_dev), int(info.st_ino))
-                if info.st_nlink > 1:
-                    if identity in seen:
-                        continue
-                    seen.add(identity)
-                allocated = _allocated_bytes(info)
-                if allocated >= min_size_bytes:
-                    found.append((allocated, entry.path, info))
+        if budget_exhausted:
+            break
 
+    if budget_exhausted:
+        complete = False
+        warnings.append("Entry budget reached; larger files may exist beyond the scanned part.")
+    if duplicate_directories:
+        warnings.append(
+            f"Skipped {duplicate_directories} directory aliases already visited (same device and inode)."
+        )
+    if skipped_locations:
+        warnings.append("Skipped excluded filesystem locations, resolution aliases, or directories on other mounted volumes.")
     if unreadable:
         warnings.append(f"{unreadable} director{'y' if unreadable == 1 else 'ies'} could not be read.")
 

@@ -8,25 +8,27 @@ struct BrowserContents {
     /// Chart palette rank per folder child; empty for search results.
     var colorRanks: [UUID: Int] = [:]
 
-    static func load(focused: FileNode, root: FileNode, query: String, order: FileSortOrder) throws -> BrowserContents {
+    static func load(focused: FileNode, root: FileNode, query: String, order: FileSortOrder,
+                     filters: BrowserSearchFilters = .init(), now: Date = Date()) throws -> BrowserContents {
         let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let searching = !query.isEmpty || filters.isFiltering
         var nodes: [FileNode]
-        if query.isEmpty {
+        if !searching {
             nodes = focused.isAggregate ? focused.aggregatedChildren : focused.children
         } else {
             nodes = []
-            var stack = root.children
+            let scopeRoot = filters.scope == .all ? root : focused
+            var stack = scopeRoot.isAggregate ? scopeRoot.aggregatedChildren : scopeRoot.children
             while let node = stack.popLast() {
                 try Task.checkCancellation()
-                if node.name.localizedCaseInsensitiveContains(query)
-                    || node.path.localizedCaseInsensitiveContains(query) {
+                if filters.matches(node, query: query, now: now) {
                     nodes.append(node)
                 }
                 stack.append(contentsOf: node.children)
             }
         }
         try Task.checkCancellation()
-        let ranks = query.isEmpty ? paletteRanks(of: nodes) : [:]
+        let ranks = searching ? [:] : paletteRanks(of: nodes)
         nodes.sort(by: order.precedes)
         try Task.checkCancellation()
         return BrowserContents(nodes: nodes, colorRanks: ranks)
@@ -40,67 +42,113 @@ struct PieContentsPanel: View {
     let onSelect: ([FileNode], FileNode?) -> Void
     let onFocus: (FileNode) -> Void
     let onPreview: (FileNode) -> Void
+    var treeRevision: UUID = UUID()
+    var snapshotDate: Date?
+    var wasStopped = false
 
     @State private var searchText = ""
     @State private var sortOrder: FileSortOrder = .size
     @State private var contents = BrowserContents(nodes: [])
     @State private var loading = false
+    @State private var filters = BrowserSearchFilters()
+    @State private var showingFilters = false
+    @State private var contentsRequest: BrowserRequest?
+    @State private var reportPresentation: ScanReportPresentation?
     @FocusState private var searchFocused: Bool
 
     private var request: BrowserRequest {
-        BrowserRequest(focus: focusedNode.id, root: searchRoot.id, query: searchText, order: sortOrder)
+        BrowserRequest(focus: focusedNode.id, root: searchRoot.id, revision: treeRevision,
+                       query: searchText, order: sortOrder, filters: filters)
     }
+
+    private var isSearching: Bool { !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || filters.isFiltering }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 8) {
-                    Text(searchText.isEmpty ? String(localized: "Contents") : String(localized: "Search Results"))
+                    Text(isSearching ? String(localized: "Search Results") : String(localized: "Contents"))
                         .font(.headline)
                     Pill(title: String(localized: "\(contents.nodes.count) items"))
                     Spacer(minLength: 8)
                     if loading { ProgressView().controlSize(.small) }
+                }
+                HStack(spacing: 12) {
+                    Button { showingFilters.toggle() } label: {
+                        Label(showingFilters ? String(localized: "Hide filters") : String(localized: "Filters"),
+                              systemImage: filters.isFiltering ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                    }
+                    .buttonStyle(.plain).help("Search filters").accessibilityLabel("Search filters")
+                    .accessibilityIdentifier("search-filters")
                     Menu {
                         Picker("Sort", selection: $sortOrder) {
                             ForEach(FileSortOrder.allCases) { order in Text(order.title).tag(order) }
                         }
                     } label: {
-                        Label("Sort", systemImage: "arrow.up.arrow.down").labelStyle(.iconOnly)
+                        Label("Sort", systemImage: "arrow.up.arrow.down").labelStyle(.titleAndIcon)
                     }
                     .menuStyle(.borderlessButton).fixedSize()
                     .help("Sort").accessibilityIdentifier("file-sort")
+                    Spacer(minLength: 0)
                 }
                 HStack(spacing: 7) {
                     Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                     TextField("Search all scanned files", text: $searchText).textFieldStyle(.plain)
                         .focused($searchFocused)
+                        .accessibilityLabel("Search all scanned files")
                         .accessibilityIdentifier("file-search")
                     if !searchText.isEmpty {
-                        Button { searchText = "" } label: { Image(systemName: "xmark.circle.fill") }
+                        Button { searchText = "" } label: { Label("Clear search", systemImage: "xmark.circle.fill") }
                             .buttonStyle(.plain).foregroundStyle(.secondary).accessibilityLabel("Clear search")
+                            .font(.caption).fixedSize()
                     }
                 }
                 .padding(.horizontal, 10).padding(.vertical, 8)
                 .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
                     .strokeBorder(searchFocused ? Theme.accent.opacity(0.7) : Theme.cardStroke))
+                if showingFilters { searchFilters }
+                if isSearching {
+                    Text(filters.scope.title).font(.caption2).foregroundStyle(.secondary)
+                }
+                HStack {
+                    Menu {
+                        Button("Export Results…") { presentReport() }
+                        Button("Export Folder Tree…") { presentReport(entireFolder: true) }
+                            .disabled(focusedNode.isAggregate)
+                    } label: { Label("Export", systemImage: "square.and.arrow.up") }
+                        .menuStyle(.borderlessButton).fixedSize()
+                        .help("Export results with names, paths, types and sizes")
+                        .accessibilityIdentifier("export-results")
+                    Button { presentReport(review: true) } label: {
+                        Label("Review Cleanup", systemImage: "sparkles")
+                    }
+                    .buttonStyle(.bordered).controlSize(.small)
+                    .help("Prepare these results for Codex or Claude")
+                    .accessibilityIdentifier("review-cleanup")
+                    .disabled(contents.nodes.isEmpty)
+                    Spacer(minLength: 0)
+                }
+                .font(.caption)
+                .disabled(loading || contentsRequest != request)
             }
             .padding(16)
             Divider()
             if contents.nodes.isEmpty, !loading {
                 ContentUnavailableView(
-                    searchText.isEmpty ? String(localized: "Nothing to display") : String(localized: "No matching files"),
-                    systemImage: searchText.isEmpty ? "folder" : "magnifyingglass",
-                    description: Text(searchText.isEmpty
+                    isSearching ? String(localized: "No matching files") : String(localized: "Nothing to display"),
+                    systemImage: isSearching ? "magnifyingglass" : "folder",
+                    description: Text(!isSearching
                                       ? String(localized: "This folder may be empty or unreadable.")
-                                      : String(localized: "Try another file name or path."))
+                                      : String(localized: "Try other words or clear the search filters."))
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 FileBrowserTable(contents: contents, selectedIDs: selectedIDs,
-                                 total: focusedNode.size, showPath: !searchText.isEmpty,
+                                 total: focusedNode.size, showPath: isSearching,
                                  onSelect: onSelect, onOpen: { node in
                                      searchText = ""
+                                     filters = BrowserSearchFilters()
                                      onFocus(node)
                                  }, onPreview: onPreview)
                     .accessibilityIdentifier("file-list")
@@ -113,6 +161,7 @@ struct PieContentsPanel: View {
                 .keyboardShortcut("f", modifiers: .command).hidden()
         }
         .onChange(of: focusedNode.id) { _, _ in searchText = "" }
+        .sheet(item: $reportPresentation) { ScanReportSheet(presentation: $0) }
         .task(id: request) {
             let current = request
             let focused = focusedNode
@@ -123,11 +172,12 @@ struct PieContentsPanel: View {
                 do {
                     if !current.query.isEmpty { try await Task.sleep(for: .milliseconds(180)) }
                     let result = try BrowserContents.load(focused: focused, root: root,
-                                                         query: current.query, order: current.order)
+                                                         query: current.query, order: current.order, filters: current.filters)
                     guard !Task.isCancelled else { return }
                     await MainActor.run {
-                        guard request == current else { return }
+                        guard !Task.isCancelled, request == current else { return }
                         contents = result
+                        contentsRequest = current
                         loading = false
                     }
                 } catch {
@@ -136,7 +186,58 @@ struct PieContentsPanel: View {
             }
             await withTaskCancellationHandler { await worker.value } onCancel: { worker.cancel() }
         }
-        .accessibilityLabel("Disk contents")
+    }
+
+    private func presentReport(entireFolder: Bool = false, review: Bool = false) {
+        guard !loading, contentsRequest == request else { return }
+        var descriptions: [String]
+        if entireFolder {
+            descriptions = [String(localized: "All scanned descendants of this folder; search filters are not applied.")]
+        } else if isSearching {
+            descriptions = [filters.scope.title, filters.kind.title, filters.modified.title]
+            if filters.minimumBytes > 0 {
+                descriptions.append(String(localized: "Minimum size: \(ByteCountFormatter.string(fromByteCount: filters.minimumBytes, countStyle: .file))"))
+            }
+            if !filters.extensions.isEmpty { descriptions.append(String(localized: "Extensions: \(filters.extensions)")) }
+        } else {
+            descriptions = [String(localized: "Immediate contents of the current folder; nested contents are not included.")]
+        }
+        let context = ScanReportContext(
+            title: entireFolder ? String(localized: "Folder Tree") : (isSearching ? String(localized: "Search Results") : String(localized: "Contents")),
+            query: entireFolder ? "" : searchText,
+            filters: descriptions,
+            snapshotDate: snapshotDate,
+            wasStopped: wasStopped
+        )
+        reportPresentation = ScanReportPresentation(root: entireFolder ? focusedNode : searchRoot,
+                                                  matches: entireFolder ? nil : contents.nodes,
+                                                  context: context, reviewWithAssistant: review)
+    }
+
+    private var searchFilters: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Picker("Search in", selection: $filters.scope) {
+                ForEach(BrowserSearchScope.allCases) { Text($0.title).tag($0) }
+            }
+            Picker("Kind", selection: $filters.kind) {
+                ForEach(BrowserItemKind.allCases) { Text($0.title).tag($0) }
+            }
+            Picker("Minimum size", selection: $filters.minimumBytes) {
+                Text("Any size").tag(Int64(0))
+                ForEach([Int64(100_000_000), 1_000_000_000, 10_000_000_000], id: \.self) { bytes in
+                    Text(ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)).tag(bytes)
+                }
+            }
+            Picker("Date Modified", selection: $filters.modified) {
+                ForEach(BrowserModifiedFilter.allCases) { Text($0.title).tag($0) }
+            }
+            TextField("Extensions, e.g. zip, dmg, mov", text: $filters.extensions)
+                .textFieldStyle(.roundedBorder)
+                .help("Separate file extensions with commas")
+            Button("Reset filters") { filters = BrowserSearchFilters() }
+                .buttonStyle(.link)
+        }
+        .font(.caption)
     }
 }
 
@@ -163,7 +264,7 @@ private struct FileBrowserTable: NSViewRepresentable {
         table.setAccessibilityLabel(String(localized: "Disk contents"))
         table.headerView = nil
         table.style = .inset
-        table.rowHeight = 52
+        table.rowHeight = 62
         table.intercellSpacing = NSSize(width: 0, height: 2)
         table.backgroundColor = .clear
         table.selectionHighlightStyle = .regular
@@ -277,8 +378,10 @@ private final class BrowserTableView: NSTableView {
 private struct BrowserRequest: Equatable {
     let focus: UUID
     let root: UUID
+    let revision: UUID
     let query: String
     let order: FileSortOrder
+    let filters: BrowserSearchFilters
 }
 
 enum FileSortOrder: String, CaseIterable, Identifiable {
@@ -321,35 +424,34 @@ private struct FileBrowserRow: View {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(node.name).lineLimit(1).truncationMode(.middle)
                     Spacer(minLength: 8)
-                    if !showPath {
-                        Text(fraction.formatted(.percent.precision(.fractionLength(fraction < 0.01 ? 1 : 0))))
-                            .font(.caption.monospacedDigit()).foregroundStyle(.tertiary).fixedSize()
-                    }
                     Text(ByteCountFormatter.string(fromByteCount: node.size, countStyle: .file))
                         .font(.callout.weight(.medium).monospacedDigit()).foregroundStyle(.secondary).fixedSize()
                 }
-                if showPath {
-                    Text(node.path).font(.caption).foregroundStyle(.secondary)
-                        .lineLimit(1).truncationMode(.middle)
-                } else {
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            Capsule().fill(Color.primary.opacity(0.07))
-                            Capsule().fill(chartColor(seed: colorSeed, level: 1, aggregate: node.isAggregate))
-                                .frame(width: max(3, geo.size.width * fraction))
+                HStack(spacing: 8) {
+                    if showPath {
+                        Text(node.path).font(.caption).foregroundStyle(.secondary)
+                            .lineLimit(1).truncationMode(.middle)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        Text(fraction.formatted(.percent.precision(.fractionLength(fraction < 0.01 ? 1 : 0))))
+                            .font(.caption.monospacedDigit()).foregroundStyle(.tertiary).fixedSize()
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                Capsule().fill(Color.primary.opacity(0.07))
+                                Capsule().fill(chartColor(seed: colorSeed, level: 1, aggregate: node.isAggregate))
+                                    .frame(width: max(3, geo.size.width * fraction))
+                            }
+                        }.frame(height: 4)
+                    }
+                    if node.isDirectory || node.isAggregate {
+                        Button(action: onOpen) {
+                            Label("Open Folder", systemImage: "chevron.right").font(.caption.weight(.semibold))
+                                .fixedSize().contentShape(Rectangle())
                         }
-                    }.frame(height: 4)
+                        .buttonStyle(.borderless)
+                        .help("Open Folder").accessibilityLabel("Open Folder")
+                    }
                 }
-            }
-            if node.isDirectory || node.isAggregate {
-                Button(action: onOpen) {
-                    Image(systemName: "chevron.right").font(.caption.weight(.semibold))
-                        .frame(width: 22, height: 30).contentShape(Rectangle())
-                }
-                .buttonStyle(.borderless)
-                .help("Open Folder").accessibilityLabel("Open Folder")
-            } else {
-                Color.clear.frame(width: 22, height: 30)
             }
         }
         .padding(.vertical, 7)

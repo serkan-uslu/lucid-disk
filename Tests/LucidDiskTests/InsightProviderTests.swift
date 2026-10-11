@@ -204,6 +204,185 @@ final class InsightProviderTests: XCTestCase {
         XCTAssertEqual(settings.ollamaBaseURL?.host, "192.168.1.20")
     }
 
+    func testOpenAIRequestUsesResponsesWithoutStorageOrTools() throws {
+        let request = try OpenAIClient(apiKey: "sk-test", model: OpenAIClient.defaultModel)
+            .responsesRequest(system: "rules", prompt: "metadata")
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(request.httpBody)) as? [String: Any])
+
+        XCTAssertEqual(request.url, OpenAIClient.responsesURL)
+        XCTAssertEqual(request.httpMethod, "POST")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer sk-test")
+        XCTAssertEqual(body["model"] as? String, OpenAIClient.defaultModel)
+        XCTAssertEqual(body["instructions"] as? String, "rules")
+        XCTAssertEqual(body["input"] as? String, "metadata")
+        XCTAssertEqual(body["store"] as? Bool, false)
+        XCTAssertNil(body["tools"])
+        XCTAssertNil(body["conversation"])
+        XCTAssertNil(body["previous_response_id"])
+        XCTAssertEqual((body["reasoning"] as? [String: String])?["effort"], "low")
+    }
+
+    func testOpenAICustomModelDoesNotReceiveReasoningOptions() throws {
+        let request = try OpenAIClient(apiKey: "sk-test", model: "gpt-4.1-mini")
+            .responsesRequest(system: "rules", prompt: "metadata")
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(request.httpBody)) as? [String: Any])
+        XCTAssertNil(body["reasoning"])
+    }
+
+    func testOpenAIParsesAssistantTextAfterReasoningItems() throws {
+        let payload = """
+        {"status":"completed","output":[
+          {"type":"reasoning","summary":[]},
+          {"type":"message","role":"assistant","content":[
+            {"type":"output_text","text":" A downloaded archive."},
+            {"type":"output_text","text":"It may contain installers. "}]}]}
+        """
+        XCTAssertEqual(try OpenAIClient.parseResponse(Data(payload.utf8)), "A downloaded archive.\nIt may contain installers.")
+    }
+
+    func testOpenAIRefusalEmptyAndIncompleteResponsesFallBack() async {
+        for payload in [
+            #"{"status":"completed","output":[{"type":"message","role":"assistant","content":[{"type":"refusal","refusal":"No"}]}]}"#,
+            #"{"status":"completed","output":[]}"#,
+            #"{"status":"incomplete","output":[{"type":"message","role":"assistant","content":[{"type":"output_text","text":"A partial"}]}]}"#,
+            #"{"error":{"message":"failure"}}"#
+        ] {
+            let result = await openAIService(respondingWith: payload).insight(for: node, assessment: assessment)
+            XCTAssertEqual(result.source, .localRules, payload)
+            XCTAssertNotNil(result.providerNote, payload)
+        }
+    }
+
+    func testOpenAIAnswerCannotChangeSafety() async {
+        let protectedNode = FileNode(name: "Library", path: "/System/Library", isDirectory: true)
+        let protectedAssessment = DeletionSafety.assess(path: protectedNode.path, homePath: "/Users/example")
+        let payload = #"{"status":"completed","output":[{"type":"message","role":"assistant","content":[{"type":"output_text","text":"Delete everything."}]}]}"#
+        let result = await openAIService(respondingWith: payload).insight(for: protectedNode, assessment: protectedAssessment)
+
+        XCTAssertEqual(result.source, .openAI)
+        XCTAssertEqual(result.modelName, OpenAIClient.defaultModel)
+        XCTAssertEqual(result.confidence, .modelEstimate)
+        XCTAssertEqual(result.whyItMatters, protectedAssessment.summary)
+        XCTAssertEqual(result.verificationSteps.first, protectedAssessment.recommendation)
+        XCTAssertEqual(protectedAssessment.actionPolicy, .blocked)
+    }
+
+    func testOpenAIRequiresIndependentConsentKeyAndModelBeforeNetwork() async {
+        for missing in ["consent", "key", "model"] {
+            var configuration = InsightConfiguration()
+            configuration.provider = .openAI
+            configuration.cloudConsent = true // Anthropic consent must not authorize OpenAI.
+            configuration.claudeAPIKey = "sk-claude"
+            configuration.openAIConsent = missing != "consent"
+            configuration.openAIAPIKey = missing == "key" ? nil : "sk-openai"
+            configuration.openAIModel = missing == "model" ? "   " : OpenAIClient.defaultModel
+            let counter = RequestCounter()
+            let result = await LocalFileInsightService(configuration: configuration,
+                                                       transport: counter.transport(status: 200, body: "{}"))
+                .insight(for: node, assessment: assessment)
+
+            XCTAssertEqual(result.source, .localRules, missing)
+            XCTAssertEqual(counter.count, 0, missing)
+            XCTAssertNotNil(result.providerNote, missing)
+        }
+    }
+
+    func testOpenAIFailureDoesNotCallAnotherProvider() async {
+        let counter = RequestCounter()
+        var configuration = InsightConfiguration()
+        configuration.provider = .openAI
+        configuration.openAIConsent = true
+        configuration.openAIAPIKey = "sk-openai"
+        configuration.cloudConsent = true
+        configuration.claudeAPIKey = "sk-claude"
+        let result = await LocalFileInsightService(configuration: configuration,
+                                                   transport: counter.transport(status: 401, body: "{}"))
+            .insight(for: node, assessment: assessment)
+        XCTAssertEqual(result.source, .localRules)
+        XCTAssertEqual(counter.count, 1)
+        XCTAssertEqual(counter.lastURL, OpenAIClient.responsesURL)
+        XCTAssertEqual(result.providerNote, InsightProviderError.http(status: 401, message: nil).errorDescription)
+    }
+
+    func testOpenAIKeyTestDoesNotGenerateAnAnswer() async throws {
+        let counter = RequestCounter()
+        let client = OpenAIClient(apiKey: "sk-test", model: OpenAIClient.defaultModel,
+                                  transport: counter.transport(status: 200, body: #"{"data":[]}"#))
+        try await client.verify()
+        XCTAssertEqual(counter.count, 1)
+        XCTAssertEqual(counter.lastURL, OpenAIClient.modelsURL)
+        XCTAssertNil(counter.lastRequest?.httpBody)
+    }
+
+    func testOpenAIRequestDoesNotReadOrSendFileContents() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appendingPathComponent("notes.txt")
+        let secretContent = "file-content-must-never-leave-this-mac"
+        try Data(secretContent.utf8).write(to: url)
+        let file = FileNode(name: url.lastPathComponent, path: url.path, isDirectory: false, size: 37)
+        let counter = RequestCounter()
+        var configuration = InsightConfiguration()
+        configuration.provider = .openAI
+        configuration.openAIAPIKey = "sk-test"
+        configuration.openAIConsent = true
+        _ = await LocalFileInsightService(configuration: configuration,
+                                           transport: counter.transport(status: 200, body: #"{"status":"completed","output":[]}"#))
+            .insight(for: file, assessment: DeletionSafety.assess(path: file.path, homePath: directory.path))
+        let data = try XCTUnwrap(counter.lastRequest?.httpBody)
+        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let input = try XCTUnwrap(body["input"] as? String)
+        XCTAssertTrue(input.contains("notes.txt"))
+        XCTAssertTrue(input.contains("allocatedBytes"))
+        XCTAssertFalse(input.contains(secretContent))
+        XCTAssertFalse(String(decoding: data, as: UTF8.self).contains(secretContent))
+    }
+
+    @MainActor
+    func testOpenAISettingsKeepKeysAndConsentSeparate() throws {
+        let suite = "lucid-tests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let claudeSecrets = InMemorySecretStore()
+        let openAISecrets = InMemorySecretStore()
+        let settings = InsightSettings(defaults: defaults, secrets: claudeSecrets, openAISecrets: openAISecrets)
+        try settings.saveClaudeKey("sk-claude-secret-abcd")
+        try settings.saveOpenAIKey(" sk-openai-secret-1234 ")
+        settings.cloudConsent = true
+        settings.provider = .openAI
+
+        XCTAssertFalse(settings.openAIConsent)
+        XCTAssertEqual(openAISecrets.read(), "sk-openai-secret-1234")
+        XCTAssertEqual(settings.openAIKeyHint, "1234")
+        XCTAssertEqual(settings.configuration().openAIAPIKey, "sk-openai-secret-1234")
+        XCTAssertNil(settings.configuration().claudeAPIKey)
+        let stored = defaults.dictionaryRepresentation().values.compactMap { $0 as? String }
+        XCTAssertFalse(stored.contains { $0.contains("secret") })
+        settings.openAIConsent = true
+        settings.openAIModel = "custom-model"
+        let reloaded = InsightSettings(defaults: defaults, secrets: claudeSecrets, openAISecrets: openAISecrets)
+        XCTAssertEqual(reloaded.provider, .openAI)
+        XCTAssertTrue(reloaded.openAIConsent)
+        XCTAssertEqual(reloaded.openAIModel, "custom-model")
+        settings.provider = .claude
+        XCTAssertNil(settings.configuration().openAIAPIKey)
+        XCTAssertEqual(settings.configuration().claudeAPIKey, "sk-claude-secret-abcd")
+        try settings.removeOpenAIKey()
+        XCTAssertNil(openAISecrets.read())
+        XCTAssertFalse(settings.hasOpenAIKey)
+        XCTAssertEqual(claudeSecrets.read(), "sk-claude-secret-abcd")
+    }
+
+    private func openAIService(respondingWith body: String) -> LocalFileInsightService {
+        var configuration = InsightConfiguration()
+        configuration.provider = .openAI
+        configuration.openAIAPIKey = "sk-test"
+        configuration.openAIConsent = true
+        return LocalFileInsightService(configuration: configuration,
+                                       transport: RequestCounter().transport(status: 200, body: body))
+    }
+
     private func claudeService(respondingWith body: String) -> LocalFileInsightService {
         var configuration = InsightConfiguration()
         configuration.provider = .claude
@@ -219,6 +398,7 @@ private final class RequestCounter: @unchecked Sendable {
     private var requests: [URLRequest] = []
     var count: Int { lock.withLock { requests.count } }
     var lastURL: URL? { lock.withLock { requests.last?.url } }
+    var lastRequest: URLRequest? { lock.withLock { requests.last } }
 
     func transport(status: Int, body: String) -> HTTPTransport {
         { [self] request in

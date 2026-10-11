@@ -15,6 +15,8 @@ struct ScanVolume: Identifiable, Hashable {
 @MainActor
 final class ScanViewModel: ObservableObject {
     @Published var rootNode: FileNode?
+    /// Invalidates cached layouts/searches when a new tree revision is published.
+    @Published private(set) var treeRevision = UUID()
     @Published var focusedNode: FileNode?
     /// The primary (last clicked) item; the inspector shows it when one item is selected.
     @Published var selectedNode: FileNode? {
@@ -62,6 +64,9 @@ final class ScanViewModel: ObservableObject {
     let scanStore: ScanStore?
 
     private var scanTask: Task<Void, Never>?
+    private var activeScanner: DiskScanner?
+    private var subtreeBeingRescanned: FileNode?
+    private var reconciliationTask: Task<Void, Never>?
     /// The read-only view handed to edition extensions.
     lazy var extensionContext = LucidDiskContext(viewModel: self)
 
@@ -72,8 +77,23 @@ final class ScanViewModel: ObservableObject {
     }
 
     func startScan(path: String) {
+        beginScan(path: path, replacing: nil)
+    }
+
+    /// Refreshes only this folder. Historical snapshots become a separate fresh
+    /// folder scan, so no unscanned portion of a saved tree gains Trash access.
+    func rescanFolder(_ node: FileNode) {
+        guard node.isDirectory, !node.isAggregate, !isScanning, !isMovingToTrash else { return }
+        guard let rootNode, ScanTreeRevision.contains(node.path, in: rootNode.path) else { return }
+        beginScan(path: node.path, replacing: isShowingSavedScan ? nil : node)
+    }
+
+    private func beginScan(path: String, replacing subtree: FileNode?) {
         guard !isMovingToTrash else { return }
         cancelScan()
+        reconciliationTask?.cancel()
+        reconciliationTask = nil
+        subtreeBeingRescanned = subtree
         let scanID = UUID()
         activeScanID = scanID
         savedScanRequest = nil
@@ -82,6 +102,7 @@ final class ScanViewModel: ObservableObject {
         // Keep the completed snapshot intact until its replacement succeeds.
         // Cancelling or failing a rescan must not discard navigation or review work.
         pendingDeletion = nil
+        pendingBatchDeletion = nil
         completionMessage = nil
         lastTrashedURL = nil
         scannedCount = 0
@@ -99,6 +120,7 @@ final class ScanViewModel: ObservableObject {
             }
         }
 
+        activeScanner = scanner
         scanTask = Task.detached(priority: .userInitiated) { [weak self] in
             do {
                 let result = try scanner.scan(rootPath: path, scanID: scanID)
@@ -111,10 +133,18 @@ final class ScanViewModel: ObservableObject {
         }
     }
 
+    /// User-facing Stop retains a partial tree; it does not invalidate this scan's ID.
+    func stopScan() {
+        activeScanner?.requestStop()
+    }
+
+    /// Abandons work when another scan supersedes it, without publishing its tree.
     func cancelScan() {
         activeScanID = nil
         scanTask?.cancel()
         scanTask = nil
+        activeScanner = nil
+        subtreeBeingRescanned = nil
         isScanning = false
     }
 
@@ -132,7 +162,9 @@ final class ScanViewModel: ObservableObject {
             options: []
         ) ?? []
 
-        mountedVolumes = urls.compactMap { url in
+        mountedVolumes = urls.compactMap { mountedURL in
+            var url = URL(fileURLWithPath: mountedURL.path, isDirectory: true)
+            url.removeAllCachedResourceValues()
             guard let values = try? url.resourceValues(forKeys: keys),
                   values.volumeIsBrowsable != false else { return nil }
             return ScanVolume(
@@ -221,10 +253,42 @@ final class ScanViewModel: ObservableObject {
 
     func finish(_ result: ScanResult, for scanID: UUID) {
         guard activeScanID == scanID, result.id == scanID else { return }
+        guard let subtree = subtreeBeingRescanned, let previousRoot = rootNode else {
+            publishFinished(result, preservingContext: false)
+            return
+        }
+        // The filesystem may have replaced a folder with a symlink while it was
+        // being rescanned. Never merge a result from a different location.
+        guard result.root.path == subtree.path else {
+            finish(error: CocoaError(.fileReadInvalidFileName), for: scanID)
+            return
+        }
+        let previousDuration = lastScanResult?.duration ?? 0
+        Task { [weak self] in
+            let revised = await Task.detached(priority: .userInitiated) {
+                ScanTreeRevision.replacing(subtree, in: previousRoot, with: result, previousDuration: previousDuration)
+            }.value
+            guard let self, self.activeScanID == scanID else { return }
+            guard let revised else { self.finishCancellation(for: scanID); return }
+            self.publishFinished(revised, preservingContext: true)
+        }
+    }
+
+    private func publishFinished(_ result: ScanResult, preservingContext: Bool) {
+        let focusPath = focusedNode?.path
+        let selection = selectedNodes
+        let primary = selectedNode
+        let queued = reviewQueue
         rootNode = result.root
-        focusedNode = result.root
-        selectedNode = nil
-        reviewQueue = []
+        if preservingContext {
+            focusedNode = ScanTreeRevision.nearestFolder(to: focusPath, in: result.root)
+            restoreSelection(selection, primary: primary, queue: queued, in: result.root)
+        } else {
+            focusedNode = result.root
+            selectedNode = nil
+            reviewQueue = []
+        }
+        pendingDeletion = nil
         pendingBatchDeletion = nil
         snapshotDate = nil
         lastScanResult = result
@@ -235,7 +299,11 @@ final class ScanViewModel: ObservableObject {
         currentPath = result.root.path
         activeScanID = nil
         scanTask = nil
+        activeScanner = nil
+        subtreeBeingRescanned = nil
         isScanning = false
+        treeRevision = UUID()
+        refreshMountedVolumes()
         save(result)
         explainSpace(for: result)
     }
@@ -244,6 +312,8 @@ final class ScanViewModel: ObservableObject {
         guard activeScanID == scanID else { return }
         activeScanID = nil
         scanTask = nil
+        activeScanner = nil
+        subtreeBeingRescanned = nil
         isScanning = false
     }
 
@@ -252,6 +322,8 @@ final class ScanViewModel: ObservableObject {
         errorMessage = error.localizedDescription
         activeScanID = nil
         scanTask = nil
+        activeScanner = nil
+        subtreeBeingRescanned = nil
         isScanning = false
     }
 
@@ -292,6 +364,7 @@ extension ScanViewModel {
     /// The old tree is invalid after a mutation, even if the rescan is stopped.
     func invalidateAfterTrash(rescanning rootPath: String?) {
         rootNode = nil
+        treeRevision = UUID()
         focusedNode = nil
         selectedNode = nil
         reviewQueue = []
@@ -332,8 +405,9 @@ extension ScanViewModel {
     private func save(_ result: ScanResult) {
         guard let scanStore, ScanSaving.isEnabled else { return }
         let generation = scanStore.generation
+        let scannedAt = Date()
         Task {
-            _ = await Task.detached(priority: .utility) { try? scanStore.save(result, generation: generation) }.value
+            _ = await Task.detached(priority: .utility) { try? scanStore.save(result, scannedAt: scannedAt, generation: generation) }.value
             refreshSavedScans()
         }
     }
@@ -363,6 +437,7 @@ extension ScanViewModel {
         // Current disk numbers would not match an old scan.
         spaceBreakdown = nil
         rootNode = result.root
+        treeRevision = UUID()
         focusedNode = result.root
         selectedNode = nil
         reviewQueue = []
@@ -385,12 +460,13 @@ extension ScanViewModel {
         let scanned = result.root.allocatedSizeBytes
         let unreadable = result.statistics.unreadableDirectoryCount
         let rootID = result.root.id
+        let revision = treeRevision
         Task {
             let breakdown = await Task.detached(priority: .utility) {
                 SpaceAnalyzer.breakdown(rootPath: rootPath, scannedBytes: scanned,
                                         unreadableFolderCount: unreadable, probe: probe)
             }.value
-            guard rootNode?.id == rootID, !isShowingSavedScan else { return }
+            guard rootNode?.id == rootID, treeRevision == revision, !isShowingSavedScan else { return }
             spaceBreakdown = breakdown
         }
     }
@@ -398,5 +474,70 @@ extension ScanViewModel {
     func deleteAllSavedScans() {
         scanStore?.deleteAll()
         refreshSavedScans()
+    }
+}
+
+// MARK: - Live filesystem refresh
+
+extension ScanViewModel {
+    /// Refreshes capacity and checks the visible/selected/queued live items when
+    /// returning from Finder. Missing or replaced scan roots preserve the tree;
+    /// an ejected volume must never look like a successfully emptied folder.
+    func refreshAfterActivation() {
+        refreshMountedVolumes()
+        guard !isScanning, !isMovingToTrash, !isShowingSavedScan,
+              let root = rootNode, reconciliationTask == nil else { return }
+        let revision = treeRevision
+        let previousResult = lastScanResult
+        let visible = focusedNode.map { [$0] + ($0.isAggregate ? $0.aggregatedChildren : $0.children) } ?? [root]
+        let paths = Set((visible + selectedNodes + reviewQueue).map(\.path))
+        reconciliationTask = Task { [weak self] in
+            let revised = await Task.detached(priority: .utility) { () -> ScanResult? in
+                guard let stat = fileSystemStat(atPath: root.path),
+                      stat.isDirectory, root.fileIdentity == nil || stat.identity == root.fileIdentity else { return nil }
+                let missing = paths.filter { path in
+                    guard fileSystemStat(atPath: path) == nil else { return false }
+                    return errno == ENOENT || errno == ENOTDIR
+                }
+                guard !missing.isEmpty, !missing.contains(root.path),
+                      fileSystemStat(atPath: root.path)?.identity == stat.identity else { return nil }
+                return ScanTreeRevision.removing(missing, from: root, previousResult: previousResult)
+            }.value
+            guard !Task.isCancelled, let self else { return }
+            self.reconciliationTask = nil
+            guard self.treeRevision == revision, self.rootNode?.id == root.id,
+                  !self.isScanning, !self.isMovingToTrash, !self.isShowingSavedScan,
+                  let revised else { return }
+            let focusPath = self.focusedNode?.path
+            let selection = self.selectedNodes
+            let primary = self.selectedNode
+            let queued = self.reviewQueue
+            self.pendingDeletion = nil
+            self.pendingBatchDeletion = nil
+            self.rootNode = revised.root
+            self.focusedNode = ScanTreeRevision.nearestFolder(to: focusPath, in: revised.root)
+            self.restoreSelection(selection, primary: primary, queue: queued, in: revised.root)
+            self.lastScanResult = revised
+            self.scanWarnings = revised.warnings
+            self.scannedCount = revised.statistics.scannedFileCount
+            self.scannedBytes = revised.statistics.allocatedSizeBytes
+            self.unreadableDirectoryCount = revised.statistics.unreadableDirectoryCount
+            self.treeRevision = UUID()
+            self.save(revised)
+            self.explainSpace(for: revised)
+        }
+    }
+
+    /// Queued items survive a refresh only if they still refer to the same file.
+    /// A replacement at the same path needs its own review and confirmation.
+    private func restoreSelection(_ selected: [FileNode], primary: FileNode?, queue: [FileNode], in root: FileNode) {
+        let index = Dictionary(uniqueKeysWithValues: ScanTreeRevision.nodes(in: root).map { ($0.path, $0) })
+        func current(_ old: FileNode) -> FileNode? {
+            guard let node = index[old.path], node.fileIdentity == old.fileIdentity else { return nil }
+            return node
+        }
+        let updatedSelection = selected.compactMap(current)
+        select(updatedSelection, primary: primary.flatMap(current))
+        reviewQueue = queue.compactMap(current)
     }
 }

@@ -9,6 +9,10 @@ struct ContentView: View {
     @State private var wedges: [Wedge] = []
     @State private var quickLookItem: QuickLookItem?
     @State private var showingSpaceBreakdown = false
+    @State private var showingHome = false
+    @State private var showingDetails = false
+    @State private var sidebarVisibility: NavigationSplitViewVisibility = .all
+    private let volumeRefresh = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
 
     @MainActor
     init(viewModel: ScanViewModel? = nil) {
@@ -17,74 +21,103 @@ struct ContentView: View {
 
     var body: some View {
       VStack(spacing: 0) {
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $sidebarVisibility) {
             sidebar
                 .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 280)
         } detail: {
             detail
         }
         .navigationSplitViewStyle(.balanced)
+        .toolbar(removing: .sidebarToggle)
         statusBar
       }
         .navigationTitle(extensions.edition.displayName)
         .toolbar {
-            ToolbarItemGroup {
+            ToolbarItem(placement: .navigation) {
                 Button {
-                    viewModel.startScan(path: "/")
+                    sidebarVisibility = sidebarVisibility == .detailOnly ? .all : .detailOnly
                 } label: {
-                    Label("Scan Startup Disk", systemImage: "internaldrive")
+                    Label(sidebarVisibility == .detailOnly ? String(localized: "Show Sidebar") : String(localized: "Hide Sidebar"),
+                          systemImage: "sidebar.left")
                 }
-                .accessibilityIdentifier("scan-startup-disk")
-                .disabled(viewModel.isScanning || viewModel.isMovingToTrash)
-
+                .labelStyle(.titleAndIcon)
+                .help("Show or hide volumes, locations and the review queue")
+                .accessibilityIdentifier("toggle-sidebar")
+            }
+            ToolbarItemGroup {
+              if !viewModel.isScanning {
+                Button { goHome() } label: { Label("Home", systemImage: "house") }
+                    .labelStyle(.titleAndIcon)
+                    .help("Return to the start page")
+                    .accessibilityIdentifier("show-home")
+                    .disabled(viewModel.isScanning || viewModel.isMovingToTrash)
                 Button {
                     chooseFolder()
                 } label: {
                     Label("Choose Folder", systemImage: "folder.badge.plus")
                 }
+                .labelStyle(.titleAndIcon)
                 .accessibilityIdentifier("choose-folder")
+                .help("Choose a folder to scan")
                 .keyboardShortcut("o", modifiers: .command)
                 .disabled(viewModel.isScanning || viewModel.isMovingToTrash)
-
                 Button {
-                    if let path = viewModel.rootNode?.path { viewModel.startScan(path: path) }
+                    showingHome = false
+                    if let node = viewModel.focusedNode { viewModel.rescanFolder(node) }
                 } label: {
                     Label("Scan Again", systemImage: "arrow.clockwise")
                 }
+                .labelStyle(.titleAndIcon)
                 .keyboardShortcut("r", modifiers: .command)
-                .help("Scan Again")
+                .help("Scan the current folder again")
                 .disabled(viewModel.rootNode == nil || viewModel.isScanning || viewModel.isMovingToTrash)
-
-                Button { AppSupport.shared.show(.guide) } label: {
-                    Label("How to Use", systemImage: "questionmark.circle")
+              }
+                Menu {
+                    Button {
+                        showingHome = false
+                        viewModel.startScan(path: "/")
+                    } label: {
+                        Label("Scan Startup Disk", systemImage: "internaldrive")
+                    }
+                    .accessibilityIdentifier("scan-startup-disk")
+                    .help("Scan the startup disk to find what uses space")
+                    .disabled(viewModel.isScanning || viewModel.isMovingToTrash)
+                    Divider()
+                    Button { AppSupport.shared.show(.guide) } label: {
+                        Label("How to Use", systemImage: "questionmark.circle")
+                    }
+                    .accessibilityIdentifier("show-help")
+                    SettingsLink {
+                        Label("Settings", systemImage: "gearshape")
+                    }
+                    .accessibilityIdentifier("show-settings")
+                } label: {
+                    Label("More", systemImage: "ellipsis.circle")
                 }
-                .help("How to Use")
-                .accessibilityIdentifier("show-help")
-
-                SettingsLink {
-                    Label("Settings", systemImage: "gearshape")
-                }
-                .help("Settings")
-                .accessibilityIdentifier("show-settings")
-
+                .labelStyle(.titleAndIcon)
+                .help("Startup disk scan, help and settings")
+                .accessibilityIdentifier("more-actions")
                 if viewModel.isScanning {
                     Button(role: .destructive) {
-                        viewModel.cancelScan()
+                        viewModel.stopScan()
                     } label: {
-                        Label("Stop", systemImage: "stop.circle")
+                        Label("Stop Scan", systemImage: "stop.circle")
                     }
+                    .labelStyle(.titleAndIcon)
                     .accessibilityIdentifier("stop-scan")
+                    .help("Stop scanning and show the items already scanned")
                 }
             }
         }
-        .task(id: viewModel.focusedNode?.id) {
+        .task(id: "\(viewModel.focusedNode?.id.uuidString ?? "")-\(viewModel.treeRevision.uuidString)") {
             wedges = []
             guard let focused = viewModel.focusedNode else { return }
+            let revision = viewModel.treeRevision
             let worker = Task.detached(priority: .userInitiated) {
                 let result = computeWedges(focusedNode: focused)
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
-                    guard viewModel.focusedNode?.id == focused.id else { return }
+                    guard viewModel.focusedNode?.id == focused.id, viewModel.treeRevision == revision else { return }
                     wedges = result
                 }
             }
@@ -93,7 +126,20 @@ struct ContentView: View {
             } onCancel: { worker.cancel() }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { viewModel.refreshMountedVolumes() }
+            if phase == .active { viewModel.refreshAfterActivation() }
+        }
+        .onReceive(volumeRefresh) { _ in
+            if scenePhase == .active { viewModel.refreshMountedVolumes() }
+        }
+        .onChange(of: viewModel.focusedNode?.id) { _, _ in
+            showingHome = false
+            showingDetails = false
+        }
+        .onChange(of: viewModel.isScanning) { _, scanning in
+            if scanning { showingHome = false; showingDetails = false }
+        }
+        .onChange(of: viewModel.selectedNode?.id) { _, selection in
+            if selection == nil { showingDetails = false }
         }
         .onReceive(NotificationCenter.default.publisher(for: ScanStore.didChangeNotification).receive(on: RunLoop.main)) { _ in
             viewModel.refreshSavedScans()
@@ -105,7 +151,8 @@ struct ContentView: View {
             viewModel.refreshMountedVolumes()
         }
         .onKeyPress(.space) {
-            guard let node = viewModel.selectedNode, !node.isAggregate else { return .ignored }
+            guard !showingHome, !viewModel.isScanning,
+                  let node = viewModel.selectedNode, !node.isAggregate else { return .ignored }
             quickLookItem = QuickLookItem(url: URL(fileURLWithPath: node.path))
             return .handled
         }
@@ -184,9 +231,19 @@ struct ContentView: View {
 
     private var sidebar: some View {
         List {
+            Button { goHome() } label: { Label("Home", systemImage: "house") }
+                .buttonStyle(.plain)
+                .help("Return to the start page")
+                .disabled(viewModel.isScanning || viewModel.isMovingToTrash)
+            if showingHome, viewModel.rootNode != nil {
+                Button { showingHome = false } label: { Label("Back to Scan Results", systemImage: "chart.pie") }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("back-to-results")
+            }
             Section("Volumes") {
                 ForEach(viewModel.mountedVolumes) { volume in
                     Button {
+                        showingHome = false
                         viewModel.startScan(path: volume.url.path)
                     } label: {
                         VolumeRow(volume: volume, isCurrent: viewModel.rootNode?.path == volume.url.path)
@@ -201,6 +258,7 @@ struct ContentView: View {
                     let chain = ancestorChain(from: viewModel.focusedNode ?? root)
                     ForEach(Array(chain.enumerated()), id: \.element.id) { depth, node in
                         Button {
+                            showingHome = false
                             viewModel.focus(on: node)
                         } label: {
                             let isCurrent = node === viewModel.focusedNode
@@ -225,7 +283,9 @@ struct ContentView: View {
                     ForEach(viewModel.reviewQueue, id: \.id) { node in
                         HStack(spacing: 8) {
                             Button {
-                                viewModel.selectedNode = node
+                                showingHome = false
+                                showingDetails = true
+                                viewModel.select([node], primary: node)
                             } label: {
                                 HStack(spacing: 8) {
                                     FileIconView(node: node, size: 20)
@@ -242,16 +302,16 @@ struct ContentView: View {
                             Button {
                                 viewModel.removeFromReview(node: node)
                             } label: {
-                                Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary)
+                                Label("Remove", systemImage: "xmark.circle").font(.caption)
                             }
                             .buttonStyle(.borderless)
                             .accessibilityLabel("Remove from review queue")
+                            .help("Remove from review queue")
                         }
                     }
-                    HStack {
-                        Button("Clear") { viewModel.clearReviewQueue() }
+                    VStack(alignment: .leading, spacing: 8) {
+                        Button("Clear Queue") { viewModel.clearReviewQueue() }
                             .buttonStyle(.borderless)
-                        Spacer()
                         Button {
                             viewModel.requestBatchDeletion()
                         } label: {
@@ -321,48 +381,52 @@ struct ContentView: View {
     private var detail: some View {
         if viewModel.isScanning {
             ScanProgressView(count: viewModel.scannedCount, bytes: viewModel.scannedBytes,
-                             path: viewModel.currentPath, onCancel: viewModel.cancelScan)
+                             path: viewModel.currentPath, onCancel: viewModel.stopScan)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(nsColor: .windowBackgroundColor))
-        } else if let focused = viewModel.focusedNode {
+        } else if let focused = viewModel.focusedNode, !showingHome {
             GeometryReader { area in
               let inspectorWidth = min(460, max(340, area.size.width * 0.43))
               HStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 0) {
-                    HStack(alignment: .center, spacing: 12) {
-                        Button { viewModel.zoomOut() } label: {
-                            Image(systemName: "chevron.left").font(.body.weight(.semibold))
-                                .frame(width: 28, height: 28)
-                        }
-                        .buttonStyle(.borderless)
-                        .background(Theme.cardFill, in: Circle())
-                        .disabled(focused.parent == nil)
-                        .help("Back to parent folder")
-                        .keyboardShortcut(.leftArrow, modifiers: .command)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(focused.name).font(.title2.weight(.semibold)).lineLimit(1)
-                            PathBar(chain: ancestorChain(from: focused)) { viewModel.focus(on: $0) }
-                        }
-                        Spacer(minLength: 8)
-                        if let breakdown = viewModel.spaceBreakdown {
-                            Button { showingSpaceBreakdown = true } label: {
-                                Label(spaceButtonTitle(breakdown), systemImage: "chart.bar.doc.horizontal")
-                                    .font(.caption.weight(.semibold))
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(alignment: .center, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(focused.name).font(.title2.weight(.semibold)).lineLimit(1)
+                                PathBar(chain: ancestorChain(from: focused)) { viewModel.focus(on: $0) }
                             }
-                            .buttonStyle(.bordered)
-                            .tint(breakdown.outsideScanBytes > breakdown.usedBytes / 20 ? .orange : Theme.accent)
-                            .help("See where this disk's used space goes, including what a scan cannot see")
-                            .accessibilityIdentifier("space-breakdown")
-                        }
-                        if area.size.width > 1_000 {
-                            HStack(spacing: 18) {
-                                StatView(title: String(localized: "Allocated"),
-                                         value: ByteCountFormatter.string(fromByteCount: focused.allocatedSizeBytes, countStyle: .file))
-                                StatView(title: String(localized: "Items"),
-                                         value: (focused.isAggregate ? focused.aggregatedChildren.count : focused.children.count).formatted())
-                                if focused.measurementAccuracy == .incomplete {
-                                    Pill(title: String(localized: "Partial"), systemImage: "exclamationmark.triangle", color: .orange)
+                            Spacer(minLength: 0)
+                            if area.size.width > 1_000 {
+                                HStack(spacing: 18) {
+                                    StatView(title: String(localized: "Allocated"),
+                                             value: ByteCountFormatter.string(fromByteCount: focused.allocatedSizeBytes, countStyle: .file))
+                                    StatView(title: String(localized: "Items"),
+                                             value: (focused.isAggregate ? focused.aggregatedChildren.count : focused.children.count).formatted())
+                                    if focused.measurementAccuracy == .incomplete {
+                                        Pill(title: String(localized: "Partial"), systemImage: "exclamationmark.triangle", color: .orange)
+                                    }
                                 }
+                            }
+                        }
+                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), alignment: .leading)], alignment: .leading, spacing: 6) {
+                            Button { viewModel.zoomOut() } label: {
+                                Label("Parent Folder", systemImage: "chevron.left")
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            .buttonStyle(.bordered).controlSize(.small)
+                            .disabled(focused.parent == nil)
+                            .help("Back to parent folder")
+                            .keyboardShortcut(.leftArrow, modifiers: .command)
+                            if let breakdown = viewModel.spaceBreakdown {
+                                Button { showingSpaceBreakdown = true } label: {
+                                    Label(spaceButtonTitle(breakdown), systemImage: "chart.bar.doc.horizontal")
+                                        .font(.caption.weight(.semibold))
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                                .buttonStyle(.bordered).controlSize(.small)
+                                .tint(breakdown.outsideScanBytes > breakdown.usedBytes / 20 ? .orange : Theme.accent)
+                                .help("See where this disk's used space goes, including what a scan cannot see")
+                                .accessibilityIdentifier("space-breakdown")
                             }
                         }
                     }
@@ -373,14 +437,35 @@ struct ContentView: View {
                         selectedNode: viewModel.selectedNode,
                         selectedIDs: Set(viewModel.selectedNodes.map(\.id)),
                         onZoomOut: { viewModel.zoomOut() },
-                        onSelect: { node in viewModel.selectedNode = node },
+                        onSelect: { node in viewModel.select(node.map { [$0] } ?? [], primary: node) },
                         onFocus: { node in viewModel.focus(on: node) },
                         onToggleSelection: { node in viewModel.toggleSelection(node) }
                     )
                     .padding(.horizontal, 20).padding(.vertical, 12)
-                    Text("Click a folder to open it. Click a file to inspect it. ⌘-click to select several.")
+                    Text("Select an item, then choose View Details. Double-click a folder to open it. ⌘-click to select several.")
                         .font(.caption).foregroundStyle(.tertiary)
                         .frame(maxWidth: .infinity).padding(.bottom, 14)
+                    if showingDetails, !viewModel.selectedNodes.isEmpty {
+                        Divider()
+                        HStack {
+                            Text("Details").font(.headline)
+                            Spacer()
+                            Button { showingDetails = false } label: { Label("Close details", systemImage: "xmark") }
+                                .buttonStyle(.plain).help("Close details").accessibilityLabel("Close details")
+                                .accessibilityIdentifier("close-details")
+                        }
+                        .padding(.horizontal, 18).padding(.vertical, 8)
+                        Group {
+                            if viewModel.selectedNodes.count > 1 {
+                                BatchSelectionPanel(nodes: viewModel.selectedNodes, viewModel: viewModel)
+                            } else if let selected = viewModel.selectedNode {
+                                DetailPanel(node: selected, viewModel: viewModel,
+                                            onQuickLook: { quickLookItem = QuickLookItem(url: $0) })
+                                    .id("\(selected.id)-\(viewModel.treeRevision)")
+                            }
+                        }
+                        .frame(height: min(300, area.size.height * 0.44))
+                    }
                 }
                 .frame(width: max(0, area.size.width - inspectorWidth - 1), height: area.size.height)
                 .background(Color(nsColor: .windowBackgroundColor))
@@ -393,19 +478,15 @@ struct ContentView: View {
                         selectedIDs: Set(viewModel.selectedNodes.map(\.id)),
                         onSelect: { nodes, primary in viewModel.select(nodes, primary: primary) },
                         onFocus: { node in viewModel.focus(on: node) },
-                        onPreview: { node in quickLookItem = QuickLookItem(url: URL(fileURLWithPath: node.path)) }
+                        onPreview: { node in quickLookItem = QuickLookItem(url: URL(fileURLWithPath: node.path)) },
+                        treeRevision: viewModel.treeRevision,
+                        snapshotDate: viewModel.snapshotDate,
+                        wasStopped: viewModel.lastScanResult?.wasStopped ?? false
                     )
                     .frame(minHeight: 200, maxHeight: .infinity)
-                    if viewModel.selectedNodes.count > 1 {
+                    if let selected = viewModel.selectedNode {
                         Divider()
-                        BatchSelectionPanel(nodes: viewModel.selectedNodes, viewModel: viewModel)
-                            .frame(height: min(460, max(300, area.size.height * 0.54)))
-                    } else if let selected = viewModel.selectedNode {
-                        Divider()
-                        DetailPanel(node: selected, viewModel: viewModel,
-                                    onQuickLook: { quickLookItem = QuickLookItem(url: $0) })
-                            .id(selected.id)
-                            .frame(height: min(460, max(300, area.size.height * 0.54)))
+                        selectionActions(selected)
                     }
                 }
                 .frame(width: inspectorWidth, height: area.size.height)
@@ -428,8 +509,75 @@ struct ContentView: View {
         panel.canChooseFiles = false
         panel.allowsMultipleSelection = false
         if panel.runModal() == .OK, let url = panel.url {
+            showingHome = false
             viewModel.startScan(path: url.path)
         }
+    }
+
+    private func goHome() {
+        showingHome = true
+        showingDetails = false
+        viewModel.refreshMountedVolumes()
+        viewModel.refreshSavedScans()
+    }
+
+    private func selectionActions(_ node: FileNode) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(viewModel.selectedNodes.count > 1
+                     ? String(localized: "\(viewModel.selectedNodes.count) items selected") : node.name)
+                    .font(.subheadline.weight(.semibold)).lineLimit(1).truncationMode(.middle)
+                Spacer()
+                Button { viewModel.select([], primary: nil) } label: { Label("Clear Selection", systemImage: "xmark.circle") }
+                    .font(.caption).fixedSize()
+                    .buttonStyle(.plain).help("Clear Selection").accessibilityLabel("Clear Selection")
+            }
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 138), alignment: .leading)], alignment: .leading, spacing: 8) {
+                Button { showingDetails.toggle() } label: {
+                    Label(showingDetails ? String(localized: "Hide Details") : String(localized: "View Details"), systemImage: "info.circle")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .accessibilityIdentifier("view-details")
+                if viewModel.selectedNodes.count == 1, !node.isAggregate {
+                    Button { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: node.path)]) } label: {
+                        Label("Show in Finder", systemImage: "folder")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .help("Show in Finder").accessibilityLabel("Show in Finder")
+                    if node.isDirectory {
+                        Button { viewModel.rescanFolder(node) } label: {
+                            Label("Rescan Folder", systemImage: "arrow.clockwise")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                            .help("Rescan this folder").accessibilityLabel("Rescan this folder")
+                            .accessibilityIdentifier("rescan-folder")
+                    }
+                }
+            }
+            .buttonStyle(.bordered).controlSize(.small)
+            if viewModel.selectedNodes.count == 1, !node.isAggregate {
+                Button(role: .destructive) {
+                    if !viewModel.isQueued(node) { viewModel.toggleReview(node: node) }
+                    viewModel.requestDeletion(node: node)
+                } label: {
+                    Label("Move to Trash…", systemImage: "trash").frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.bordered).controlSize(.small)
+                .help("Add this item to the review queue and review before moving it to Trash")
+                .accessibilityIdentifier("selection-trash")
+            } else {
+                Button { _ = viewModel.addToReview(viewModel.selectedNodes) } label: {
+                    Label("Add to Review Queue", systemImage: "plus.circle").frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(.bordered).controlSize(.small)
+            }
+            if viewModel.isShowingSavedScan {
+                Text("Saved scan: scan again to update results and enable Trash.")
+                    .font(.caption).foregroundStyle(.orange)
+            }
+        }
+        .padding(14)
+        .disabled(viewModel.isMovingToTrash || viewModel.isScanning)
     }
 
     private var statusBar: some View {
@@ -447,7 +595,7 @@ struct ContentView: View {
                         Button("Show in Trash") { NSWorkspace.shared.activateFileViewerSelecting([url]) }
                             .buttonStyle(.link)
                     }
-                    Button { viewModel.completionMessage = nil } label: { Image(systemName: "xmark") }
+                    Button { viewModel.completionMessage = nil } label: { Label("Dismiss", systemImage: "xmark") }
                         .buttonStyle(.plain).accessibilityLabel("Dismiss notification")
                 } else if let savedAt = viewModel.snapshotDate, !viewModel.isScanning {
                     Image(systemName: "clock.arrow.circlepath").foregroundStyle(.orange)
@@ -465,7 +613,9 @@ struct ContentView: View {
                         .foregroundStyle(viewModel.scanWarnings.isEmpty ? Theme.accent : .orange)
                     Text("\(result.statistics.scannedFileCount) files · \(String(format: "%.2f", result.duration)) s")
                         .monospacedDigit()
-                    if !viewModel.scanWarnings.isEmpty {
+                    if result.wasStopped {
+                        Text("Scan stopped. Only items measured so far are shown.").foregroundStyle(.orange).lineLimit(1)
+                    } else if !viewModel.scanWarnings.isEmpty {
                         Text("Partial scan — see warnings").foregroundStyle(.orange)
                     }
                     Spacer(minLength: 0)
@@ -563,14 +713,18 @@ private struct VolumeRow: View {
                 HStack(spacing: 4) {
                     Text(volume.name).lineLimit(1).fontWeight(isCurrent ? .semibold : .regular)
                     Spacer(minLength: 4)
-                    if let total = volume.totalBytes {
-                        Text(ByteCountFormatter.string(fromByteCount: total, countStyle: .file))
-                            .font(.caption).foregroundStyle(.secondary).monospacedDigit()
-                    }
                 }
                 if let usedFraction = volume.usedFraction {
                     CapacityBar(fraction: usedFraction, height: 4)
                         .accessibilityLabel("Used storage")
+                }
+                if let available = volume.availableBytes {
+                    Text("\(ByteCountFormatter.string(fromByteCount: available, countStyle: .file)) available")
+                        .font(.caption2).foregroundStyle(.secondary).monospacedDigit()
+                }
+                if let total = volume.totalBytes {
+                    Text("\(ByteCountFormatter.string(fromByteCount: total, countStyle: .file)) total")
+                        .font(.caption2).foregroundStyle(.tertiary).monospacedDigit()
                 }
             }
         }

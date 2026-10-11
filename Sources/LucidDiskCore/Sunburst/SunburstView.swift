@@ -99,7 +99,9 @@ struct SunburstView: View {
                     Button(action: onZoomOut) {
                         VStack(spacing: 6) {
                             if focusedNode.parent != nil {
-                                Image(systemName: "arrow.up").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                                Label("Parent Folder", systemImage: "arrow.up")
+                                    .font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                                    .lineLimit(1).minimumScaleFactor(0.65)
                             }
                             Text(ByteCountFormatter.string(fromByteCount: focusedNode.size, countStyle: .file))
                                 .font(.system(size: 24, weight: .semibold, design: .rounded))

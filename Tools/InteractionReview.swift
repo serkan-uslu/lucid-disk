@@ -38,6 +38,9 @@ final class ReviewDelegate: NSObject, NSApplicationDelegate {
             .preferredColorScheme(.dark).tint(Color(red: 0.15, green: 0.68, blue: 0.78)))
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        // A separate review bundle can keep the sample tree open for manual
+        // accessibility/layout checks without loading or saving personal scans.
+        if Bundle.main.object(forInfoDictionaryKey: "LucidInteractiveReview") as? Bool == true { return }
         Task {
             do {
                 try FileManager.default.createDirectory(atPath: output, withIntermediateDirectories: true)
@@ -75,6 +78,8 @@ final class ReviewDelegate: NSObject, NSApplicationDelegate {
         postClick(at: files.convert(NSPoint(x: fileRow.minX + 90, y: fileRow.midY), to: nil), count: 1)
         try await pause()
         check(model.selectedNode?.id == root.children[1].children[0].id, "Found file can be selected")
+        // Review the SwiftUI Details/Home buttons through an external accessibility
+        // client: the in-process NSAccessibilityProtocol tree omits these controls.
         for (name, size) in [("wide", NSSize(width: 1440, height: 900)), ("compact", NSSize(width: 1050, height: 700))] {
             window.setContentSize(size)
             try await pause()
@@ -246,6 +251,7 @@ final class ReviewDelegate: NSObject, NSApplicationDelegate {
         defer { settings.provider = previous }
         let panes: [(String, InsightProviderKind?, AnyView)] = [
             ("settings-ai-claude", .claude, AnyView(InsightSettingsPane())),
+            ("settings-ai-openai", .openAI, AnyView(InsightSettingsPane())),
             ("settings-ai-ollama", .ollama, AnyView(InsightSettingsPane())),
             ("settings-mcp", nil, AnyView(MCPSettingsPane()))
         ]
@@ -357,6 +363,8 @@ final class ReviewDelegate: NSObject, NSApplicationDelegate {
     }
 
     func postClick(at point: NSPoint, count: Int) {
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
         for type: NSEvent.EventType in [.leftMouseDown, .leftMouseUp] {
             let event = NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
                                           timestamp: ProcessInfo.processInfo.systemUptime,
@@ -368,6 +376,8 @@ final class ReviewDelegate: NSObject, NSApplicationDelegate {
 
     func postKey(_ code: UInt16, characters: String, in target: NSWindow? = nil) {
         let target = target ?? window!
+        NSApp.activate(ignoringOtherApps: true)
+        target.makeKeyAndOrderFront(nil)
         let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [],
                                     timestamp: ProcessInfo.processInfo.systemUptime,
                                     windowNumber: target.windowNumber, context: nil,

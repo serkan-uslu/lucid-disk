@@ -10,6 +10,8 @@ A local, read-only MCP server for reviewing disk cleanup candidates found by Luc
 
 A typical assistant flow: start with `summarize_known_locations` or `inventory_directory`, narrow down with `find_large_files`, then run `assess_paths` or `create_cleanup_plan` on the items the user is considering. The app's **Settings → MCP** tab shows the same list and generates the setup commands below with your paths filled in.
 
+The welcome screen's **Connect Claude or Codex** button opens this setup directly. **Open Claude Desktop** and **Open Codex** launch an installed client; they do not install the server or edit the client's configuration. Choose the repository's `mcp` folder, select your assistant, and copy its configuration for the one-time setup. Existing client configurations remain under your control.
+
 Risk rules are the same as the app's (`Tests/Fixtures/deletion-safety.json` is checked by both test suites), compare paths case-insensitively, and all output is in English. Measurements stay on one volume and skip `/System/Volumes` and `/Volumes`, so firmlinked data is not counted twice.
 
 `effective_risk` is the stricter classification of the normalized lexical path and its resolved path. Even `rebuildable` is not permission to delete an item.
@@ -47,6 +49,8 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (use th
 }
 ```
 
+Open the file through **Claude → Settings → Developer → Edit Config**, merge the `luciddisk` entry with any existing servers, then fully quit and reopen Claude Desktop. See the [official local MCP setup guide](https://modelcontextprotocol.io/docs/develop/connect-local-servers).
+
 ## Connect to Codex
 
 The repository's `.codex/config.toml` registers the server as `luciddisk` and prompts before every tool call. For a user-level setup from the repository root:
@@ -56,6 +60,8 @@ codex mcp add luciddisk -- uv run --project "$(pwd)/mcp" luciddisk-mcp
 ```
 
 Restart Codex, then use `/mcp` to verify the `luciddisk` server.
+
+The desktop app and CLI share the configuration on the same host. See the [official Codex MCP documentation](https://developers.openai.com/codex/mcp).
 
 ## Privacy and safety
 

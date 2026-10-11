@@ -20,7 +20,17 @@ final class UIContractTests: XCTestCase {
         for key in [
             "Scan Startup Disk", "Lucid Insight", "Add to Review Queue",
             "Move to Trash", "Scan Warnings", "Quick Look", "About Lucid Disk",
-            "How to Use", "Keyboard Shortcuts", "Privacy & Safety", "Scan Again", "Show in Trash"
+            "How to Use", "Keyboard Shortcuts", "Privacy & Safety", "Scan Again", "Show in Trash",
+            "Home", "View Details", "Close details", "Rescan this folder", "Search filters",
+            "Move to Trash…", "OpenAI API", "Open Claude Desktop", "Open Codex",
+            "Scan stopped. Only items measured so far are shown.",
+            "Export & Review", "Export Results…", "Export Folder Tree…", "Review Cleanup",
+            "Copy & Open Codex", "Copy & Open Claude", "Save report…", "Hide Sidebar",
+            "Parent Folder", "Rescan Folder",
+            "This directory was already visited through another path and was not counted again.",
+            "Estimated file allocation", "Allocation estimate exceeds used space", "Used space", "Free space",
+            "File allocations are estimates. Shared APFS blocks can make their sum exceed disk capacity; this is not reclaimable space.",
+            "The measured file allocations exceed the space macOS reports as used. Shared APFS blocks and changes during scanning can contribute. This difference is not reclaimable space."
         ] {
             let entry = try XCTUnwrap(strings[key] as? [String: Any], key)
             let localizations = try XCTUnwrap(entry["localizations"] as? [String: Any], key)

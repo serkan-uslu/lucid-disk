@@ -34,7 +34,7 @@ struct BatchSelectionPanel: View {
                 .card(padding: 12)
 
                 if !riskCounts.isEmpty {
-                    HStack(spacing: 6) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 170), alignment: .leading)], alignment: .leading, spacing: 6) {
                         ForEach(DeletionRisk.allCasesByRisk, id: \.self) { risk in
                             if let count = riskCounts[risk], count > 0 {
                                 Pill(title: "\(count) \(risk.title)", systemImage: risk.systemImage, color: risk.color)

@@ -37,7 +37,7 @@ flowchart LR
     VM -->|volume roots| Space[SpaceAnalyzer<br/>diskutil · tmutil · sysctl]
     VM --> UI[ContentView<br/>sunburst · list · inspector]
     UI -->|Ask AI| Insight[LocalFileInsightService]
-    Insight -->|metadata only| Providers[Apple · Ollama · Claude · rules]
+    Insight -->|metadata only| Providers[Apple · Ollama · Claude · OpenAI · rules]
     UI -->|queue + confirm| Batch[Batch review]
     Batch -->|validateBeforeTrash| Safety[DeletionSafety]
     Safety -->|FileManager.trashItem| Trash[(macOS Trash)]
@@ -48,11 +48,23 @@ flowchart LR
 `DiskScanner` walks a directory tree with one `lstat` per entry, building a `FileNode` tree. It:
 
 - counts hard-linked files once (by device and inode),
+- visits each directory identity (device and inode) once, including the root, so directory aliases and cycles cannot inflate progress or totals,
 - stays on the root's volume and skips `/System/Volumes`, `/Volumes` and other system mount points, so firmlinked data is not counted twice,
+- excludes the root-level macOS resolution aliases `/.nofollow` and `/.resolve` (including explicitly selected descendants); their bare stub inode can differ from the root they expose when enumerated,
 - marks unreadable folders and cut-off scans as incomplete instead of hiding them,
 - checks for cancellation between entries.
 
-`ScanViewModel` (main actor) owns the published state: the tree, focus, selection (`selectedNode` plus `selectedNodes`), the review queue, warnings, saved scans and the space breakdown. Every scan gets a `scanID`; late results from a cancelled scan are ignored, and a cancelled or failed rescan keeps the previous result.
+Allocated sizes remain estimates: distinct APFS clones may share physical blocks even after inode deduplication. Progress and space breakdown distinguish this sum from disk usage and reclaimable space; totals are never clamped to capacity to hide a discrepancy. An old scan already affected by alias traversal must be replaced by a fresh scan with the corrected scanner.
+
+`ScanViewModel` (main actor) owns the published state: the tree, focus, selection (`selectedNode` plus `selectedNodes`), the review queue, warnings, saved scans and the space breakdown. Every scan gets a `scanID`; late results from a superseded scan are ignored. User-facing Stop asks the scanner to unwind directory totals and publish a partial tree, marked incomplete. A failed rescan keeps the previous result. A folder rescan replaces only that subtree in a live result; rescanning from a saved snapshot starts a fresh scan rooted at the chosen folder so stale siblings never gain Trash access.
+
+The contents browser supports word matching across names and paths, folder scope, kind, minimum allocated size, extensions and modification date. Details open explicitly below the chart and can be closed without changing selection or shrinking the file list. Home retains the current scan for returning to its results. Capacity labels distinguish total from available space; volume values refresh after scans, on activation and periodically while active.
+
+### Reports and assistant review
+
+`ScanReport` captures an immutable tree revision off the main actor. A result export includes the exact displayed matches plus ancestor context; exporting a folder tree explicitly ignores search filters and includes every scanned descendant. Text keeps a readable hierarchy, while CSV and JSON retain depth, parent paths, types, sizes, dates, accuracy and warnings. The UI preview is bounded, but files are complete. Reports identify saved or partial scans and do not imply that overlapping folder/file sizes are independently reclaimable.
+
+`AssistantReviewBrief` prepares a bounded, metadata-only cleanup prompt from these results. It treats names and paths as untrusted data, reports omitted matches, and asks for read-only checks and a prioritized cleanup plan. The handoff copies the previewed brief and launches an installed Codex or Claude Desktop; it never sends messages automatically. A complete report can be saved and attached by the user. All actual cleanup stays in the existing review/confirmation/validation flow. Every application action has a visible text label, including toolbar overflow items and folder-row actions.
 
 ### Saved scans
 
@@ -60,11 +72,11 @@ flowchart LR
 
 ### Space breakdown
 
-After a volume-root scan, `SpaceAnalyzer` compares the scanned total with what macOS reports. It reads APFS containers and volume roles from `diskutil apfs list -plist`, local snapshots from `tmutil`, swap from `sysctl vm.swapusage` and purgeable space from URL resource values. The result lists other volumes (Preboot, Recovery, VM, Update), used space a scan cannot see, and space counted twice by the scan; its parts always add up to the used space. System tools run by absolute path, with a timeout, behind the `SpaceProbe` protocol so tests use fixtures.
+After a volume-root scan, `SpaceAnalyzer` compares the scanned total with what macOS reports. It reads APFS containers and volume roles from `diskutil apfs list -plist`, local snapshots from `tmutil`, swap from `sysctl vm.swapusage` and purgeable space from URL resource values. The result lists other volumes (Preboot, Recovery, VM, Update), used space a scan cannot see, and any excess in the allocation estimate. The capacity bar uses macOS used/free capacity rather than the potentially overlapping file estimates; the raw estimates remain visible in the list. System tools run by absolute path, with a timeout, behind the `SpaceProbe` protocol so tests use fixtures.
 
 ### Lucid Insight
 
-Pressing **Ask AI** builds a prompt from the selected item's metadata (never file contents), with names and paths escaped as data. The provider chosen in Settings answers only the "probable purpose" line; risk, summary and recommendation always come from `DeletionSafety`. Providers: Apple Foundation Models, Ollama (local, cloud-hosted models hidden), the Claude API (key in Keychain, explicit consent), or rules only. Any failure falls back to the rule-based explanation, never to another provider.
+Pressing **Ask AI** builds a prompt from the selected item's metadata (never file contents), with names and paths escaped as data. The provider chosen in Settings answers only the "probable purpose" line; risk, summary and recommendation always come from `DeletionSafety`. Providers: Apple Foundation Models, Ollama (local, cloud-hosted models hidden), the Claude API, OpenAI Responses API, or rules only. Each cloud provider has its own Keychain entry and explicit consent; OpenAI requests disable response storage. Any failure falls back to the rule-based explanation, never to another provider.
 
 ### Cleanup
 
