@@ -31,6 +31,12 @@ final class UIContractTests: XCTestCase {
             "Retry Save", "Saving scan…", "Scan saved",
             "This directory was already visited through another path and was not counted again.",
             "Estimated file allocation", "Allocation estimate exceeds used space", "Used space", "Free space",
+            "%@ free now", "%@ free now of %@", "Up to %@ more reclaimable", "Current used storage",
+            "Physical free space updated %@. Reclaimable space is still included in used storage.",
+            "Reclaimable space is an estimate of what macOS may free automatically. It is still included in used storage.",
+            "Disk usage captured %@",
+            "These disk totals were measured after the scan. The sidebar and Home refresh current free space separately.",
+            "Up to %@ more may be reclaimed by macOS. This estimate is already included in used space.",
             "File allocations are estimates. Shared APFS blocks can make their sum exceed disk capacity; this is not reclaimable space.",
             "The measured file allocations exceed the space macOS reports as used. Shared APFS blocks and changes during scanning can contribute. This difference is not reclaimable space."
         ] {

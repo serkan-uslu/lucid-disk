@@ -9408,6 +9408,150 @@
           }
         }
       }
+    },
+    "%@ free now": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ free now"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şu anda %@ boş"
+          }
+        }
+      }
+    },
+    "%@ free now of %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ free now of %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şu anda %@ boş / %@"
+          }
+        }
+      }
+    },
+    "Up to %@ more reclaimable": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up to %@ more reclaimable"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ kadar ek alan geri kazanılabilir"
+          }
+        }
+      }
+    },
+    "Physical free space updated %@. Reclaimable space is still included in used storage.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Physical free space updated %@. Reclaimable space is still included in used storage."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fiziksel boş alan %@ tarihinde güncellendi. Geri kazanılabilir alan hâlâ kullanılan depolamaya dahildir."
+          }
+        }
+      }
+    },
+    "Reclaimable space is an estimate of what macOS may free automatically. It is still included in used storage.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reclaimable space is an estimate of what macOS may free automatically. It is still included in used storage."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri kazanılabilir alan, macOS’in otomatik olarak boşaltabileceği alanın tahminidir. Hâlâ kullanılan depolamaya dahildir."
+          }
+        }
+      }
+    },
+    "Disk usage captured %@": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk usage captured %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk kullanımı %@ tarihinde ölçüldü"
+          }
+        }
+      }
+    },
+    "These disk totals were measured after the scan. The sidebar and Home refresh current free space separately.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These disk totals were measured after the scan. The sidebar and Home refresh current free space separately."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu disk toplamları taramadan sonra ölçüldü. Kenar çubuğu ve Ana Sayfa, güncel boş alanı ayrı olarak yeniler."
+          }
+        }
+      }
+    },
+    "Up to %@ more may be reclaimed by macOS. This estimate is already included in used space.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Up to %@ more may be reclaimed by macOS. This estimate is already included in used space."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS tarafından %@ kadar ek alan geri kazanılabilir. Bu tahmin, kullanılan alana zaten dahildir."
+          }
+        }
+      }
+    },
+    "Current used storage": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Current used storage"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Güncel kullanılan depolama"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

@@ -191,6 +191,44 @@ final class SpaceBreakdownTests: XCTestCase {
             rootPath: "/Volumes/USB", scannedBytes: 850_000, unreadableFolderCount: 0, probe: probe))
         XCTAssertEqual(breakdown.usedBytes, 900_000)
         XCTAssertEqual(breakdown.items.first { $0.kind == .notVisible }?.bytes, 50_000)
+        XCTAssertEqual(breakdown.purgeableBytes, 30_000)
+    }
+
+    func testScreenshotCapacitySeparatesPhysicalFreeAndAdditionalReclaimable() throws {
+        var probe = FixtureProbe()
+        probe.capacity = VolumeCapacity(name: "Fixture", total: 994_660_000_000, available: 20_000_000_000,
+                                        availableForImportantUsage: 27_020_000_000)
+        probe.containers = [APFSContainerInfo(reference: "disk3", capacityCeiling: 994_660_000_000,
+                                             capacityFree: 22_110_000_000, volumes: [])]
+        let breakdown = try analyze(probe, scanned: 925_790_000_000)
+        XCTAssertEqual(breakdown.freeBytes, 22_110_000_000)
+        XCTAssertEqual(breakdown.outsideScanBytes, 46_760_000_000)
+        XCTAssertEqual(breakdown.purgeableBytes, 4_910_000_000,
+                       "Reclaimable must use the chosen physical free sample, not the separate Foundation free sample")
+        XCTAssertEqual(breakdown.usedBytes + breakdown.freeBytes, breakdown.capacityBytes)
+    }
+
+    func testInconsistentOrMissingAvailabilityDoesNotInventReclaimableSpace() throws {
+        for available in [nil, Int64(-1), 99_999, 1_000_001] {
+            var probe = FixtureProbe()
+            probe.capacity = VolumeCapacity(name: "Fixture", total: 1_000_000, available: 100_000,
+                                            availableForImportantUsage: available)
+            let breakdown = try analyze(probe)
+            XCTAssertNil(breakdown.purgeableBytes)
+            XCTAssertEqual(breakdown.freeBytes, 100_000)
+            XCTAssertEqual(breakdown.usedBytes, 900_000)
+        }
+    }
+
+    func testInvalidPhysicalCapacityIsUnavailableForAPFSAndFallback() {
+        for (total, free) in [(Int64(-1), Int64(0)), (1_000, -1), (1_000, 1_001)] {
+            var probe = FixtureProbe()
+            probe.capacity = VolumeCapacity(name: "Fixture", total: total, available: free, availableForImportantUsage: nil)
+            probe.containers = [APFSContainerInfo(reference: "disk3", capacityCeiling: total, capacityFree: free, volumes: [])]
+            XCTAssertNil(SpaceAnalyzer.breakdown(rootPath: "/", scannedBytes: 0, unreadableFolderCount: 0, probe: probe))
+            probe.containers = []
+            XCTAssertNil(SpaceAnalyzer.breakdown(rootPath: "/Volumes/USB", scannedBytes: 0, unreadableFolderCount: 0, probe: probe))
+        }
     }
 
     func testParsesDiskutilPlists() throws {

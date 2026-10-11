@@ -1,15 +1,73 @@
 import Combine
 import Foundation
 
-struct ScanVolume: Identifiable, Hashable {
+struct ScanVolume: Identifiable, Hashable, Sendable {
     let url: URL
     let name: String
     let totalBytes: Int64?
-    let availableBytes: Int64?
+    let freeBytes: Int64?
+    let availableForImportantUsageBytes: Int64?
     let isInternal: Bool
     let isRemovable: Bool
+    let measuredAt: Date
+
+    init(url: URL, name: String, totalBytes: Int64?, freeBytes: Int64?,
+         availableForImportantUsageBytes: Int64?, isInternal: Bool, isRemovable: Bool,
+         measuredAt: Date = Date()) {
+        self.url = url
+        self.name = name
+        let validTotal = totalBytes.flatMap { $0 >= 0 ? $0 : nil }
+        self.totalBytes = validTotal
+        self.freeBytes = freeBytes.flatMap { free in
+            free >= 0 && (validTotal.map { free <= $0 } ?? true) ? free : nil
+        }
+        self.availableForImportantUsageBytes = availableForImportantUsageBytes
+        self.isInternal = isInternal
+        self.isRemovable = isRemovable
+        self.measuredAt = measuredAt
+    }
 
     var id: String { url.path }
+
+    var usedFraction: Double? {
+        guard let totalBytes, let freeBytes, totalBytes > 0,
+              (0...totalBytes).contains(freeBytes) else { return nil }
+        return Double(totalBytes - freeBytes) / Double(totalBytes)
+    }
+
+    var estimatedReclaimableBytes: Int64? {
+        guard let totalBytes, let freeBytes else { return nil }
+        return StorageCapacity.estimatedReclaimableBytes(total: totalBytes, free: freeBytes,
+                                                         available: availableForImportantUsageBytes)
+    }
+
+    static func readMountedVolumes() -> [ScanVolume] {
+        let keys: Set<URLResourceKey> = [
+            .volumeNameKey, .volumeTotalCapacityKey, .volumeAvailableCapacityKey,
+            .volumeAvailableCapacityForImportantUsageKey, .volumeIsInternalKey,
+            .volumeIsRemovableKey, .volumeIsBrowsableKey
+        ]
+        let urls = FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: Array(keys), options: []) ?? []
+        return urls.compactMap { mountedURL in
+            var url = URL(fileURLWithPath: mountedURL.path, isDirectory: true)
+            url.removeAllCachedResourceValues()
+            guard let values = try? url.resourceValues(forKeys: keys), values.volumeIsBrowsable != false else { return nil }
+            return ScanVolume(url: url, name: values.volumeName ?? url.lastPathComponent,
+                              totalBytes: values.volumeTotalCapacity.map(Int64.init),
+                              freeBytes: values.volumeAvailableCapacity.map(Int64.init),
+                              availableForImportantUsageBytes: values.volumeAvailableCapacityForImportantUsage,
+                              isInternal: values.volumeIsInternal ?? false,
+                              isRemovable: values.volumeIsRemovable ?? false)
+        }.sorted {
+            if $0.isInternal != $1.isInternal { return $0.isInternal }
+            return $0.name.localizedStandardCompare($1.name) == .orderedAscending
+        }
+    }
+}
+
+struct SpaceObservation: Sendable {
+    let breakdown: SpaceBreakdown
+    let measuredAt: Date
 }
 
 enum ScanSaveState: Equatable {
@@ -66,12 +124,17 @@ final class ScanViewModel: ObservableObject {
     /// The saved scan being loaded. A new scan clears it so a late load cannot replace fresh results.
     private var savedScanRequest: UUID?
     /// Where a scanned volume's used space goes, for volume-root scans only.
-    @Published private(set) var spaceBreakdown: SpaceBreakdown?
+    @Published private(set) var spaceObservation: SpaceObservation?
+    var spaceBreakdown: SpaceBreakdown? { spaceObservation?.breakdown }
     var spaceProbe: SpaceProbe = SystemSpaceProbe()
 
     /// `nil` in tests and review tools so they never write to the user's saved scans.
     let scanStore: ScanStore?
     private let savingEnabled: @Sendable () -> Bool
+    private let mountedVolumesProvider: @Sendable () async -> [ScanVolume]
+    private var mountedVolumesRequest: UUID?
+    private var mountedVolumesRefreshPending = false
+    private var usesSampleVolumes = false
     private let saveOperation: @Sendable (ScanStore, ScanResult, Date, Int) async throws -> Void
     private var savedScanObservers: Set<AnyCancellable> = []
     private struct SaveContext {
@@ -91,6 +154,9 @@ final class ScanViewModel: ObservableObject {
     lazy var extensionContext = LucidDiskContext(viewModel: self)
 
     init(scanStore: ScanStore? = nil,
+         mountedVolumesProvider: @escaping @Sendable () async -> [ScanVolume] = {
+             await Task.detached(priority: .utility) { ScanVolume.readMountedVolumes() }.value
+         },
          savingEnabled: @escaping @Sendable () -> Bool = { ScanSaving.isEnabled },
          saveOperation: @escaping @Sendable (ScanStore, ScanResult, Date, Int) async throws -> Void = { store, result, date, generation in
              _ = try await Task.detached(priority: .utility) {
@@ -98,6 +164,7 @@ final class ScanViewModel: ObservableObject {
              }.value
          }) {
         self.scanStore = scanStore
+        self.mountedVolumesProvider = mountedVolumesProvider
         self.savingEnabled = savingEnabled
         self.saveOperation = saveOperation
         refreshMountedVolumes()
@@ -208,46 +275,39 @@ final class ScanViewModel: ObservableObject {
     }
 
     func refreshMountedVolumes() {
-        let keys: Set<URLResourceKey> = [
-            .volumeNameKey,
-            .volumeTotalCapacityKey,
-            .volumeAvailableCapacityForImportantUsageKey,
-            .volumeIsInternalKey,
-            .volumeIsRemovableKey,
-            .volumeIsBrowsableKey
-        ]
-        let urls = FileManager.default.mountedVolumeURLs(
-            includingResourceValuesForKeys: Array(keys),
-            options: []
-        ) ?? []
-
-        mountedVolumes = urls.compactMap { mountedURL in
-            var url = URL(fileURLWithPath: mountedURL.path, isDirectory: true)
-            url.removeAllCachedResourceValues()
-            guard let values = try? url.resourceValues(forKeys: keys),
-                  values.volumeIsBrowsable != false else { return nil }
-            return ScanVolume(
-                url: url,
-                name: values.volumeName ?? url.lastPathComponent,
-                totalBytes: values.volumeTotalCapacity.map(Int64.init),
-                availableBytes: values.volumeAvailableCapacityForImportantUsage,
-                isInternal: values.volumeIsInternal ?? false,
-                isRemovable: values.volumeIsRemovable ?? false
-            )
-        }.sorted {
-            if $0.isInternal != $1.isInternal { return $0.isInternal }
-            return $0.name.localizedStandardCompare($1.name) == .orderedAscending
+        guard !usesSampleVolumes else { return }
+        // A slow remote volume must still get to publish. Collapse timer/mount
+        // events into one follow-up instead of superseding every unfinished read.
+        guard mountedVolumesRequest == nil else {
+            mountedVolumesRefreshPending = true
+            return
+        }
+        let request = UUID()
+        mountedVolumesRequest = request
+        let provider = mountedVolumesProvider
+        Task { [weak self] in
+            let volumes = await provider()
+            guard let self, self.mountedVolumesRequest == request else { return }
+            self.mountedVolumes = volumes
+            self.mountedVolumesRequest = nil
+            if self.mountedVolumesRefreshPending {
+                self.mountedVolumesRefreshPending = false
+                self.refreshMountedVolumes()
+            }
         }
     }
 
     /// Review tooling shows sample volumes instead of the reviewer's own disks.
     func showSampleVolumes(_ volumes: [ScanVolume]) {
+        usesSampleVolumes = true
+        mountedVolumesRequest = nil
+        mountedVolumesRefreshPending = false
         mountedVolumes = volumes
     }
 
     /// Review tooling shows a fixed space breakdown instead of this Mac's real numbers.
     func showSampleSpaceBreakdown(_ breakdown: SpaceBreakdown?) {
-        spaceBreakdown = breakdown
+        spaceObservation = breakdown.map { SpaceObservation(breakdown: $0, measuredAt: Date()) }
     }
 
     func isCurrentScan(_ id: UUID) -> Bool {
@@ -432,7 +492,7 @@ extension ScanViewModel {
         lastScanResult = nil
         scanWarnings = []
         snapshotDate = nil
-        spaceBreakdown = nil
+        spaceObservation = nil
         if let rootPath { startScan(path: rootPath) }
     }
 
@@ -543,7 +603,7 @@ extension ScanViewModel {
         resetSaveState()
         let result = savedScan.scanResult
         // Current disk numbers would not match an old scan.
-        spaceBreakdown = nil
+        spaceObservation = nil
         rootNode = result.root
         treeRevision = UUID()
         focusedNode = result.root
@@ -562,7 +622,7 @@ extension ScanViewModel {
     }
 
     private func explainSpace(for result: ScanResult) {
-        spaceBreakdown = nil
+        spaceObservation = nil
         let probe = spaceProbe
         let rootPath = result.root.path
         let scanned = result.root.allocatedSizeBytes
@@ -570,12 +630,13 @@ extension ScanViewModel {
         let rootID = result.root.id
         let revision = treeRevision
         Task {
-            let breakdown = await Task.detached(priority: .utility) {
+            let observation = await Task.detached(priority: .utility) {
                 SpaceAnalyzer.breakdown(rootPath: rootPath, scannedBytes: scanned,
                                         unreadableFolderCount: unreadable, probe: probe)
+                    .map { SpaceObservation(breakdown: $0, measuredAt: Date()) }
             }.value
             guard rootNode?.id == rootID, treeRevision == revision, !isShowingSavedScan else { return }
-            spaceBreakdown = breakdown
+            spaceObservation = observation
         }
     }
 

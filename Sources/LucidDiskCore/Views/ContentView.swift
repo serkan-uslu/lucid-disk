@@ -160,7 +160,9 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingSpaceBreakdown) {
             if let breakdown = viewModel.spaceBreakdown {
-                SpaceBreakdownView(breakdown: breakdown) { showingSpaceBreakdown = false }
+                SpaceBreakdownView(breakdown: breakdown, measuredAt: viewModel.spaceObservation?.measuredAt) {
+                    showingSpaceBreakdown = false
+                }
             }
         }
         .sheet(item: $quickLookItem) { item in
@@ -717,13 +719,6 @@ struct ContentView: View {
 
 }
 
-private extension ScanVolume {
-    var usedFraction: Double? {
-        guard let totalBytes, let availableBytes, totalBytes > 0 else { return nil }
-        return min(1, max(0, Double(totalBytes - availableBytes) / Double(totalBytes)))
-    }
-}
-
 private struct VolumeRow: View {
     let volume: ScanVolume
     let isCurrent: Bool
@@ -743,11 +738,17 @@ private struct VolumeRow: View {
                 }
                 if let usedFraction = volume.usedFraction {
                     CapacityBar(fraction: usedFraction, height: 4)
-                        .accessibilityLabel("Used storage")
+                        .accessibilityLabel("Current used storage")
                 }
-                if let available = volume.availableBytes {
-                    Text("\(ByteCountFormatter.string(fromByteCount: available, countStyle: .file)) available")
+                if let free = volume.freeBytes {
+                    Text("\(ByteCountFormatter.string(fromByteCount: free, countStyle: .file)) free now")
                         .font(.caption2).foregroundStyle(.secondary).monospacedDigit()
+                        .help(Text("Physical free space updated \(volume.measuredAt.formatted(date: .abbreviated, time: .shortened)). Reclaimable space is still included in used storage."))
+                }
+                if let reclaimable = volume.estimatedReclaimableBytes, reclaimable > 0 {
+                    Text("Up to \(ByteCountFormatter.string(fromByteCount: reclaimable, countStyle: .file)) more reclaimable")
+                        .font(.caption2).foregroundStyle(.secondary).monospacedDigit()
+                        .help("Reclaimable space is an estimate of what macOS may free automatically. It is still included in used storage.")
                 }
                 if let total = volume.totalBytes {
                     Text("\(ByteCountFormatter.string(fromByteCount: total, countStyle: .file)) total")

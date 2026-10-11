@@ -213,7 +213,7 @@ final class ReviewDelegate: NSObject, NSApplicationDelegate {
             let sheet = NSWindow(contentRect: NSRect(x: 200, y: 160, width: 640, height: 600),
                                  styleMask: [.titled, .closable], backing: .buffered, defer: false)
             sheet.isReleasedWhenClosed = false
-            sheet.contentView = NSHostingView(rootView: SpaceBreakdownView(breakdown: breakdown) {}
+            sheet.contentView = NSHostingView(rootView: SpaceBreakdownView(breakdown: breakdown, measuredAt: model.spaceObservation?.measuredAt ?? Date()) {}
                 .preferredColorScheme(.dark).tint(Theme.accent))
             sheet.makeKeyAndOrderFront(nil)
             try await pause(); try await pause()
@@ -409,12 +409,12 @@ final class ReviewDelegate: NSObject, NSApplicationDelegate {
 
     /// Clean, reproducible screenshots for the website and store listings: sample disks only.
     func marketingShots() {
-        let root = fixture(path: "/Volumes/Studio SSD/Creative Studio")
+        let root = fixture(path: "/Volumes/Studio SSD")
         let sample = [
             ScanVolume(url: URL(fileURLWithPath: "/"), name: "Macintosh HD", totalBytes: 994_000_000_000,
-                       availableBytes: 312_000_000_000, isInternal: true, isRemovable: false),
+                       freeBytes: 312_000_000_000, availableForImportantUsageBytes: 326_200_000_000, isInternal: true, isRemovable: false),
             ScanVolume(url: URL(fileURLWithPath: "/Volumes/Studio SSD"), name: "Studio SSD", totalBytes: 2_000_000_000_000,
-                       availableBytes: 820_000_000_000, isInternal: false, isRemovable: true)
+                       freeBytes: 820_000_000_000, availableForImportantUsageBytes: 834_200_000_000, isInternal: false, isRemovable: true)
         ]
         model.showSampleVolumes(sample)
         model.rootNode = root
@@ -453,7 +453,7 @@ final class ReviewDelegate: NSObject, NSApplicationDelegate {
                     let sheet = NSWindow(contentRect: NSRect(x: 200, y: 160, width: 640, height: 600),
                                          styleMask: [.titled, .closable], backing: .buffered, defer: false)
                     sheet.isReleasedWhenClosed = false
-                    sheet.contentView = NSHostingView(rootView: SpaceBreakdownView(breakdown: breakdown) {}
+                    sheet.contentView = NSHostingView(rootView: SpaceBreakdownView(breakdown: breakdown, measuredAt: model.spaceObservation?.measuredAt ?? Date()) {}
                         .preferredColorScheme(.dark).tint(Theme.accent))
                     sheet.makeKeyAndOrderFront(nil)
                     try await pause(); try await pause()
@@ -495,7 +495,7 @@ final class ReviewDelegate: NSObject, NSApplicationDelegate {
     }
 
     func sampleBreakdown(scanned: Int64) -> SpaceBreakdown {
-        let used: Int64 = 682_000_000_000
+        let used: Int64 = 1_180_000_000_000
         let volumes: [(String, String, Int64, String)] = [
             ("volume-vm", String(localized: "Virtual memory"), 6_400_000_000,
              String(localized: "Swap files and the sleep image. macOS manages this volume and shrinks it as memory pressure falls.")),
@@ -504,7 +504,7 @@ final class ReviewDelegate: NSObject, NSApplicationDelegate {
             ("volume-recovery", String(localized: "macOS Recovery"), 2_600_000_000,
              String(localized: "The recovery system used to repair or reinstall macOS. Managed by macOS."))
         ]
-        let scannedBytes: Int64 = 598_000_000_000
+        let scannedBytes = scanned
         var items = [SpaceBreakdown.Item(id: "scanned", kind: .scanned, title: String(localized: "Scanned by Lucid Disk"),
                                          bytes: scannedBytes, detail: String(localized: "Everything the scan could open and measure."))]
         items += volumes.map { SpaceBreakdown.Item(id: $0.0, kind: .otherVolume, title: $0.1, bytes: $0.2, detail: $0.3) }
@@ -512,13 +512,13 @@ final class ReviewDelegate: NSObject, NSApplicationDelegate {
         items.append(SpaceBreakdown.Item(id: "not-visible", kind: .notVisible, title: String(localized: "Used, but not visible to the scan"),
                                          bytes: remainder,
                                          detail: String(localized: "System files kept outside the folders a scan can reach: the Spotlight index, document versions, file-system event logs and APFS metadata.")))
-        return SpaceBreakdown(volumeName: "Macintosh HD", capacityBytes: 994_000_000_000, usedBytes: used,
-                              freeBytes: 994_000_000_000 - used, scannedBytes: scannedBytes, items: items,
+        return SpaceBreakdown(volumeName: "Studio SSD", capacityBytes: 2_000_000_000_000, usedBytes: used,
+                              freeBytes: 2_000_000_000_000 - used, scannedBytes: scannedBytes, items: items,
                               purgeableBytes: 14_200_000_000, localSnapshotCount: 2, unreadableFolderCount: 0)
     }
 
     func fixture(path: String = "/Users/demo/Creative Studio") -> FileNode {
-        let root = FileNode(name: "Creative Studio", path: path, isDirectory: true)
+        let root = FileNode(name: path == "/Volumes/Studio SSD" ? "Studio SSD" : "Creative Studio", path: path, isDirectory: true)
         for (index, name) in ["Video projects", "Design library", "Downloads", "Development", "Photography", "Documents"].enumerated() {
             let folder = FileNode(name: name, path: root.path + "/" + name, isDirectory: true, size: Int64(6 - index) * 1_500_000_000)
             folder.parent = root

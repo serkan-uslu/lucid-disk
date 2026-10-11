@@ -63,6 +63,16 @@ struct VolumeCapacity: Equatable, Sendable {
     let availableForImportantUsage: Int64?
 }
 
+enum StorageCapacity {
+    /// Capacity samples can disagree or be unavailable. Do not turn inconsistent
+    /// readings into a confident reclaimable-space estimate.
+    static func estimatedReclaimableBytes(total: Int64, free: Int64, available: Int64?) -> Int64? {
+        guard total >= 0, (0...total).contains(free), let available,
+              (free...total).contains(available) else { return nil }
+        return available - free
+    }
+}
+
 struct DiskInfo: Equatable, Sendable {
     let containerReference: String?
     let deviceIdentifier: String?
@@ -200,7 +210,6 @@ enum SpaceAnalyzer {
     ) -> SpaceBreakdown? {
         guard probe.isMountPoint(rootPath), let capacity = probe.volumeCapacity(at: rootPath) else { return nil }
 
-        let purgeable = capacity.availableForImportantUsage.map { max(0, $0 - capacity.available) }
         let snapshots = probe.localSnapshotCount(forMountPoint: rootPath)
         var items: [SpaceBreakdown.Item] = []
         var hasUnclassifiedVolumes = false
@@ -211,13 +220,11 @@ enum SpaceAnalyzer {
         }
 
         let total: Int64
-        let used: Int64
         let free: Int64
         var otherVolumesBytes: Int64 = 0
         if let container {
             total = container.capacityCeiling
             free = container.capacityFree
-            used = max(0, total - free)
             let device = info?.deviceIdentifier ?? ""
             let isStartup = rootPath == "/"
             let sourceVolume = container.volumes.first {
@@ -247,8 +254,9 @@ enum SpaceAnalyzer {
         } else {
             total = capacity.total
             free = capacity.available
-            used = max(0, total - free)
         }
+        guard total >= 0, (0...total).contains(free) else { return nil }
+        let used = total - free
 
         var scannedDetail = String(localized: "Everything the scan could open and measure.")
         if hasUnclassifiedVolumes {
@@ -284,7 +292,8 @@ enum SpaceAnalyzer {
             freeBytes: free,
             scannedBytes: scannedBytes,
             items: items,
-            purgeableBytes: purgeable,
+            purgeableBytes: StorageCapacity.estimatedReclaimableBytes(
+                total: total, free: free, available: capacity.availableForImportantUsage),
             localSnapshotCount: snapshots,
             unreadableFolderCount: unreadableFolderCount
         )

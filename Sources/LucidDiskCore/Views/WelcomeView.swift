@@ -141,10 +141,25 @@ struct WelcomeView: View {
                                         }
                                         Spacer(minLength: 0)
                                     }
-                                    if let total = volume.totalBytes, let available = volume.availableBytes, total > 0 {
-                                        CapacityBar(fraction: Double(max(0, total - available)) / Double(total), height: 6)
-                                        Text("\(ByteCountFormatter.string(fromByteCount: available, countStyle: .file)) available of \(ByteCountFormatter.string(fromByteCount: total, countStyle: .file))")
-                                            .font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                                    if let fraction = volume.usedFraction {
+                                        CapacityBar(fraction: fraction, height: 6)
+                                            .accessibilityLabel("Current used storage")
+                                    }
+                                    if let free = volume.freeBytes {
+                                        Group {
+                                            if let total = volume.totalBytes {
+                                                Text("\(ByteCountFormatter.string(fromByteCount: free, countStyle: .file)) free now of \(ByteCountFormatter.string(fromByteCount: total, countStyle: .file))")
+                                            } else {
+                                                Text("\(ByteCountFormatter.string(fromByteCount: free, countStyle: .file)) free now")
+                                            }
+                                        }
+                                        .font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                                        .help(Text("Physical free space updated \(volume.measuredAt.formatted(date: .abbreviated, time: .shortened)). Reclaimable space is still included in used storage."))
+                                    }
+                                    if let reclaimable = volume.estimatedReclaimableBytes, reclaimable > 0 {
+                                        Text("Up to \(ByteCountFormatter.string(fromByteCount: reclaimable, countStyle: .file)) more reclaimable")
+                                            .font(.caption).foregroundStyle(.secondary)
+                                            .help("Reclaimable space is an estimate of what macOS may free automatically. It is still included in used storage.")
                                     }
                                     Button { onScan(volume.url.path) } label: {
                                         HStack { Text("Explore Disk"); Spacer(); Image(systemName: "arrow.right") }
