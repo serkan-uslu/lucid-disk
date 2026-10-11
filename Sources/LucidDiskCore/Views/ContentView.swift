@@ -586,7 +586,7 @@ struct ContentView: View {
     private var statusBar: some View {
         VStack(spacing: 0) {
             Divider()
-            if viewModel.saveState == .failed {
+            if viewModel.saveState == .failed, !viewModel.isScanning {
                 HStack(spacing: 10) {
                     Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
                     VStack(alignment: .leading, spacing: 2) {

@@ -76,6 +76,52 @@ final class ScanSavingTests: XCTestCase {
     }
 
     @MainActor
+    func testFailedOrCancelledReplacementPreservesUnsavedResultAndRetry() async throws {
+        for cancelReplacement in [false, true] {
+            let gate = ControlledSave()
+            let vm = controlledModel(gate)
+            vm.startScan(path: folder.path)
+            try await waitUntil { await gate.pendingCount == 1 }
+            let result = try XCTUnwrap(vm.lastScanResult)
+            await gate.finish(result.id, fail: true)
+            try await waitUntil { vm.saveState == .failed }
+            let revision = vm.treeRevision
+
+            vm.startScan(path: folder.appendingPathComponent("missing").path)
+            if cancelReplacement { vm.cancelScan() }
+            try await waitUntil { !vm.isScanning }
+            XCTAssertEqual(vm.lastScanResult?.id, result.id)
+            XCTAssertEqual(vm.treeRevision, revision)
+            XCTAssertEqual(vm.saveState, .failed)
+            vm.retrySave()
+            try await waitUntil { await gate.pendingCount == 1 }
+            await gate.finish(result.id)
+            try await waitUntil { vm.saveState == .saved }
+            XCTAssertEqual(vm.lastScanResult?.id, result.id)
+            XCTAssertEqual(vm.treeRevision, revision, "Retry must not start a fresh scan")
+            XCTAssertEqual(vm.savedScans.map(\.id), [result.id])
+        }
+    }
+
+    @MainActor
+    func testPendingSaveStillReportsFailureWhenReplacementScanFails() async throws {
+        let gate = ControlledSave()
+        let vm = controlledModel(gate)
+        vm.startScan(path: folder.path)
+        try await waitUntil { await gate.pendingCount == 1 }
+        let result = try XCTUnwrap(vm.lastScanResult)
+        vm.startScan(path: folder.appendingPathComponent("missing").path)
+        try await waitUntil { !vm.isScanning }
+        await gate.finish(result.id, fail: true)
+        try await waitUntil { vm.saveState == .failed }
+        XCTAssertEqual(vm.lastScanResult?.id, result.id)
+        vm.retrySave()
+        try await waitUntil { await gate.pendingCount == 1 }
+        await gate.finish(result.id)
+        try await waitUntil { vm.saveState == .saved }
+    }
+
+    @MainActor
     func testLatePreviousSuccessAndFailureCannotReplaceNewScanState() async throws {
         for olderFails in [false, true] {
             let gate = ControlledSave()
@@ -86,7 +132,7 @@ final class ScanSavingTests: XCTestCase {
             XCTAssertEqual(vm.saveState, .saving)
 
             vm.startScan(path: folder.path)
-            XCTAssertEqual(vm.saveState, .idle)
+            XCTAssertEqual(vm.saveState, .saving, "Persistence still belongs to the retained result until replacement succeeds")
             try await waitUntil { await gate.pendingCount == 2 }
             let currentID = try XCTUnwrap(vm.lastScanResult?.id)
             XCTAssertNotEqual(oldID, currentID)

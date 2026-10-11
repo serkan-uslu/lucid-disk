@@ -148,7 +148,8 @@ final class ScanViewModel: ObservableObject {
     private func beginScan(path: String, replacing subtree: FileNode?) {
         guard !isMovingToTrash else { return }
         cancelScan()
-        resetSaveState()
+        // Keep persistence attached to the retained result until a replacement
+        // actually arrives. A failed or cancelled scan must not lose Retry Save.
         reconciliationTask?.cancel()
         reconciliationTask = nil
         subtreeBeingRescanned = subtree
