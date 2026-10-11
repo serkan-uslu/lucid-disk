@@ -473,6 +473,7 @@ struct ContentView: View {
                         focusedNode: focused,
                         searchRoot: viewModel.rootNode ?? focused,
                         selectedIDs: Set(viewModel.selectedNodes.map(\.id)),
+                        primaryID: viewModel.selectedNode?.id,
                         onSelect: { nodes, primary in viewModel.select(nodes, primary: primary) },
                         onFocus: { node in viewModel.focus(on: node) },
                         onPreview: { node in quickLookItem = QuickLookItem(url: URL(fileURLWithPath: node.path)) },

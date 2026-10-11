@@ -39,6 +39,7 @@ struct PieContentsPanel: View {
     let focusedNode: FileNode
     let searchRoot: FileNode
     let selectedIDs: Set<UUID>
+    let primaryID: UUID?
     let onSelect: ([FileNode], FileNode?) -> Void
     let onFocus: (FileNode) -> Void
     let onPreview: (FileNode) -> Void
@@ -144,7 +145,7 @@ struct PieContentsPanel: View {
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                FileBrowserTable(contents: contents, selectedIDs: selectedIDs,
+                FileBrowserTable(contents: contents, selectedIDs: selectedIDs, primaryID: primaryID,
                                  total: focusedNode.size, showPath: isSearching,
                                  onSelect: onSelect, onOpen: { node in
                                      searchText = ""
@@ -242,9 +243,10 @@ struct PieContentsPanel: View {
 }
 
 /// Native row reuse and selection avoid rebuilding a large SwiftUI List on every click.
-private struct FileBrowserTable: NSViewRepresentable {
+struct FileBrowserTable: NSViewRepresentable {
     let contents: BrowserContents
     let selectedIDs: Set<UUID>
+    let primaryID: UUID?
     let total: Int64
     let showPath: Bool
     let onSelect: ([FileNode], FileNode?) -> Void
@@ -254,6 +256,10 @@ private struct FileBrowserTable: NSViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator(parent: self) }
 
     func makeNSView(context: Context) -> NSScrollView {
+        makeScrollView(coordinator: context.coordinator)
+    }
+
+    func makeScrollView(coordinator: Coordinator) -> NSScrollView {
         let scroll = NSScrollView()
         scroll.hasVerticalScroller = true
         scroll.autohidesScrollers = true
@@ -275,14 +281,14 @@ private struct FileBrowserTable: NSViewRepresentable {
         column.resizingMask = .autoresizingMask
         table.addTableColumn(column)
         table.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
-        table.delegate = context.coordinator
-        table.dataSource = context.coordinator
-        table.target = context.coordinator
-        table.doubleAction = #selector(Coordinator.openSelected(_:))
-        table.openSelection = { [weak coordinator = context.coordinator, weak table] in
+        table.delegate = coordinator
+        table.dataSource = coordinator
+        table.target = coordinator
+        table.doubleAction = #selector(Coordinator.openDoubleClicked(_:))
+        table.openSelection = { [weak coordinator, weak table] in
             if let table { coordinator?.openSelected(table) }
         }
-        table.previewSelection = { [weak coordinator = context.coordinator, weak table] in
+        table.previewSelection = { [weak coordinator, weak table] in
             if let table { coordinator?.previewSelected(table) }
         }
         scroll.documentView = table
@@ -290,11 +296,15 @@ private struct FileBrowserTable: NSViewRepresentable {
     }
 
     func updateNSView(_ scroll: NSScrollView, context: Context) {
+        updateTable(in: scroll, coordinator: context.coordinator)
+    }
+
+    func updateTable(in scroll: NSScrollView, coordinator: Coordinator) {
         guard let table = scroll.documentView as? NSTableView else { return }
-        let coordinator = context.coordinator
         let changed = coordinator.revision != contents.revision
         coordinator.parent = self
         coordinator.updating = true
+        defer { coordinator.updating = false }
         if changed {
             coordinator.revision = contents.revision
             coordinator.rowByID = Dictionary(uniqueKeysWithValues: contents.nodes.enumerated().map { ($0.element.id, $0.offset) })
@@ -305,13 +315,24 @@ private struct FileBrowserTable: NSViewRepresentable {
             table.selectRowIndexes(rows, byExtendingSelection: false)
             if rows.count == 1, let row = rows.first { table.scrollRowToVisible(row) }
         }
-        coordinator.updating = false
+        // A programmatic selection or reordered contents can give AppKit a different
+        // lead row from the inspector. Resolve identity again and keep native keyboard
+        // navigation anchored on the same item without changing the selected set.
+        if let primaryID, let row = coordinator.rowByID[primaryID], rows.contains(row) {
+            coordinator.primaryID = primaryID
+            if table.selectedRow != row {
+                table.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: true)
+            }
+        } else {
+            coordinator.primaryID = nil
+        }
     }
 
     final class Coordinator: NSObject, NSTableViewDataSource, NSTableViewDelegate {
         var parent: FileBrowserTable
         var revision: UUID?
         var rowByID: [UUID: Int] = [:]
+        var primaryID: UUID?
         var updating = false
         init(parent: FileBrowserTable) { self.parent = parent }
 
@@ -336,19 +357,32 @@ private struct FileBrowserTable: NSViewRepresentable {
         func tableViewSelectionDidChange(_ notification: Notification) {
             guard !updating, let table = notification.object as? NSTableView else { return }
             let nodes = table.selectedRowIndexes.compactMap { node(at: $0) }
-            // The clicked row is the natural primary item; keyboard moves use the last selected row.
-            let primaryRow = table.selectedRowIndexes.contains(table.clickedRow) ? table.clickedRow : table.selectedRow
-            parent.onSelect(nodes, node(at: primaryRow))
+            // AppKit maintains the native lead for mouse and Shift/arrow selection.
+            // Save its identity before the SwiftUI selection update can arrive.
+            let primary = node(at: table.selectedRow)
+            primaryID = primary?.id
+            parent.onSelect(nodes, primary)
         }
 
-        @objc func openSelected(_ table: NSTableView) {
-            guard let node = node(at: table.selectedRow), node.isDirectory || node.isAggregate else { return }
+        @objc func openDoubleClicked(_ table: NSTableView) {
+            // Double-clicking an already-selected row need not change the native lead.
+            guard let node = node(at: table.clickedRow), node.isDirectory || node.isAggregate else { return }
+            parent.onOpen(node)
+        }
+
+        func openSelected(_ table: NSTableView) {
+            guard let node = primaryNode(in: table), node.isDirectory || node.isAggregate else { return }
             parent.onOpen(node)
         }
 
         func previewSelected(_ table: NSTableView) {
-            guard let node = node(at: table.selectedRow), !node.isAggregate else { return }
+            guard let node = primaryNode(in: table), !node.isAggregate else { return }
             parent.onPreview(node)
+        }
+
+        private func primaryNode(in table: NSTableView) -> FileNode? {
+            guard let primaryID, let row = rowByID[primaryID], table.selectedRowIndexes.contains(row) else { return nil }
+            return node(at: row)
         }
 
         private func node(at row: Int) -> FileNode? {
