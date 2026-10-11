@@ -10063,6 +10063,230 @@
           }
         }
       }
+    },
+    "Preparing results…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing results…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sonuçlar hazırlanıyor…"
+          }
+        }
+      }
+    },
+    "Elapsed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elapsed"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geçen süre"
+          }
+        }
+      }
+    },
+    "Keeping measured results": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keeping measured results"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ölçülen sonuçlar korunuyor"
+          }
+        }
+      }
+    },
+    "Currently scanning": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Currently scanning"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Şu anda taranıyor"
+          }
+        }
+      }
+    },
+    "Preparing the scan…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preparing the scan…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarama hazırlanıyor…"
+          }
+        }
+      }
+    },
+    "While you wait": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "While you wait"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beklerken keşfedin"
+          }
+        }
+      }
+    },
+    "Disk map": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk map"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk haritası"
+          }
+        }
+      }
+    },
+    "Search & export": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search & export"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arama ve dışa aktarma"
+          }
+        }
+      }
+    },
+    "Ask an assistant": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask an assistant"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asistana sorun"
+          }
+        }
+      }
+    },
+    "After scanning, open a folder in the disk map to see where its space goes. Parent Folder takes you back up.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "After scanning, open a folder in the disk map to see where its space goes. Parent Folder takes you back up."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarama bitince disk haritasındaki bir klasörü açarak alanın nasıl kullanıldığını görün. Üst Klasör ile bir üst seviyeye dönün."
+          }
+        }
+      }
+    },
+    "Use search and size filters to find large items. Export the results as a folder tree for a quick overview.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use search and size filters to find large items. Export the results as a folder tree for a quick overview."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Büyük öğeleri bulmak için arama ve boyut filtrelerini kullanın. Hızlıca incelemek için sonuçları klasör ağacı olarak dışa aktarın."
+          }
+        }
+      }
+    },
+    "Select an item and choose Copy Metadata to discuss it with Codex or Claude. With MCP connected, your assistant can check the current item.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select an item and choose Copy Metadata to discuss it with Codex or Claude. With MCP connected, your assistant can check the current item."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir öğe seçip Meta Veriyi Kopyala ile Codex veya Claude’a aktarın. MCP bağlıysa asistanınız öğenin güncel durumunu inceleyebilir."
+          }
+        }
+      }
+    },
+    "Stopping keeps the items measured so far.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stopping keeps the items measured so far."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarama durdurulduğunda ölçülen öğeler korunur."
+          }
+        }
+      }
+    },
+    "Go Up": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go Up"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Üste Çık"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

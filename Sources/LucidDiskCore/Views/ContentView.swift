@@ -121,10 +121,11 @@ struct ContentView: View {
                     Button(role: .destructive) {
                         viewModel.stopScan()
                     } label: {
-                        Label("Stop Scan", systemImage: "stop.circle")
+                        Label(viewModel.isStoppingScan ? String(localized: "Preparing results…") : String(localized: "Stop Scan"), systemImage: "stop.circle")
                     }
                     .labelStyle(.titleAndIcon)
                     .accessibilityIdentifier("stop-scan")
+                    .disabled(viewModel.isStoppingScan)
                     .help("Stop scanning and show the items already scanned")
                 }
             }
@@ -399,7 +400,9 @@ struct ContentView: View {
     private var detail: some View {
         if viewModel.isScanning {
             ScanProgressView(count: viewModel.scannedCount, bytes: viewModel.scannedBytes,
-                             path: viewModel.currentPath, onCancel: viewModel.stopScan)
+                             path: viewModel.currentPath, targetPath: viewModel.scanTargetPath,
+                             startedAt: viewModel.scanStartedAt, isStopping: viewModel.isStoppingScan,
+                             onCancel: viewModel.stopScan)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(nsColor: .windowBackgroundColor))
         } else if let focused = viewModel.focusedNode, !showingHome {

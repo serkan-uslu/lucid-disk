@@ -10,6 +10,17 @@ struct PresentationReview {
         let locale = Locale(identifier: UserDefaults.standard.stringArray(forKey: "AppleLanguages")?.first ?? "en")
         let output = URL(fileURLWithPath: CommandLine.arguments[1], isDirectory: true)
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        for (name, count, bytes, path, stopping, size) in [
+            ("loading-initial", 0, Int64(0), "", false, NSSize(width: 730, height: 580)),
+            ("loading-millions", 9_999_999, Int64(1_500_000_000_000), "/Users/demo/Library/Developer/CoreSimulator/Devices/Long-device-identifier/data/Containers/Data/Application/Uzun Türkçe klasör adı/Archive metadata.plist", false, NSSize(width: 730, height: 580)),
+            ("loading-stopping", 9_999_999, Int64(1_500_000_000_000), "/Users/demo/Library/Caches/Last measured item", true, NSSize(width: 730, height: 580)),
+            ("loading-wide", 4_482_321, Int64(464_700_000_000), "/Users/demo/Library/Developer/CoreSimulator/Devices/Current folder", false, NSSize(width: 1100, height: 780))
+        ] {
+            try render(ScanProgressView(count: count, bytes: bytes, path: path, targetPath: "/",
+                       startedAt: Date().addingTimeInterval(-193), isStopping: stopping, onCancel: {}, animatesActivity: false)
+                       .environment(\.locale, locale),
+                       size: size, to: output.appendingPathComponent(name + ".png"))
+        }
         let breakdown = SpaceBreakdown(volumeName: "Macintosh HD", capacityBytes: 994_660_000_000,
             usedBytes: 972_550_000_000, freeBytes: 22_110_000_000, scannedBytes: 925_790_000_000,
             items: [.init(id: "scan", kind: .scanned, title: String(localized: "Estimated file allocation"), bytes: 925_790_000_000,

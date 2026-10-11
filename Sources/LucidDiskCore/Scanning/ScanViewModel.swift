@@ -98,6 +98,10 @@ final class ScanViewModel: ObservableObject {
     /// Every selected item, including `selectedNode`.
     @Published private(set) var selectedNodes: [FileNode] = []
     @Published var isScanning = false
+    /// Stable for one scan, even while progress arrives or Stop prepares its partial result.
+    @Published private(set) var scanStartedAt: Date?
+    @Published private(set) var scanTargetPath = ""
+    @Published private(set) var isStoppingScan = false
     @Published var scannedCount = 0
     @Published var scannedBytes: Int64 = 0
     @Published var unreadableDirectoryCount = 0
@@ -224,6 +228,9 @@ final class ScanViewModel: ObservableObject {
         activeScanID = scanID
         savedScanRequest = nil
         isOpeningSavedScan = false
+        scanStartedAt = Date()
+        scanTargetPath = URL(fileURLWithPath: path).standardizedFileURL.path
+        isStoppingScan = false
         isScanning = true
         // Keep the completed snapshot intact until its replacement succeeds.
         // Cancelling or failing a rescan must not discard navigation or review work.
@@ -261,7 +268,9 @@ final class ScanViewModel: ObservableObject {
 
     /// User-facing Stop retains a partial tree; it does not invalidate this scan's ID.
     func stopScan() {
-        activeScanner?.requestStop()
+        guard isScanning, activeScanID != nil, !isStoppingScan, let activeScanner else { return }
+        isStoppingScan = true
+        activeScanner.requestStop()
     }
 
     /// Abandons work when another scan supersedes it, without publishing its tree.
@@ -271,7 +280,14 @@ final class ScanViewModel: ObservableObject {
         scanTask = nil
         activeScanner = nil
         subtreeBeingRescanned = nil
+        clearScanProgressContext()
         isScanning = false
+    }
+
+    private func clearScanProgressContext() {
+        scanStartedAt = nil
+        scanTargetPath = ""
+        isStoppingScan = false
     }
 
     func refreshMountedVolumes() {
@@ -420,6 +436,7 @@ final class ScanViewModel: ObservableObject {
         scanTask = nil
         activeScanner = nil
         subtreeBeingRescanned = nil
+        clearScanProgressContext()
         isScanning = false
         treeRevision = UUID()
         refreshMountedVolumes()
@@ -433,6 +450,7 @@ final class ScanViewModel: ObservableObject {
         scanTask = nil
         activeScanner = nil
         subtreeBeingRescanned = nil
+        clearScanProgressContext()
         isScanning = false
     }
 
@@ -443,6 +461,7 @@ final class ScanViewModel: ObservableObject {
         scanTask = nil
         activeScanner = nil
         subtreeBeingRescanned = nil
+        clearScanProgressContext()
         isScanning = false
     }
 
