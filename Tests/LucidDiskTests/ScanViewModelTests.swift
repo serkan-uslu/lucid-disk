@@ -122,6 +122,33 @@ final class ScanViewModelTests: XCTestCase {
     }
 
     @MainActor
+    func testStrongerPolicyAfterSingleOrBatchRequestRequiresFreshConfirmation() async throws {
+        for batch in [false, true] {
+            let directory = temporaryDirectory()
+            defer { try? FileManager.default.removeItem(at: directory) }
+            let folder = directory.appendingPathComponent("ordinary", isDirectory: true)
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            let vm = ScanViewModel()
+            vm.startScan(path: directory.path)
+            try await waitForScan(vm)
+            let node = try XCTUnwrap(vm.rootNode?.children.first)
+            vm.toggleReview(node: node)
+            if batch { vm.requestBatchDeletion() } else { vm.requestDeletion(node: node) }
+            XCTAssertEqual(batch ? vm.pendingBatchDeletion?.confirmationPolicy : vm.pendingDeletion?.assessment.actionPolicy, .standardConfirmation)
+            node.measurementAccuracy = .incomplete
+            if batch { vm.confirmBatchDeletion() } else { vm.confirmDeletion() }
+            for _ in 0..<200 where vm.isMovingToTrash { try await Task.sleep(for: .milliseconds(5)) }
+            XCTAssertFalse(vm.isMovingToTrash)
+            XCTAssertTrue(FileManager.default.fileExists(atPath: folder.path))
+            XCTAssertTrue(vm.isQueued(node))
+            XCTAssertNotNil(vm.errorMessage)
+            XCTAssertNil(vm.lastTrashedURL)
+            if batch { vm.requestBatchDeletion() } else { vm.requestDeletion(node: node) }
+            XCTAssertEqual(batch ? vm.pendingBatchDeletion?.confirmationPolicy : vm.pendingDeletion?.assessment.actionPolicy, .strongConfirmation)
+        }
+    }
+
+    @MainActor
     func testStopPublishesPartialScanInsteadOfReturningToWelcome() async throws {
         let directory = temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }

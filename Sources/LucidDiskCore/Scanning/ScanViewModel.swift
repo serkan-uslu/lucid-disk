@@ -248,7 +248,7 @@ final class ScanViewModel: ObservableObject {
             return
         }
         self.pendingDeletion = nil
-        trash(node: pendingDeletion.node)
+        trash(node: pendingDeletion.node, confirmedPolicy: pendingDeletion.assessment.actionPolicy)
     }
 
     func finish(_ result: ScanResult, for scanID: UUID) {
@@ -329,7 +329,7 @@ final class ScanViewModel: ObservableObject {
 
 
 
-    private func trash(node: FileNode) {
+    private func trash(node: FileNode, confirmedPolicy: ActionPolicy) {
         guard !node.isAggregate, node.parent != nil else { return }
         isMovingToTrash = true
         let rootPath = rootNode?.path
@@ -338,7 +338,7 @@ final class ScanViewModel: ObservableObject {
         Task {
             let outcome = await Task.detached(priority: .userInitiated) { () -> (error: String?, url: URL?) in
                 do {
-                    try DeletionSafety.validateBeforeTrash(node: node)
+                    try DeletionSafety.validateBeforeTrash(node: node, confirmedPolicy: confirmedPolicy)
                     var destination: NSURL?
                     try FileManager.default.trashItem(at: URL(fileURLWithPath: node.path), resultingItemURL: &destination)
                     return (nil, destination as URL?)

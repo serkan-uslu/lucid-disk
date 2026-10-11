@@ -83,6 +83,7 @@ final class BatchReviewTests: XCTestCase {
         let pending = try? XCTUnwrap(vm.pendingBatchDeletion)
         XCTAssertEqual(pending?.items.map(\.node.id), [t.folder.id])
         XCTAssertEqual(pending?.excludedNested, 1)
+        XCTAssertEqual(pending?.confirmationPolicy, .strongConfirmation)
         XCTAssertEqual(pending?.requiresStrongConfirmation, true,
                        "Moving the folder moves the child, so its stronger confirmation carries over")
         withExtendedLifetime(t.root) {}
@@ -137,7 +138,7 @@ final class BatchReviewTests: XCTestCase {
         try FileManager.default.removeItem(at: keepURL)
         try Data("replacement".utf8).write(to: keepURL)
 
-        let outcome = ScanViewModel.moveToTrash(pending.items.map(\.node))
+        let outcome = ScanViewModel.moveToTrash(pending.items.map(\.node), confirmedPolicy: pending.confirmationPolicy)
         defer {
             for destination in outcome.destinations {
                 try? FileManager.default.removeItem(at: destination)
