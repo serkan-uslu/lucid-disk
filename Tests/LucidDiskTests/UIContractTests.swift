@@ -27,6 +27,8 @@ final class UIContractTests: XCTestCase {
             "Export & Review", "Export Results…", "Export Folder Tree…", "Review Cleanup",
             "Copy & Open Codex", "Copy & Open Claude", "Save report…", "Hide Sidebar",
             "Parent Folder", "Rescan Folder",
+            "Scan could not be saved.", "Results are still available. Check free disk space and folder permissions, then retry.",
+            "Retry Save", "Saving scan…", "Scan saved",
             "This directory was already visited through another path and was not counted again.",
             "Estimated file allocation", "Allocation estimate exceeds used space", "Used space", "Free space",
             "File allocations are estimates. Shared APFS blocks can make their sum exceed disk capacity; this is not reclaimable space.",

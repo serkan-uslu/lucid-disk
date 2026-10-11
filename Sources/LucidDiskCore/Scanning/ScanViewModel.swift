@@ -12,6 +12,13 @@ struct ScanVolume: Identifiable, Hashable {
     var id: String { url.path }
 }
 
+enum ScanSaveState: Equatable {
+    case idle
+    case saving
+    case saved
+    case failed
+}
+
 @MainActor
 final class ScanViewModel: ObservableObject {
     @Published var rootNode: FileNode?
@@ -53,6 +60,8 @@ final class ScanViewModel: ObservableObject {
     var isShowingSavedScan: Bool { snapshotDate != nil }
     /// Saved scans available to reopen, newest first.
     @Published private(set) var savedScans: [SavedScanInfo] = []
+    /// Persistence is independent of scan success; the tree stays usable on failure.
+    @Published private(set) var saveState: ScanSaveState = .idle
     @Published private(set) var isOpeningSavedScan = false
     /// The saved scan being loaded. A new scan clears it so a late load cannot replace fresh results.
     private var savedScanRequest: UUID?
@@ -62,6 +71,17 @@ final class ScanViewModel: ObservableObject {
 
     /// `nil` in tests and review tools so they never write to the user's saved scans.
     let scanStore: ScanStore?
+    private let savingEnabled: @Sendable () -> Bool
+    private let saveOperation: @Sendable (ScanStore, ScanResult, Date, Int) async throws -> Void
+    private var savedScanObservers: Set<AnyCancellable> = []
+    private struct SaveContext {
+        let result: ScanResult
+        let scannedAt: Date
+        let generation: Int
+        let revision: UUID
+    }
+    private var saveContext: SaveContext?
+    private var saveRequest: UUID?
 
     private var scanTask: Task<Void, Never>?
     private var activeScanner: DiskScanner?
@@ -70,10 +90,28 @@ final class ScanViewModel: ObservableObject {
     /// The read-only view handed to edition extensions.
     lazy var extensionContext = LucidDiskContext(viewModel: self)
 
-    init(scanStore: ScanStore? = nil) {
+    init(scanStore: ScanStore? = nil,
+         savingEnabled: @escaping @Sendable () -> Bool = { ScanSaving.isEnabled },
+         saveOperation: @escaping @Sendable (ScanStore, ScanResult, Date, Int) async throws -> Void = { store, result, date, generation in
+             _ = try await Task.detached(priority: .utility) {
+                 try store.save(result, scannedAt: date, generation: generation)
+             }.value
+         }) {
         self.scanStore = scanStore
+        self.savingEnabled = savingEnabled
+        self.saveOperation = saveOperation
         refreshMountedVolumes()
         refreshSavedScans()
+        // Settings can clear the shared store directly, without going through this model.
+        NotificationCenter.default.publisher(for: ScanStore.didChangeNotification)
+            .filter { ($0.object as? ScanStore) === scanStore }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.refreshSavedScans() }
+            .store(in: &savedScanObservers)
+        NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.refreshSaveEligibility() }
+            .store(in: &savedScanObservers)
     }
 
     func startScan(path: String) {
@@ -91,6 +129,7 @@ final class ScanViewModel: ObservableObject {
     private func beginScan(path: String, replacing subtree: FileNode?) {
         guard !isMovingToTrash else { return }
         cancelScan()
+        resetSaveState()
         reconciliationTask?.cancel()
         reconciliationTask = nil
         subtreeBeingRescanned = subtree
@@ -304,7 +343,7 @@ final class ScanViewModel: ObservableObject {
         isScanning = false
         treeRevision = UUID()
         refreshMountedVolumes()
-        save(result)
+        prepareSave(result)
         explainSpace(for: result)
     }
 
@@ -363,6 +402,7 @@ extension ScanViewModel {
 
     /// The old tree is invalid after a mutation, even if the rescan is stopped.
     func invalidateAfterTrash(rescanning rootPath: String?) {
+        resetSaveState()
         rootNode = nil
         treeRevision = UUID()
         focusedNode = nil
@@ -400,15 +440,62 @@ enum ScanSaving {
 extension ScanViewModel {
     func refreshSavedScans() {
         savedScans = scanStore?.list() ?? []
+        refreshSaveEligibility()
     }
 
-    private func save(_ result: ScanResult) {
-        guard let scanStore, ScanSaving.isEnabled else { return }
-        let generation = scanStore.generation
-        let scannedAt = Date()
-        Task {
-            _ = await Task.detached(priority: .utility) { try? scanStore.save(result, scannedAt: scannedAt, generation: generation) }.value
-            refreshSavedScans()
+    private func resetSaveState() {
+        saveContext = nil
+        saveRequest = nil
+        saveState = .idle
+    }
+
+    private func refreshSaveEligibility() {
+        guard let context = saveContext else { return }
+        guard savingEnabled(), context.generation == scanStore?.generation else {
+            resetSaveState()
+            return
+        }
+    }
+
+    private func prepareSave(_ result: ScanResult) {
+        resetSaveState()
+        guard let scanStore, savingEnabled() else { return }
+        saveContext = SaveContext(result: result, scannedAt: Date(), generation: scanStore.generation, revision: treeRevision)
+        saveCurrentResult()
+    }
+
+    /// Reuses the completed result and original timestamp, without another disk scan.
+    func retrySave() {
+        guard saveState == .failed, !isScanning, !isMovingToTrash, !isOpeningSavedScan else { return }
+        saveCurrentResult()
+    }
+
+    private func saveCurrentResult() {
+        refreshSaveEligibility()
+        guard let scanStore, let context = saveContext,
+              context.revision == treeRevision, context.result.id == lastScanResult?.id,
+              !isShowingSavedScan else { return }
+        let request = UUID()
+        saveRequest = request
+        saveState = .saving
+        let operation = saveOperation
+        Task { [weak self] in
+            let outcome: ScanSaveState
+            do {
+                try await operation(scanStore, context.result, context.scannedAt, context.generation)
+                outcome = .saved
+            } catch ScanStoreError.clearedDuringSave {
+                outcome = .idle
+            } catch {
+                outcome = .failed
+            }
+            guard let self else { return }
+            self.refreshSavedScans()
+            guard self.saveRequest == request, self.treeRevision == context.revision,
+                  self.lastScanResult?.id == context.result.id, !self.isShowingSavedScan else { return }
+            self.saveRequest = nil
+            self.saveState = outcome
+            if outcome == .idle { self.saveContext = nil }
         }
     }
 
@@ -433,6 +520,7 @@ extension ScanViewModel {
     }
 
     func show(savedScan: SavedScan) {
+        resetSaveState()
         let result = savedScan.scanResult
         // Current disk numbers would not match an old scan.
         spaceBreakdown = nil
@@ -523,7 +611,13 @@ extension ScanViewModel {
             self.scannedBytes = revised.statistics.allocatedSizeBytes
             self.unreadableDirectoryCount = revised.statistics.unreadableDirectoryCount
             self.treeRevision = UUID()
-            self.save(revised)
+            // A passive filesystem refresh must not recreate history cleared in Settings.
+            self.refreshSaveEligibility()
+            if let context = self.saveContext {
+                self.saveContext = SaveContext(result: revised, scannedAt: Date(), generation: context.generation,
+                                               revision: self.treeRevision)
+                self.saveCurrentResult()
+            }
             self.explainSpace(for: revised)
         }
     }

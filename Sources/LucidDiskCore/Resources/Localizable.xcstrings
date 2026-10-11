@@ -1,6 +1,86 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Scan could not be saved.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan could not be saved."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarama kaydedilemedi."
+          }
+        }
+      }
+    },
+    "Results are still available. Check free disk space and folder permissions, then retry.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Results are still available. Check free disk space and folder permissions, then retry."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sonuçlar hâlâ kullanılabilir. Boş disk alanını ve klasör izinlerini kontrol edip yeniden deneyin."
+          }
+        }
+      }
+    },
+    "Retry Save": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retry Save"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydetmeyi Yeniden Dene"
+          }
+        }
+      }
+    },
+    "Saving scan…": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saving scan…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarama kaydediliyor…"
+          }
+        }
+      }
+    },
+    "Scan saved": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scan saved"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarama kaydedildi"
+          }
+        }
+      }
+    },
     "How to Use": {
       "localizations": {
         "en": {

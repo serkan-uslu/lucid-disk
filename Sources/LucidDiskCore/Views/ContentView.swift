@@ -141,9 +141,6 @@ struct ContentView: View {
         .onChange(of: viewModel.selectedNode?.id) { _, selection in
             if selection == nil { showingDetails = false }
         }
-        .onReceive(NotificationCenter.default.publisher(for: ScanStore.didChangeNotification).receive(on: RunLoop.main)) { _ in
-            viewModel.refreshSavedScans()
-        }
         .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didMountNotification)) { _ in
             viewModel.refreshMountedVolumes()
         }
@@ -583,6 +580,23 @@ struct ContentView: View {
     private var statusBar: some View {
         VStack(spacing: 0) {
             Divider()
+            if viewModel.saveState == .failed {
+                HStack(spacing: 10) {
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Scan could not be saved.").fontWeight(.medium)
+                        Text("Results are still available. Check free disk space and folder permissions, then retry.")
+                            .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 0)
+                    Button("Retry Save") { viewModel.retrySave() }
+                        .disabled(viewModel.isScanning || viewModel.isMovingToTrash || viewModel.isOpeningSavedScan)
+                        .accessibilityIdentifier("retry-save-scan")
+                }
+                .font(.caption).padding(.horizontal, 16).padding(.vertical, 9)
+                .accessibilityIdentifier("scan-save-failure")
+                Divider()
+            }
             HStack(spacing: 10) {
                 if viewModel.isMovingToTrash {
                     ProgressView().controlSize(.mini)
@@ -613,6 +627,13 @@ struct ContentView: View {
                         .foregroundStyle(viewModel.scanWarnings.isEmpty ? Theme.accent : .orange)
                     Text("\(result.statistics.scannedFileCount) files · \(String(format: "%.2f", result.duration)) s")
                         .monospacedDigit()
+                    if viewModel.saveState == .saving {
+                        Label("Saving scan…", systemImage: "arrow.triangle.2.circlepath")
+                            .accessibilityIdentifier("scan-save-status")
+                    } else if viewModel.saveState == .saved {
+                        Label("Scan saved", systemImage: "checkmark.circle")
+                            .accessibilityIdentifier("scan-save-status")
+                    }
                     if result.wasStopped {
                         Text("Scan stopped. Only items measured so far are shown.").foregroundStyle(.orange).lineLimit(1)
                     } else if !viewModel.scanWarnings.isEmpty {
