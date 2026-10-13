@@ -48,7 +48,7 @@ Proje çalışma alanı: http://127.0.0.1:3210/projects/cd70d5c6-6fbf-416f-a347-
 GitHub deposu: https://github.com/serkan-uslu/lucid-disk
 Depo rolü: Ana depo
 GitHub Projects panosu: https://github.com/users/serkan-uslu/projects/12
-Yönetilen yapı sürümü: 13
+Yönetilen yapı sürümü: 16
 
 Bu blok Project Managment tarafından yönetilir ve eşitlenir; içini düzenleme. Depoya özel talimatları bloğun dışına yaz. Proje tanımı, kararlar ve geliştirme geçmişi bu dosyada değil, Project Managment veritabanındadır.
 
