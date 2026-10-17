@@ -39,7 +39,9 @@ struct SunburstView: View {
     var onToggleSelection: (FileNode) -> Void = { _ in }
 
     @State private var hoveredNodeID: UUID?
+    @State private var isCenterHovered = false
     private var hovered: FileNode? { wedges.first { $0.node.id == hoveredNodeID }?.node }
+    private var canZoomOut: Bool { focusedNode.parent != nil }
 
     var body: some View {
         VStack(spacing: 16) {
@@ -53,7 +55,9 @@ struct SunburstView: View {
                         .padding(8).allowsHitTesting(false)
                     Circle()
                         .fill(Theme.cardFill)
-                        .overlay(Circle().strokeBorder(Theme.accent.opacity(0.35), lineWidth: 1.5))
+                        .overlay(Circle().fill(Theme.accent.opacity(canZoomOut && isCenterHovered ? 0.16 : 0)))
+                        .overlay(Circle().strokeBorder(Theme.accent.opacity(canZoomOut && isCenterHovered ? 0.9 : 0.35),
+                                                       lineWidth: canZoomOut && isCenterHovered ? 2 : 1.5))
                         .frame(width: geometry.centerRadius * 1.86, height: geometry.centerRadius * 1.86)
                         .position(geometry.center)
                         .allowsHitTesting(false)
@@ -91,32 +95,16 @@ struct SunburstView: View {
                         }
                     }
 
-                    ChartInputSurface(wedges: wedges, onActivate: activate, onToggle: onToggleSelection, onZoomOut: onZoomOut, onHover: { next in
+                    ChartInputSurface(wedges: wedges, canZoomOut: canZoomOut,
+                                      onActivate: activate, onToggle: onToggleSelection, onZoomOut: onZoomOut, onHover: { next in
                         if next != hoveredNodeID { hoveredNodeID = next }
+                    }, onCenterHover: { hovering in
+                        if hovering != isCenterHovered { isCenterHovered = hovering }
                     })
                     .accessibilityHidden(true)
 
-                    Button(action: onZoomOut) {
-                        VStack(spacing: 6) {
-                            if focusedNode.parent != nil {
-                                Label("Parent Folder", systemImage: "arrow.up")
-                                    .font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
-                                    .lineLimit(1).minimumScaleFactor(0.65)
-                            }
-                            Text(ByteCountFormatter.string(fromByteCount: focusedNode.size, countStyle: .file))
-                                .font(.system(size: 24, weight: .semibold, design: .rounded))
-                                .lineLimit(1).minimumScaleFactor(0.5)
-                            Text(focusedNode.name).font(.caption).foregroundStyle(.secondary)
-                                .lineLimit(1).truncationMode(.middle)
-                        }
-                        .frame(width: geometry.centerRadius * 1.65, height: geometry.centerRadius * 1.65)
-                        .contentShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .allowsHitTesting(false)
-                    .help("Back to parent folder")
-                    .accessibilityLabel("Back to parent folder")
-                    .position(geometry.center)
+                    centerContent(geometry)
+                        .position(geometry.center)
                 }
             }
             let shown = hovered ?? selectedNode ?? focusedNode
@@ -142,7 +130,59 @@ struct SunburstView: View {
             }
             .card(padding: 12)
         }
-        .onChange(of: focusedNode.id) { _, _ in hoveredNodeID = nil }
+        .onChange(of: focusedNode.id) { _, _ in
+            hoveredNodeID = nil
+            isCenterHovered = false
+        }
+    }
+
+    @ViewBuilder
+    private func centerContent(_ geometry: SunburstGeometry) -> some View {
+        if canZoomOut {
+            Button(action: onZoomOut) { centerMeasurement(geometry) }
+                .buttonStyle(.plain)
+                .allowsHitTesting(false)
+                .help("Back to parent folder")
+                .accessibilityIdentifier("chart-parent-folder")
+                .accessibilityLabel("Parent Folder")
+                .accessibilityValue(Text("Measured allocation for \(ScanMeasurementPresentation.scopeName(for: focusedNode))")
+                    + Text(": " + ByteCountFormatter.string(fromByteCount: focusedNode.size, countStyle: .file)))
+                .accessibilityHint("Back to parent folder")
+        } else {
+            centerMeasurement(geometry)
+                .allowsHitTesting(false)
+                .help(ScanMeasurementPresentation.allocationHelp)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text("Measured allocation for \(focusedNode.name)"))
+                .accessibilityValue(ByteCountFormatter.string(fromByteCount: focusedNode.size, countStyle: .file))
+        }
+    }
+
+    private func centerMeasurement(_ geometry: SunburstGeometry) -> some View {
+        VStack(spacing: 3) {
+            Text("Measured").font(.caption2).foregroundStyle(.secondary)
+                .lineLimit(1).minimumScaleFactor(0.8)
+            Text(ByteCountFormatter.string(fromByteCount: focusedNode.size, countStyle: .file))
+                .font(.system(size: min(24, max(11, geometry.centerRadius * 0.38)), weight: .semibold, design: .rounded))
+                .lineLimit(1).minimumScaleFactor(0.5).layoutPriority(1)
+            if canZoomOut {
+                HStack(spacing: 3) {
+                    Image(systemName: "arrow.up")
+                        .font(.system(size: min(11, max(7, geometry.centerRadius * 0.18)), weight: .semibold))
+                        .accessibilityHidden(true)
+                    Text(geometry.centerRadius < 48 ? String(localized: "Go Up") : String(localized: "Parent Folder"))
+                        .font(.caption2.weight(.semibold))
+                        .lineLimit(1).minimumScaleFactor(0.65)
+                }
+                .foregroundStyle(Theme.accent)
+                .frame(maxWidth: geometry.centerRadius * 1.45)
+            } else {
+                Text(focusedNode.name).font(.caption2).foregroundStyle(.secondary)
+                    .lineLimit(1).truncationMode(.middle)
+            }
+        }
+        .frame(width: geometry.centerRadius * 1.65, height: geometry.centerRadius * 1.65)
+        .contentShape(Circle())
     }
 
     private func activate(_ node: FileNode) {
@@ -154,10 +194,12 @@ struct SunburstView: View {
 /// Native mouse events keep chart navigation immediate and avoid gesture conflicts.
 private struct ChartInputSurface: NSViewRepresentable {
     let wedges: [Wedge]
+    let canZoomOut: Bool
     let onActivate: (FileNode) -> Void
     let onToggle: (FileNode) -> Void
     let onZoomOut: () -> Void
     let onHover: (UUID?) -> Void
+    let onCenterHover: (Bool) -> Void
 
     func makeNSView(context: Context) -> ChartMouseView {
         let view = ChartMouseView()
@@ -167,19 +209,32 @@ private struct ChartInputSurface: NSViewRepresentable {
 
     func updateNSView(_ view: ChartMouseView, context: Context) {
         view.wedges = wedges
+        view.canZoomOut = canZoomOut
         view.onActivate = onActivate
         view.onToggle = onToggle
         view.onZoomOut = onZoomOut
         view.onHover = onHover
+        view.onCenterHover = onCenterHover
     }
 }
 
-private final class ChartMouseView: NSView {
+final class ChartMouseView: NSView {
     var wedges: [Wedge] = []
+    var canZoomOut = false {
+        didSet {
+            if !canZoomOut, isCenterHovered {
+                isCenterHovered = false
+                toolTip = nil
+                NSCursor.arrow.set()
+            }
+        }
+    }
     var onActivate: ((FileNode) -> Void)?
     var onToggle: ((FileNode) -> Void)?
     var onZoomOut: (() -> Void)?
     var onHover: ((UUID?) -> Void)?
+    var onCenterHover: ((Bool) -> Void)?
+    private var isCenterHovered = false
     private var tracking: NSTrackingArea?
     override var isFlipped: Bool { true }
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
@@ -198,7 +253,7 @@ private final class ChartMouseView: NSView {
         let point = convert(event.locationInWindow, from: nil)
         let geometry = SunburstGeometry(size: bounds.size)
         if hypot(point.x - geometry.center.x, point.y - geometry.center.y) <= geometry.centerRadius {
-            onZoomOut?()
+            if canZoomOut { onZoomOut?() }
             return
         }
         guard let node = node(at: event) else { return }
@@ -212,12 +267,25 @@ private final class ChartMouseView: NSView {
 
     override func mouseMoved(with event: NSEvent) {
         let node = node(at: event)
+        let point = convert(event.locationInWindow, from: nil)
+        let geometry = SunburstGeometry(size: bounds.size)
+        let hoveringCenter = canZoomOut && hypot(point.x - geometry.center.x, point.y - geometry.center.y) <= geometry.centerRadius
+        isCenterHovered = hoveringCenter
         onHover?(node?.id)
-        (node == nil ? NSCursor.arrow : NSCursor.pointingHand).set()
+        onCenterHover?(hoveringCenter)
+        toolTip = hoveringCenter ? String(localized: "Back to parent folder") : nil
+        (node != nil || hoveringCenter ? NSCursor.pointingHand : NSCursor.arrow).set()
+    }
+
+    override func mouseEntered(with event: NSEvent) {
+        mouseMoved(with: event)
     }
 
     override func mouseExited(with event: NSEvent) {
+        isCenterHovered = false
         onHover?(nil)
+        onCenterHover?(false)
+        toolTip = nil
         NSCursor.arrow.set()
     }
 

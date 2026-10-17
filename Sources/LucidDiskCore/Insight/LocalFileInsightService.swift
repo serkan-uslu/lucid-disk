@@ -99,7 +99,10 @@ struct LocalFileInsightService {
         case .appleOnDevice:
             return await appleInsight(for: node, assessment: assessment, fallback: fallback)
         case .ollama:
-            let client = OllamaClient(baseURL: configuration.ollamaBaseURL,
+            guard let baseURL = configuration.ollamaBaseURL else {
+                return noted(fallback, InsightProviderError.invalidOllamaURL)
+            }
+            let client = OllamaClient(baseURL: baseURL,
                                       model: configuration.ollamaModel, transport: transport)
             do {
                 let text = try await client.explain(system: system, prompt: userPrompt)

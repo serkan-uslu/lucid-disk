@@ -21,14 +21,22 @@ struct SpaceCapacityBarMetrics {
 /// Explains a volume's used space, including what a scan cannot see.
 struct SpaceBreakdownView: View {
     let breakdown: SpaceBreakdown
+    var measuredAt: Date? = nil
     let onDone: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Where your space goes").font(.title2.weight(.semibold))
+                Text("Disk Space Breakdown").font(.title2.weight(.semibold))
                 Text("\(breakdown.volumeName) · \(format(breakdown.usedBytes)) used of \(format(breakdown.capacityBytes)) · \(format(breakdown.freeBytes)) free")
                     .foregroundStyle(.secondary)
+                if let measuredAt {
+                    Text("Disk usage captured \(measuredAt.formatted(date: .abbreviated, time: .shortened))")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Text("These disk totals were measured after the scan. The sidebar and Home refresh current free space separately.")
+                    .font(.caption).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding([.horizontal, .top], 24)
 
@@ -74,7 +82,7 @@ struct SpaceBreakdownView: View {
                         .card(padding: 12)
                     }
                     if let purgeable = breakdown.purgeableBytes, purgeable > 0 {
-                        Label("Up to \(format(purgeable)) is purgeable: macOS frees it automatically when an app needs the space.",
+                        Label("Up to \(format(purgeable)) more may be reclaimed by macOS. This estimate is already included in used space.",
                               systemImage: "arrow.3.trianglepath")
                             .font(.callout).foregroundStyle(.secondary)
                     }
@@ -101,11 +109,13 @@ struct SpaceBreakdownView: View {
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
                 Button("Done", action: onDone).keyboardShortcut(.defaultAction)
+                    .accessibilityIdentifier("close-space-breakdown")
             }
             .padding(16)
         }
         .frame(width: 640, height: 600)
         .accessibilityIdentifier("space-breakdown-sheet")
+        .onExitCommand(perform: onDone)
     }
 
     private func color(for item: SpaceBreakdown.Item) -> Color {

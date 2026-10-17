@@ -116,12 +116,6 @@ public final class ScanStore: @unchecked Sendable {
     /// every saved scan was deleted in the meantime.
     @discardableResult
     func save(_ result: ScanResult, scannedAt: Date = Date(), generation expected: Int? = nil) throws -> SavedScanInfo {
-        try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
-        var excluded = URLResourceValues()
-        excluded.isExcludedFromBackup = true
-        var directoryURL = directory
-        try? directoryURL.setResourceValues(excluded)
-
         let info = SavedScanInfo(
             id: result.id,
             rootPath: result.root.path,
@@ -141,6 +135,11 @@ public final class ScanStore: @unchecked Sendable {
         let index = try JSONEncoder().encode(info)
         let saved = try ioLock.withLock { () throws -> Bool in
             if let expected, expected != _generation { return false }
+            try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+            var excluded = URLResourceValues()
+            excluded.isExcludedFromBackup = true
+            var directoryURL = directory
+            try? directoryURL.setResourceValues(excluded)
             // Write the tree first so an index entry never points at a missing blob.
             try archive.write(to: blobURL(info.id), options: .atomic)
             try index.write(to: infoURL(info.id), options: .atomic)

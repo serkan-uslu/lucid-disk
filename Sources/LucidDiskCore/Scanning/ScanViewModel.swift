@@ -1,15 +1,80 @@
 import Combine
 import Foundation
 
-struct ScanVolume: Identifiable, Hashable {
+struct ScanVolume: Identifiable, Hashable, Sendable {
     let url: URL
     let name: String
     let totalBytes: Int64?
-    let availableBytes: Int64?
+    let freeBytes: Int64?
+    let availableForImportantUsageBytes: Int64?
     let isInternal: Bool
     let isRemovable: Bool
+    let measuredAt: Date
+
+    init(url: URL, name: String, totalBytes: Int64?, freeBytes: Int64?,
+         availableForImportantUsageBytes: Int64?, isInternal: Bool, isRemovable: Bool,
+         measuredAt: Date = Date()) {
+        self.url = url
+        self.name = name
+        let validTotal = totalBytes.flatMap { $0 >= 0 ? $0 : nil }
+        self.totalBytes = validTotal
+        self.freeBytes = freeBytes.flatMap { free in
+            free >= 0 && (validTotal.map { free <= $0 } ?? true) ? free : nil
+        }
+        self.availableForImportantUsageBytes = availableForImportantUsageBytes
+        self.isInternal = isInternal
+        self.isRemovable = isRemovable
+        self.measuredAt = measuredAt
+    }
 
     var id: String { url.path }
+
+    var usedFraction: Double? {
+        guard let totalBytes, let freeBytes, totalBytes > 0,
+              (0...totalBytes).contains(freeBytes) else { return nil }
+        return Double(totalBytes - freeBytes) / Double(totalBytes)
+    }
+
+    var estimatedReclaimableBytes: Int64? {
+        guard let totalBytes, let freeBytes else { return nil }
+        return StorageCapacity.estimatedReclaimableBytes(total: totalBytes, free: freeBytes,
+                                                         available: availableForImportantUsageBytes)
+    }
+
+    static func readMountedVolumes() -> [ScanVolume] {
+        let keys: Set<URLResourceKey> = [
+            .volumeNameKey, .volumeTotalCapacityKey, .volumeAvailableCapacityKey,
+            .volumeAvailableCapacityForImportantUsageKey, .volumeIsInternalKey,
+            .volumeIsRemovableKey, .volumeIsBrowsableKey
+        ]
+        let urls = FileManager.default.mountedVolumeURLs(includingResourceValuesForKeys: Array(keys), options: []) ?? []
+        return urls.compactMap { mountedURL in
+            var url = URL(fileURLWithPath: mountedURL.path, isDirectory: true)
+            url.removeAllCachedResourceValues()
+            guard let values = try? url.resourceValues(forKeys: keys), values.volumeIsBrowsable != false else { return nil }
+            return ScanVolume(url: url, name: values.volumeName ?? url.lastPathComponent,
+                              totalBytes: values.volumeTotalCapacity.map(Int64.init),
+                              freeBytes: values.volumeAvailableCapacity.map(Int64.init),
+                              availableForImportantUsageBytes: values.volumeAvailableCapacityForImportantUsage,
+                              isInternal: values.volumeIsInternal ?? false,
+                              isRemovable: values.volumeIsRemovable ?? false)
+        }.sorted {
+            if $0.isInternal != $1.isInternal { return $0.isInternal }
+            return $0.name.localizedStandardCompare($1.name) == .orderedAscending
+        }
+    }
+}
+
+struct SpaceObservation: Sendable {
+    let breakdown: SpaceBreakdown
+    let measuredAt: Date
+}
+
+enum ScanSaveState: Equatable {
+    case idle
+    case saving
+    case saved
+    case failed
 }
 
 @MainActor
@@ -33,6 +98,10 @@ final class ScanViewModel: ObservableObject {
     /// Every selected item, including `selectedNode`.
     @Published private(set) var selectedNodes: [FileNode] = []
     @Published var isScanning = false
+    /// Stable for one scan, even while progress arrives or Stop prepares its partial result.
+    @Published private(set) var scanStartedAt: Date?
+    @Published private(set) var scanTargetPath = ""
+    @Published private(set) var isStoppingScan = false
     @Published var scannedCount = 0
     @Published var scannedBytes: Int64 = 0
     @Published var unreadableDirectoryCount = 0
@@ -53,15 +122,33 @@ final class ScanViewModel: ObservableObject {
     var isShowingSavedScan: Bool { snapshotDate != nil }
     /// Saved scans available to reopen, newest first.
     @Published private(set) var savedScans: [SavedScanInfo] = []
+    /// Persistence is independent of scan success; the tree stays usable on failure.
+    @Published private(set) var saveState: ScanSaveState = .idle
     @Published private(set) var isOpeningSavedScan = false
     /// The saved scan being loaded. A new scan clears it so a late load cannot replace fresh results.
     private var savedScanRequest: UUID?
     /// Where a scanned volume's used space goes, for volume-root scans only.
-    @Published private(set) var spaceBreakdown: SpaceBreakdown?
+    @Published private(set) var spaceObservation: SpaceObservation?
+    var spaceBreakdown: SpaceBreakdown? { spaceObservation?.breakdown }
     var spaceProbe: SpaceProbe = SystemSpaceProbe()
 
     /// `nil` in tests and review tools so they never write to the user's saved scans.
     let scanStore: ScanStore?
+    private let savingEnabled: @Sendable () -> Bool
+    private let mountedVolumesProvider: @Sendable () async -> [ScanVolume]
+    private var mountedVolumesRequest: UUID?
+    private var mountedVolumesRefreshPending = false
+    private var usesSampleVolumes = false
+    private let saveOperation: @Sendable (ScanStore, ScanResult, Date, Int) async throws -> Void
+    private var savedScanObservers: Set<AnyCancellable> = []
+    private struct SaveContext {
+        let result: ScanResult
+        let scannedAt: Date
+        let generation: Int
+        let revision: UUID
+    }
+    private var saveContext: SaveContext?
+    private var saveRequest: UUID?
 
     private var scanTask: Task<Void, Never>?
     private var activeScanner: DiskScanner?
@@ -70,14 +157,55 @@ final class ScanViewModel: ObservableObject {
     /// The read-only view handed to edition extensions.
     lazy var extensionContext = LucidDiskContext(viewModel: self)
 
-    init(scanStore: ScanStore? = nil) {
+    init(scanStore: ScanStore? = nil,
+         mountedVolumesProvider: @escaping @Sendable () async -> [ScanVolume] = {
+             await Task.detached(priority: .utility) { ScanVolume.readMountedVolumes() }.value
+         },
+         savingEnabled: @escaping @Sendable () -> Bool = { ScanSaving.isEnabled },
+         saveOperation: @escaping @Sendable (ScanStore, ScanResult, Date, Int) async throws -> Void = { store, result, date, generation in
+             _ = try await Task.detached(priority: .utility) {
+                 try store.save(result, scannedAt: date, generation: generation)
+             }.value
+         }) {
         self.scanStore = scanStore
+        self.mountedVolumesProvider = mountedVolumesProvider
+        self.savingEnabled = savingEnabled
+        self.saveOperation = saveOperation
         refreshMountedVolumes()
         refreshSavedScans()
+        // Settings can clear the shared store directly, without going through this model.
+        NotificationCenter.default.publisher(for: ScanStore.didChangeNotification)
+            .filter { ($0.object as? ScanStore) === scanStore }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.refreshSavedScans() }
+            .store(in: &savedScanObservers)
+        NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.refreshSaveEligibility() }
+            .store(in: &savedScanObservers)
     }
 
     func startScan(path: String) {
         beginScan(path: path, replacing: nil)
+    }
+
+    /// Chart-only Other groups share their containing folder's path, but are not
+    /// directories. Walk to the real folder instead of trying to scan the group.
+    var focusedRescanTarget: FileNode? {
+        var target = focusedNode
+        var visited: Set<UUID> = []
+        while let node = target, node.isAggregate {
+            guard visited.insert(node.id).inserted else { return nil }
+            target = node.parent
+        }
+        guard let target, target.isDirectory, let rootNode,
+              ScanTreeRevision.contains(target.path, in: rootNode.path) else { return nil }
+        return target
+    }
+
+    func rescanFocusedFolder() {
+        guard let target = focusedRescanTarget else { return }
+        rescanFolder(target)
     }
 
     /// Refreshes only this folder. Historical snapshots become a separate fresh
@@ -91,6 +219,8 @@ final class ScanViewModel: ObservableObject {
     private func beginScan(path: String, replacing subtree: FileNode?) {
         guard !isMovingToTrash else { return }
         cancelScan()
+        // Keep persistence attached to the retained result until a replacement
+        // actually arrives. A failed or cancelled scan must not lose Retry Save.
         reconciliationTask?.cancel()
         reconciliationTask = nil
         subtreeBeingRescanned = subtree
@@ -98,6 +228,9 @@ final class ScanViewModel: ObservableObject {
         activeScanID = scanID
         savedScanRequest = nil
         isOpeningSavedScan = false
+        scanStartedAt = Date()
+        scanTargetPath = URL(fileURLWithPath: path).standardizedFileURL.path
+        isStoppingScan = false
         isScanning = true
         // Keep the completed snapshot intact until its replacement succeeds.
         // Cancelling or failing a rescan must not discard navigation or review work.
@@ -135,7 +268,9 @@ final class ScanViewModel: ObservableObject {
 
     /// User-facing Stop retains a partial tree; it does not invalidate this scan's ID.
     func stopScan() {
-        activeScanner?.requestStop()
+        guard isScanning, activeScanID != nil, !isStoppingScan, let activeScanner else { return }
+        isStoppingScan = true
+        activeScanner.requestStop()
     }
 
     /// Abandons work when another scan supersedes it, without publishing its tree.
@@ -145,50 +280,50 @@ final class ScanViewModel: ObservableObject {
         scanTask = nil
         activeScanner = nil
         subtreeBeingRescanned = nil
+        clearScanProgressContext()
         isScanning = false
     }
 
-    func refreshMountedVolumes() {
-        let keys: Set<URLResourceKey> = [
-            .volumeNameKey,
-            .volumeTotalCapacityKey,
-            .volumeAvailableCapacityForImportantUsageKey,
-            .volumeIsInternalKey,
-            .volumeIsRemovableKey,
-            .volumeIsBrowsableKey
-        ]
-        let urls = FileManager.default.mountedVolumeURLs(
-            includingResourceValuesForKeys: Array(keys),
-            options: []
-        ) ?? []
+    private func clearScanProgressContext() {
+        scanStartedAt = nil
+        scanTargetPath = ""
+        isStoppingScan = false
+    }
 
-        mountedVolumes = urls.compactMap { mountedURL in
-            var url = URL(fileURLWithPath: mountedURL.path, isDirectory: true)
-            url.removeAllCachedResourceValues()
-            guard let values = try? url.resourceValues(forKeys: keys),
-                  values.volumeIsBrowsable != false else { return nil }
-            return ScanVolume(
-                url: url,
-                name: values.volumeName ?? url.lastPathComponent,
-                totalBytes: values.volumeTotalCapacity.map(Int64.init),
-                availableBytes: values.volumeAvailableCapacityForImportantUsage,
-                isInternal: values.volumeIsInternal ?? false,
-                isRemovable: values.volumeIsRemovable ?? false
-            )
-        }.sorted {
-            if $0.isInternal != $1.isInternal { return $0.isInternal }
-            return $0.name.localizedStandardCompare($1.name) == .orderedAscending
+    func refreshMountedVolumes() {
+        guard !usesSampleVolumes else { return }
+        // A slow remote volume must still get to publish. Collapse timer/mount
+        // events into one follow-up instead of superseding every unfinished read.
+        guard mountedVolumesRequest == nil else {
+            mountedVolumesRefreshPending = true
+            return
+        }
+        let request = UUID()
+        mountedVolumesRequest = request
+        let provider = mountedVolumesProvider
+        Task { [weak self] in
+            let volumes = await provider()
+            guard let self, self.mountedVolumesRequest == request else { return }
+            self.mountedVolumes = volumes
+            self.mountedVolumesRequest = nil
+            if self.mountedVolumesRefreshPending {
+                self.mountedVolumesRefreshPending = false
+                self.refreshMountedVolumes()
+            }
         }
     }
 
     /// Review tooling shows sample volumes instead of the reviewer's own disks.
     func showSampleVolumes(_ volumes: [ScanVolume]) {
+        usesSampleVolumes = true
+        mountedVolumesRequest = nil
+        mountedVolumesRefreshPending = false
         mountedVolumes = volumes
     }
 
     /// Review tooling shows a fixed space breakdown instead of this Mac's real numbers.
     func showSampleSpaceBreakdown(_ breakdown: SpaceBreakdown?) {
-        spaceBreakdown = breakdown
+        spaceObservation = breakdown.map { SpaceObservation(breakdown: $0, measuredAt: Date()) }
     }
 
     func isCurrentScan(_ id: UUID) -> Bool {
@@ -248,7 +383,7 @@ final class ScanViewModel: ObservableObject {
             return
         }
         self.pendingDeletion = nil
-        trash(node: pendingDeletion.node)
+        trash(node: pendingDeletion.node, confirmedPolicy: pendingDeletion.assessment.actionPolicy)
     }
 
     func finish(_ result: ScanResult, for scanID: UUID) {
@@ -301,10 +436,11 @@ final class ScanViewModel: ObservableObject {
         scanTask = nil
         activeScanner = nil
         subtreeBeingRescanned = nil
+        clearScanProgressContext()
         isScanning = false
         treeRevision = UUID()
         refreshMountedVolumes()
-        save(result)
+        prepareSave(result)
         explainSpace(for: result)
     }
 
@@ -314,6 +450,7 @@ final class ScanViewModel: ObservableObject {
         scanTask = nil
         activeScanner = nil
         subtreeBeingRescanned = nil
+        clearScanProgressContext()
         isScanning = false
     }
 
@@ -324,12 +461,13 @@ final class ScanViewModel: ObservableObject {
         scanTask = nil
         activeScanner = nil
         subtreeBeingRescanned = nil
+        clearScanProgressContext()
         isScanning = false
     }
 
 
 
-    private func trash(node: FileNode) {
+    private func trash(node: FileNode, confirmedPolicy: ActionPolicy) {
         guard !node.isAggregate, node.parent != nil else { return }
         isMovingToTrash = true
         let rootPath = rootNode?.path
@@ -338,7 +476,7 @@ final class ScanViewModel: ObservableObject {
         Task {
             let outcome = await Task.detached(priority: .userInitiated) { () -> (error: String?, url: URL?) in
                 do {
-                    try DeletionSafety.validateBeforeTrash(node: node)
+                    try DeletionSafety.validateBeforeTrash(node: node, confirmedPolicy: confirmedPolicy)
                     var destination: NSURL?
                     try FileManager.default.trashItem(at: URL(fileURLWithPath: node.path), resultingItemURL: &destination)
                     return (nil, destination as URL?)
@@ -363,6 +501,7 @@ extension ScanViewModel {
 
     /// The old tree is invalid after a mutation, even if the rescan is stopped.
     func invalidateAfterTrash(rescanning rootPath: String?) {
+        resetSaveState()
         rootNode = nil
         treeRevision = UUID()
         focusedNode = nil
@@ -372,7 +511,7 @@ extension ScanViewModel {
         lastScanResult = nil
         scanWarnings = []
         snapshotDate = nil
-        spaceBreakdown = nil
+        spaceObservation = nil
         if let rootPath { startScan(path: rootPath) }
     }
 
@@ -400,15 +539,62 @@ enum ScanSaving {
 extension ScanViewModel {
     func refreshSavedScans() {
         savedScans = scanStore?.list() ?? []
+        refreshSaveEligibility()
     }
 
-    private func save(_ result: ScanResult) {
-        guard let scanStore, ScanSaving.isEnabled else { return }
-        let generation = scanStore.generation
-        let scannedAt = Date()
-        Task {
-            _ = await Task.detached(priority: .utility) { try? scanStore.save(result, scannedAt: scannedAt, generation: generation) }.value
-            refreshSavedScans()
+    private func resetSaveState() {
+        saveContext = nil
+        saveRequest = nil
+        saveState = .idle
+    }
+
+    private func refreshSaveEligibility() {
+        guard let context = saveContext else { return }
+        guard savingEnabled(), context.generation == scanStore?.generation else {
+            resetSaveState()
+            return
+        }
+    }
+
+    private func prepareSave(_ result: ScanResult) {
+        resetSaveState()
+        guard let scanStore, savingEnabled() else { return }
+        saveContext = SaveContext(result: result, scannedAt: Date(), generation: scanStore.generation, revision: treeRevision)
+        saveCurrentResult()
+    }
+
+    /// Reuses the completed result and original timestamp, without another disk scan.
+    func retrySave() {
+        guard saveState == .failed, !isScanning, !isMovingToTrash, !isOpeningSavedScan else { return }
+        saveCurrentResult()
+    }
+
+    private func saveCurrentResult() {
+        refreshSaveEligibility()
+        guard let scanStore, let context = saveContext,
+              context.revision == treeRevision, context.result.id == lastScanResult?.id,
+              !isShowingSavedScan else { return }
+        let request = UUID()
+        saveRequest = request
+        saveState = .saving
+        let operation = saveOperation
+        Task { [weak self] in
+            let outcome: ScanSaveState
+            do {
+                try await operation(scanStore, context.result, context.scannedAt, context.generation)
+                outcome = .saved
+            } catch ScanStoreError.clearedDuringSave {
+                outcome = .idle
+            } catch {
+                outcome = .failed
+            }
+            guard let self else { return }
+            self.refreshSavedScans()
+            guard self.saveRequest == request, self.treeRevision == context.revision,
+                  self.lastScanResult?.id == context.result.id, !self.isShowingSavedScan else { return }
+            self.saveRequest = nil
+            self.saveState = outcome
+            if outcome == .idle { self.saveContext = nil }
         }
     }
 
@@ -433,9 +619,10 @@ extension ScanViewModel {
     }
 
     func show(savedScan: SavedScan) {
+        resetSaveState()
         let result = savedScan.scanResult
         // Current disk numbers would not match an old scan.
-        spaceBreakdown = nil
+        spaceObservation = nil
         rootNode = result.root
         treeRevision = UUID()
         focusedNode = result.root
@@ -454,7 +641,7 @@ extension ScanViewModel {
     }
 
     private func explainSpace(for result: ScanResult) {
-        spaceBreakdown = nil
+        spaceObservation = nil
         let probe = spaceProbe
         let rootPath = result.root.path
         let scanned = result.root.allocatedSizeBytes
@@ -462,12 +649,13 @@ extension ScanViewModel {
         let rootID = result.root.id
         let revision = treeRevision
         Task {
-            let breakdown = await Task.detached(priority: .utility) {
+            let observation = await Task.detached(priority: .utility) {
                 SpaceAnalyzer.breakdown(rootPath: rootPath, scannedBytes: scanned,
                                         unreadableFolderCount: unreadable, probe: probe)
+                    .map { SpaceObservation(breakdown: $0, measuredAt: Date()) }
             }.value
             guard rootNode?.id == rootID, treeRevision == revision, !isShowingSavedScan else { return }
-            spaceBreakdown = breakdown
+            spaceObservation = observation
         }
     }
 
@@ -523,7 +711,13 @@ extension ScanViewModel {
             self.scannedBytes = revised.statistics.allocatedSizeBytes
             self.unreadableDirectoryCount = revised.statistics.unreadableDirectoryCount
             self.treeRevision = UUID()
-            self.save(revised)
+            // A passive filesystem refresh must not recreate history cleared in Settings.
+            self.refreshSaveEligibility()
+            if let context = self.saveContext {
+                self.saveContext = SaveContext(result: revised, scannedAt: Date(), generation: context.generation,
+                                               revision: self.treeRevision)
+                self.saveCurrentResult()
+            }
             self.explainSpace(for: revised)
         }
     }

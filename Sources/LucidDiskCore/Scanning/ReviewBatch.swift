@@ -24,6 +24,8 @@ struct PendingBatchDeletion: Identifiable {
 
     var totalBytes: Int64 { items.reduce(0) { $0 + $1.node.size } }
     var requiresStrongConfirmation: Bool { items.contains { $0.assessment.actionPolicy == .strongConfirmation } }
+    /// The dialog's strong approval explicitly applies to every item in the batch.
+    var confirmationPolicy: ActionPolicy { requiresStrongConfirmation ? .strongConfirmation : .standardConfirmation }
     var sensitiveCount: Int { items.filter { $0.assessment.actionPolicy == .strongConfirmation }.count }
 }
 
@@ -143,6 +145,7 @@ extension ScanViewModel {
         }
         pendingBatchDeletion = nil
         // A stale confirmation must not move items the user has since removed from the queue.
+        let confirmedPolicy = pending.confirmationPolicy
         let queued = Set(reviewQueue.map(\.id))
         let nodes = pending.items.map(\.node).filter { queued.contains($0.id) && !$0.isAggregate && $0.parent != nil }
         guard !nodes.isEmpty else { return }
@@ -150,7 +153,7 @@ extension ScanViewModel {
         let rootPath = rootNode?.path
         Task {
             let outcome = await Task.detached(priority: .userInitiated) {
-                Self.moveToTrash(nodes)
+                Self.moveToTrash(nodes, confirmedPolicy: confirmedPolicy)
             }.value
             setMovingToTrash(false)
             if outcome.moved > 0 {
@@ -181,11 +184,11 @@ extension ScanViewModel {
     }
 
     /// Each item is re-validated immediately before its own move.
-    nonisolated static func moveToTrash(_ nodes: [FileNode]) -> BatchTrashOutcome {
+    nonisolated static func moveToTrash(_ nodes: [FileNode], confirmedPolicy: ActionPolicy) -> BatchTrashOutcome {
         var outcome = BatchTrashOutcome()
         for node in nodes {
             do {
-                try DeletionSafety.validateBeforeTrash(node: node)
+                try DeletionSafety.validateBeforeTrash(node: node, confirmedPolicy: confirmedPolicy)
                 var destination: NSURL?
                 try FileManager.default.trashItem(at: URL(fileURLWithPath: node.path), resultingItemURL: &destination)
                 outcome.moved += 1

@@ -39,9 +39,12 @@ struct PieContentsPanel: View {
     let focusedNode: FileNode
     let searchRoot: FileNode
     let selectedIDs: Set<UUID>
+    let primaryID: UUID?
     let onSelect: ([FileNode], FileNode?) -> Void
     let onFocus: (FileNode) -> Void
     let onPreview: (FileNode) -> Void
+    var onCopyMetadata: (FileNode) -> Void = { _ in }
+    var copiedMetadataID: UUID?
     var treeRevision: UUID = UUID()
     var snapshotDate: Date?
     var wasStopped = false
@@ -144,13 +147,14 @@ struct PieContentsPanel: View {
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                FileBrowserTable(contents: contents, selectedIDs: selectedIDs,
+                FileBrowserTable(contents: contents, selectedIDs: selectedIDs, primaryID: primaryID,
                                  total: focusedNode.size, showPath: isSearching,
                                  onSelect: onSelect, onOpen: { node in
                                      searchText = ""
                                      filters = BrowserSearchFilters()
                                      onFocus(node)
-                                 }, onPreview: onPreview)
+                                 }, onPreview: onPreview, onCopyMetadata: onCopyMetadata,
+                                 copiedMetadataID: copiedMetadataID)
                     .accessibilityIdentifier("file-list")
             }
         }
@@ -242,18 +246,25 @@ struct PieContentsPanel: View {
 }
 
 /// Native row reuse and selection avoid rebuilding a large SwiftUI List on every click.
-private struct FileBrowserTable: NSViewRepresentable {
+struct FileBrowserTable: NSViewRepresentable {
     let contents: BrowserContents
     let selectedIDs: Set<UUID>
+    let primaryID: UUID?
     let total: Int64
     let showPath: Bool
     let onSelect: ([FileNode], FileNode?) -> Void
     let onOpen: (FileNode) -> Void
     let onPreview: (FileNode) -> Void
+    var onCopyMetadata: (FileNode) -> Void = { _ in }
+    var copiedMetadataID: UUID?
 
     func makeCoordinator() -> Coordinator { Coordinator(parent: self) }
 
     func makeNSView(context: Context) -> NSScrollView {
+        makeScrollView(coordinator: context.coordinator)
+    }
+
+    func makeScrollView(coordinator: Coordinator) -> NSScrollView {
         let scroll = NSScrollView()
         scroll.hasVerticalScroller = true
         scroll.autohidesScrollers = true
@@ -275,14 +286,14 @@ private struct FileBrowserTable: NSViewRepresentable {
         column.resizingMask = .autoresizingMask
         table.addTableColumn(column)
         table.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
-        table.delegate = context.coordinator
-        table.dataSource = context.coordinator
-        table.target = context.coordinator
-        table.doubleAction = #selector(Coordinator.openSelected(_:))
-        table.openSelection = { [weak coordinator = context.coordinator, weak table] in
+        table.delegate = coordinator
+        table.dataSource = coordinator
+        table.target = coordinator
+        table.doubleAction = #selector(Coordinator.openDoubleClicked(_:))
+        table.openSelection = { [weak coordinator, weak table] in
             if let table { coordinator?.openSelected(table) }
         }
-        table.previewSelection = { [weak coordinator = context.coordinator, weak table] in
+        table.previewSelection = { [weak coordinator, weak table] in
             if let table { coordinator?.previewSelected(table) }
         }
         scroll.documentView = table
@@ -290,11 +301,15 @@ private struct FileBrowserTable: NSViewRepresentable {
     }
 
     func updateNSView(_ scroll: NSScrollView, context: Context) {
+        updateTable(in: scroll, coordinator: context.coordinator)
+    }
+
+    func updateTable(in scroll: NSScrollView, coordinator: Coordinator) {
         guard let table = scroll.documentView as? NSTableView else { return }
-        let coordinator = context.coordinator
         let changed = coordinator.revision != contents.revision
         coordinator.parent = self
         coordinator.updating = true
+        defer { coordinator.updating = false }
         if changed {
             coordinator.revision = contents.revision
             coordinator.rowByID = Dictionary(uniqueKeysWithValues: contents.nodes.enumerated().map { ($0.element.id, $0.offset) })
@@ -305,24 +320,32 @@ private struct FileBrowserTable: NSViewRepresentable {
             table.selectRowIndexes(rows, byExtendingSelection: false)
             if rows.count == 1, let row = rows.first { table.scrollRowToVisible(row) }
         }
-        coordinator.updating = false
+        // A programmatic selection or reordered contents can give AppKit a different
+        // lead row from the inspector. Resolve identity again and keep native keyboard
+        // navigation anchored on the same item without changing the selected set.
+        if let primaryID, let row = coordinator.rowByID[primaryID], rows.contains(row) {
+            coordinator.primaryID = primaryID
+            if table.selectedRow != row {
+                table.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: true)
+            }
+        } else {
+            coordinator.primaryID = nil
+        }
+        coordinator.refreshVisibleRows(in: table)
     }
 
     final class Coordinator: NSObject, NSTableViewDataSource, NSTableViewDelegate {
         var parent: FileBrowserTable
         var revision: UUID?
         var rowByID: [UUID: Int] = [:]
+        var primaryID: UUID?
         var updating = false
         init(parent: FileBrowserTable) { self.parent = parent }
 
         func numberOfRows(in tableView: NSTableView) -> Int { parent.contents.nodes.count }
 
         func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-            let node = parent.contents.nodes[row]
-            let view = FileBrowserRow(node: node, colorSeed: parent.contents.colorRanks[node.id].map(paletteSeed) ?? node.path,
-                                      total: parent.total, showPath: parent.showPath,
-                                      onOpen: { [weak self] in self?.parent.onOpen(node) })
-                .padding(.horizontal, 8)
+            let view = rowView(row, in: tableView)
             let id = NSUserInterfaceItemIdentifier("file-cell")
             if let host = tableView.makeView(withIdentifier: id, owner: self) as? NSHostingView<AnyView> {
                 host.rootView = AnyView(view)
@@ -333,22 +356,67 @@ private struct FileBrowserTable: NSViewRepresentable {
             return host
         }
 
+        private func rowView(_ row: Int, in table: NSTableView) -> some View {
+            let node = parent.contents.nodes[row]
+            return FileBrowserRow(node: node, colorSeed: parent.contents.colorRanks[node.id].map(paletteSeed) ?? node.path,
+                                  total: parent.total, showPath: parent.showPath,
+                                  canCopyMetadata: table.selectedRowIndexes.contains(row) && !node.isAggregate,
+                                  metadataCopied: parent.copiedMetadataID == node.id,
+                                  onOpen: { [weak self] in self?.parent.onOpen(node) },
+                                  onCopyMetadata: { [weak self, weak table] in
+                                      guard let table else { return }
+                                      self?.copyMetadata(for: node.id, in: table)
+                                  })
+                .padding(.horizontal, 8)
+        }
+
+        func refreshVisibleRows(in table: NSTableView) {
+            let visible = table.rows(in: table.visibleRect)
+            guard visible.location != NSNotFound else { return }
+            for row in visible.location..<NSMaxRange(visible) where parent.contents.nodes.indices.contains(row) {
+                if let host = table.view(atColumn: 0, row: row, makeIfNecessary: false) as? NSHostingView<AnyView> {
+                    host.rootView = AnyView(rowView(row, in: table))
+                }
+            }
+        }
+
+        func copyMetadata(for id: UUID, in table: NSTableView) {
+            // Reused rows and delayed clicks must resolve the current item by identity.
+            guard let row = rowByID[id], table.selectedRowIndexes.contains(row),
+                  let node = node(at: row), node.id == id, !node.isAggregate else { return }
+            parent.onCopyMetadata(node)
+        }
+
         func tableViewSelectionDidChange(_ notification: Notification) {
             guard !updating, let table = notification.object as? NSTableView else { return }
             let nodes = table.selectedRowIndexes.compactMap { node(at: $0) }
-            // The clicked row is the natural primary item; keyboard moves use the last selected row.
-            let primaryRow = table.selectedRowIndexes.contains(table.clickedRow) ? table.clickedRow : table.selectedRow
-            parent.onSelect(nodes, node(at: primaryRow))
+            // AppKit maintains the native lead for mouse and Shift/arrow selection.
+            // Save its identity before the SwiftUI selection update can arrive.
+            let primary = node(at: table.selectedRow)
+            primaryID = primary?.id
+            refreshVisibleRows(in: table)
+            parent.onSelect(nodes, primary)
         }
 
-        @objc func openSelected(_ table: NSTableView) {
-            guard let node = node(at: table.selectedRow), node.isDirectory || node.isAggregate else { return }
+        @objc func openDoubleClicked(_ table: NSTableView) {
+            // Double-clicking an already-selected row need not change the native lead.
+            guard let node = node(at: table.clickedRow), node.isDirectory || node.isAggregate else { return }
+            parent.onOpen(node)
+        }
+
+        func openSelected(_ table: NSTableView) {
+            guard let node = primaryNode(in: table), node.isDirectory || node.isAggregate else { return }
             parent.onOpen(node)
         }
 
         func previewSelected(_ table: NSTableView) {
-            guard let node = node(at: table.selectedRow), !node.isAggregate else { return }
+            guard let node = primaryNode(in: table), !node.isAggregate else { return }
             parent.onPreview(node)
+        }
+
+        private func primaryNode(in table: NSTableView) -> FileNode? {
+            guard let primaryID, let row = rowByID[primaryID], table.selectedRowIndexes.contains(row) else { return nil }
+            return node(at: row)
         }
 
         private func node(at row: Int) -> FileNode? {
@@ -408,12 +476,15 @@ enum FileSortOrder: String, CaseIterable, Identifiable {
     }
 }
 
-private struct FileBrowserRow: View {
+struct FileBrowserRow: View {
     let node: FileNode
     let colorSeed: String
     let total: Int64
     let showPath: Bool
+    var canCopyMetadata = false
+    var metadataCopied = false
     let onOpen: () -> Void
+    var onCopyMetadata: () -> Void = {}
 
     private var fraction: Double { min(1, Double(node.size) / Double(max(1, total))) }
 
@@ -443,15 +514,26 @@ private struct FileBrowserRow: View {
                             }
                         }.frame(height: 4)
                     }
-                    if node.isDirectory || node.isAggregate {
-                        Button(action: onOpen) {
-                            Label("Open Folder", systemImage: "chevron.right").font(.caption.weight(.semibold))
-                                .fixedSize().contentShape(Rectangle())
+                }
+            }
+            if canCopyMetadata || node.isDirectory || node.isAggregate {
+                VStack(alignment: .trailing, spacing: 7) {
+                    if canCopyMetadata {
+                        Button(action: onCopyMetadata) {
+                            Label(metadataCopied ? String(localized: "Copied") : String(localized: "Copy Metadata"),
+                                  systemImage: metadataCopied ? "checkmark" : "doc.on.doc")
                         }
-                        .buttonStyle(.borderless)
-                        .help("Open Folder").accessibilityLabel("Open Folder")
+                        .help("Copy this item's path and scan metadata for Codex or Claude. No file contents are copied.")
+                        .accessibilityLabel("Copy Metadata")
+                        .accessibilityIdentifier("copy-item-metadata-\(node.id.uuidString)")
+                    }
+                    if node.isDirectory || node.isAggregate {
+                        Button(action: onOpen) { Label("Open Folder", systemImage: "chevron.right") }
+                            .help("Open Folder").accessibilityLabel("Open Folder")
                     }
                 }
+                .font(.caption.weight(.semibold)).fixedSize()
+                .buttonStyle(.borderless)
             }
         }
         .padding(.vertical, 7)

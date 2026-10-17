@@ -84,6 +84,7 @@ enum DeletionValidationError: LocalizedError {
     case itemMissing
     case identityChanged
     case newlyBlocked(String)
+    case confirmationChanged
 
     var errorDescription: String? {
         switch self {
@@ -95,6 +96,8 @@ enum DeletionValidationError: LocalizedError {
             String(localized: "The item changed after it was scanned. Scan it again before moving it to the Trash.")
         case .newlyBlocked(let reason):
             reason
+        case .confirmationChanged:
+            String(localized: "This item now requires stronger confirmation. Review it again before moving it to the Trash.")
         }
     }
 }
@@ -164,11 +167,15 @@ public enum DeletionSafety {
     @discardableResult
     static func validateBeforeTrash(
         node: FileNode,
+        confirmedPolicy: ActionPolicy,
         homePath: String = FileManager.default.homeDirectoryForCurrentUser.path
     ) throws -> DeletionAssessment {
         let assessment = assess(node: node, homePath: homePath)
         guard assessment.actionPolicy != .blocked else {
             throw DeletionValidationError.newlyBlocked(assessment.recommendation)
+        }
+        guard confirmedPolicy != .blocked, assessment.actionPolicy <= confirmedPolicy else {
+            throw DeletionValidationError.confirmationChanged
         }
         guard let expected = node.fileIdentity else {
             throw DeletionValidationError.missingScannedIdentity

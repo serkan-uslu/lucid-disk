@@ -1,44 +1,5 @@
 import SwiftUI
 
-struct ScanProgressView: View {
-    let count: Int
-    let bytes: Int64
-    let path: String
-    let onCancel: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            HStack(spacing: 18) {
-                ScanningRings().frame(width: 64, height: 64)
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("Mapping your storage").font(.title2.weight(.semibold))
-                    Text("Finding where your space goes.").foregroundStyle(.secondary)
-                }
-            }
-            HStack(spacing: 40) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(count.formatted()).font(.system(size: 30, weight: .semibold, design: .rounded)).monospacedDigit()
-                    Text("Files scanned").font(.caption).foregroundStyle(.secondary)
-                }
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file))
-                        .font(.system(size: 30, weight: .semibold, design: .rounded)).monospacedDigit()
-                    Text("Estimated file allocation").font(.caption).foregroundStyle(.secondary)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .card(padding: 20)
-            Text("File allocations are estimates. Shared APFS blocks can make their sum exceed disk capacity; this is not reclaimable space.")
-                .font(.caption).foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Text(path).font(.caption).foregroundStyle(.secondary).lineLimit(2)
-                .truncationMode(.middle).frame(height: 36, alignment: .topLeading)
-            Button("Stop Scan", action: onCancel).buttonStyle(.bordered).controlSize(.large)
-        }
-        .padding(32).frame(maxWidth: 580)
-    }
-}
-
 struct WelcomeView: View {
     @Environment(\.openSettings) private var openSettings
     let volumes: [ScanVolume]
@@ -141,10 +102,25 @@ struct WelcomeView: View {
                                         }
                                         Spacer(minLength: 0)
                                     }
-                                    if let total = volume.totalBytes, let available = volume.availableBytes, total > 0 {
-                                        CapacityBar(fraction: Double(max(0, total - available)) / Double(total), height: 6)
-                                        Text("\(ByteCountFormatter.string(fromByteCount: available, countStyle: .file)) available of \(ByteCountFormatter.string(fromByteCount: total, countStyle: .file))")
-                                            .font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                                    if let fraction = volume.usedFraction {
+                                        CapacityBar(fraction: fraction, height: 6)
+                                            .accessibilityLabel("Current used storage")
+                                    }
+                                    if let free = volume.freeBytes {
+                                        Group {
+                                            if let total = volume.totalBytes {
+                                                Text("\(ByteCountFormatter.string(fromByteCount: free, countStyle: .file)) free now of \(ByteCountFormatter.string(fromByteCount: total, countStyle: .file))")
+                                            } else {
+                                                Text("\(ByteCountFormatter.string(fromByteCount: free, countStyle: .file)) free now")
+                                            }
+                                        }
+                                        .font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                                        .help(Text("Physical free space updated \(volume.measuredAt.formatted(date: .abbreviated, time: .shortened)). Reclaimable space is still included in used storage."))
+                                    }
+                                    if let reclaimable = volume.estimatedReclaimableBytes, reclaimable > 0 {
+                                        Text("Up to \(ByteCountFormatter.string(fromByteCount: reclaimable, countStyle: .file)) more reclaimable")
+                                            .font(.caption).foregroundStyle(.secondary)
+                                            .help("Reclaimable space is an estimate of what macOS may free automatically. It is still included in used storage.")
                                     }
                                     Button { onScan(volume.url.path) } label: {
                                         HStack { Text("Explore Disk"); Spacer(); Image(systemName: "arrow.right") }
@@ -198,29 +174,6 @@ struct WelcomeView: View {
     private func showSettings(_ tab: String) {
         SettingsNavigation.shared.selectedTab = tab
         openSettings()
-    }
-}
-
-/// Three counter-rotating arcs echoing the sunburst while a scan runs.
-struct ScanningRings: View {
-    @State private var spinning = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        ZStack {
-            ForEach(0..<3) { index in
-                Circle()
-                    .trim(from: 0, to: 0.62 - Double(index) * 0.12)
-                    .stroke(Theme.accent.opacity(1 - Double(index) * 0.25),
-                            style: StrokeStyle(lineWidth: 5, lineCap: .round))
-                    .padding(CGFloat(index) * 9)
-                    .rotationEffect(.degrees(spinning ? (index.isMultiple(of: 2) ? 360 : -360) : 0))
-                    .animation(reduceMotion ? nil : .linear(duration: 1.6 + Double(index) * 0.5)
-                        .repeatForever(autoreverses: false), value: spinning)
-            }
-        }
-        .onAppear { spinning = true }
-        .accessibilityHidden(true)
     }
 }
 

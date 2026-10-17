@@ -122,6 +122,33 @@ final class ScanViewModelTests: XCTestCase {
     }
 
     @MainActor
+    func testStrongerPolicyAfterSingleOrBatchRequestRequiresFreshConfirmation() async throws {
+        for batch in [false, true] {
+            let directory = temporaryDirectory()
+            defer { try? FileManager.default.removeItem(at: directory) }
+            let folder = directory.appendingPathComponent("ordinary", isDirectory: true)
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            let vm = ScanViewModel()
+            vm.startScan(path: directory.path)
+            try await waitForScan(vm)
+            let node = try XCTUnwrap(vm.rootNode?.children.first)
+            vm.toggleReview(node: node)
+            if batch { vm.requestBatchDeletion() } else { vm.requestDeletion(node: node) }
+            XCTAssertEqual(batch ? vm.pendingBatchDeletion?.confirmationPolicy : vm.pendingDeletion?.assessment.actionPolicy, .standardConfirmation)
+            node.measurementAccuracy = .incomplete
+            if batch { vm.confirmBatchDeletion() } else { vm.confirmDeletion() }
+            for _ in 0..<200 where vm.isMovingToTrash { try await Task.sleep(for: .milliseconds(5)) }
+            XCTAssertFalse(vm.isMovingToTrash)
+            XCTAssertTrue(FileManager.default.fileExists(atPath: folder.path))
+            XCTAssertTrue(vm.isQueued(node))
+            XCTAssertNotNil(vm.errorMessage)
+            XCTAssertNil(vm.lastTrashedURL)
+            if batch { vm.requestBatchDeletion() } else { vm.requestDeletion(node: node) }
+            XCTAssertEqual(batch ? vm.pendingBatchDeletion?.confirmationPolicy : vm.pendingDeletion?.assessment.actionPolicy, .strongConfirmation)
+        }
+    }
+
+    @MainActor
     func testStopPublishesPartialScanInsteadOfReturningToWelcome() async throws {
         let directory = temporaryDirectory()
         defer { try? FileManager.default.removeItem(at: directory) }
@@ -136,6 +163,71 @@ final class ScanViewModelTests: XCTestCase {
         XCTAssertTrue(try XCTUnwrap(vm.lastScanResult).wasStopped)
         XCTAssertEqual(root.measurementAccuracy, .incomplete)
         XCTAssertFalse(vm.isShowingSavedScan)
+    }
+
+    @MainActor
+    func testFocusedRescanTargetResolvesNestedOtherGroupsAndRejectsInvalidTargets() throws {
+        let vm = ScanViewModel()
+        let root = FileNode(name: "Root", path: "/tmp/root", isDirectory: true)
+        vm.rootNode = root
+        vm.focus(on: root)
+        XCTAssertTrue(vm.focusedRescanTarget === root)
+        let other = FileNode(name: "Other", path: root.path, isDirectory: false)
+        other.isAggregate = true
+        other.parent = root
+        let nested = FileNode(name: "Other", path: root.path, isDirectory: false)
+        nested.isAggregate = true
+        nested.parent = other
+        vm.focus(on: nested)
+        XCTAssertTrue(vm.focusedRescanTarget === root)
+        other.parent = nil
+        XCTAssertNil(vm.focusedRescanTarget)
+        other.parent = nested
+        XCTAssertNil(vm.focusedRescanTarget, "Malformed group cycles must not hang navigation")
+        vm.focusedNode = FileNode(name: "File", path: "/tmp/root/file", isDirectory: false)
+        XCTAssertNil(vm.focusedRescanTarget)
+        vm.focus(on: FileNode(name: "Outside", path: "/tmp/outside", isDirectory: true))
+        XCTAssertNil(vm.focusedRescanTarget)
+    }
+
+    @MainActor
+    func testRescanFromOtherRefreshesContainingFolderAndPreservesLiveSiblings() async throws {
+        let directory = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let folder = directory.appendingPathComponent("folder", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try Data("small".utf8).write(to: folder.appendingPathComponent("small.txt"))
+        try Data("sibling".utf8).write(to: directory.appendingPathComponent("sibling.txt"))
+        let vm = ScanViewModel()
+        vm.startScan(path: directory.path)
+        try await waitForScan(vm)
+        let root = try XCTUnwrap(vm.rootNode)
+        let sibling = try XCTUnwrap(root.children.first { $0.name == "sibling.txt" })
+        let oldFolder = try XCTUnwrap(root.children.first { $0.name == "folder" })
+        // Force a real chart aggregate without relying on filesystem allocation sizes.
+        let other = try XCTUnwrap(computeWedges(focusedNode: oldFolder, minFraction: 2).first?.node)
+        XCTAssertTrue(other.isAggregate)
+        vm.focus(on: other)
+        vm.toggleReview(node: sibling)
+        try Data("new".utf8).write(to: folder.appendingPathComponent("new.txt"))
+        vm.rescanFocusedFolder()
+        try await waitForScan(vm)
+        XCTAssertEqual(vm.rootNode?.id, root.id)
+        XCTAssertEqual(vm.focusedNode?.path, folder.path)
+        XCTAssertFalse(try XCTUnwrap(vm.focusedNode).isAggregate)
+        XCTAssertEqual(Set(vm.focusedNode?.children.map(\.name) ?? []), ["small.txt", "new.txt"])
+        XCTAssertEqual(vm.reviewQueue.map(\.id), [sibling.id])
+        XCTAssertEqual(vm.rootNode?.children.first { $0.name == "sibling.txt" }?.id, sibling.id)
+
+        // A historical tree may not make unscanned siblings eligible for Trash.
+        vm.snapshotDate = .now
+        let savedFolder = try XCTUnwrap(vm.focusedNode)
+        vm.focus(on: try XCTUnwrap(computeWedges(focusedNode: savedFolder, minFraction: 2).first?.node))
+        vm.rescanFocusedFolder()
+        try await waitForScan(vm)
+        XCTAssertEqual(vm.rootNode?.path, folder.path)
+        XCTAssertFalse(vm.isShowingSavedScan)
+        XCTAssertTrue(vm.reviewQueue.isEmpty)
     }
 
     @MainActor

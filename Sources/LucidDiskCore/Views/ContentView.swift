@@ -8,18 +8,33 @@ struct ContentView: View {
     @ObservedObject private var extensions = LucidDiskExtensions.shared
     @State private var wedges: [Wedge] = []
     @State private var quickLookItem: QuickLookItem?
+    @State private var warningPresentation: ScanWarningsPresentation?
     @State private var showingSpaceBreakdown = false
     @State private var showingHome = false
     @State private var showingDetails = false
+    @State private var copiedMetadataID: UUID?
+    @State private var metadataCopyFailed = false
     @State private var sidebarVisibility: NavigationSplitViewVisibility = .all
     private let volumeRefresh = Timer.publish(every: 30, on: .main, in: .common).autoconnect()
 
     @MainActor
-    init(viewModel: ScanViewModel? = nil) {
+    init(viewModel: ScanViewModel? = nil, showingDetails: Bool = false) {
         _viewModel = StateObject(wrappedValue: viewModel ?? ScanViewModel(scanStore: .shared))
+        _showingDetails = State(initialValue: showingDetails)
     }
 
     var body: some View {
+        mainContent
+            .onChange(of: viewModel.treeRevision) { _, _ in copiedMetadataID = nil }
+            .onChange(of: viewModel.selectedNode?.id) { _, _ in copiedMetadataID = nil }
+            .alert("Metadata could not be copied", isPresented: $metadataCopyFailed) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Try copying again. You can also export the item metadata as a report.")
+            }
+    }
+
+    private var mainContent: some View {
       VStack(spacing: 0) {
         NavigationSplitView(columnVisibility: $sidebarVisibility) {
             sidebar
@@ -63,14 +78,19 @@ struct ContentView: View {
                 .disabled(viewModel.isScanning || viewModel.isMovingToTrash)
                 Button {
                     showingHome = false
-                    if let node = viewModel.focusedNode { viewModel.rescanFolder(node) }
+                    viewModel.rescanFocusedFolder()
                 } label: {
-                    Label("Scan Again", systemImage: "arrow.clockwise")
+                    Label(viewModel.focusedNode?.isAggregate == true
+                          ? String(localized: "Scan Containing Folder") : String(localized: "Scan Again"),
+                          systemImage: "arrow.clockwise")
                 }
                 .labelStyle(.titleAndIcon)
+                .accessibilityIdentifier("rescan-focused-folder")
                 .keyboardShortcut("r", modifiers: .command)
-                .help("Scan the current folder again")
-                .disabled(viewModel.rootNode == nil || viewModel.isScanning || viewModel.isMovingToTrash)
+                .help(viewModel.focusedNode?.isAggregate == true
+                      ? String(localized: "Scan the folder containing this Other group again")
+                      : String(localized: "Scan the current folder again"))
+                .disabled(viewModel.focusedRescanTarget == nil || viewModel.isScanning || viewModel.isMovingToTrash)
               }
                 Menu {
                     Button {
@@ -101,10 +121,11 @@ struct ContentView: View {
                     Button(role: .destructive) {
                         viewModel.stopScan()
                     } label: {
-                        Label("Stop Scan", systemImage: "stop.circle")
+                        Label(viewModel.isStoppingScan ? String(localized: "Preparing results…") : String(localized: "Stop Scan"), systemImage: "stop.circle")
                     }
                     .labelStyle(.titleAndIcon)
                     .accessibilityIdentifier("stop-scan")
+                    .disabled(viewModel.isStoppingScan)
                     .help("Stop scanning and show the items already scanned")
                 }
             }
@@ -141,26 +162,21 @@ struct ContentView: View {
         .onChange(of: viewModel.selectedNode?.id) { _, selection in
             if selection == nil { showingDetails = false }
         }
-        .onReceive(NotificationCenter.default.publisher(for: ScanStore.didChangeNotification).receive(on: RunLoop.main)) { _ in
-            viewModel.refreshSavedScans()
-        }
         .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didMountNotification)) { _ in
             viewModel.refreshMountedVolumes()
         }
         .onReceive(NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didUnmountNotification)) { _ in
             viewModel.refreshMountedVolumes()
         }
-        .onKeyPress(.space) {
-            guard !showingHome, !viewModel.isScanning,
-                  let node = viewModel.selectedNode, !node.isAggregate else { return .ignored }
-            quickLookItem = QuickLookItem(url: URL(fileURLWithPath: node.path))
-            return .handled
-        }
+        .onKeyPress(.space, action: previewSelectedItem)
         .sheet(isPresented: $showingSpaceBreakdown) {
             if let breakdown = viewModel.spaceBreakdown {
-                SpaceBreakdownView(breakdown: breakdown) { showingSpaceBreakdown = false }
+                SpaceBreakdownView(breakdown: breakdown, measuredAt: viewModel.spaceObservation?.measuredAt) {
+                    showingSpaceBreakdown = false
+                }
             }
         }
+        .sheet(item: $warningPresentation) { ScanWarningsSheet(presentation: $0) }
         .sheet(item: $quickLookItem) { item in
             VStack(spacing: 0) {
                 QuickLookPreview(url: item.url)
@@ -356,9 +372,12 @@ struct ContentView: View {
                         }
                         .font(.caption)
                     }
-                    if viewModel.scanWarnings.count > 5 {
-                        Text("\(viewModel.scanWarnings.count - 5) more warnings")
-                            .font(.caption).foregroundStyle(.secondary)
+                    ScanWarningsButton(count: viewModel.scanWarnings.count) {
+                        guard let root = viewModel.rootNode else { return }
+                        warningPresentation = ScanWarningsPresentation(
+                            root: root, warnings: viewModel.scanWarnings,
+                            wasStopped: viewModel.lastScanResult?.wasStopped ?? false,
+                            savedAt: viewModel.snapshotDate)
                     }
                 }
             }
@@ -381,71 +400,53 @@ struct ContentView: View {
     private var detail: some View {
         if viewModel.isScanning {
             ScanProgressView(count: viewModel.scannedCount, bytes: viewModel.scannedBytes,
-                             path: viewModel.currentPath, onCancel: viewModel.stopScan)
+                             path: viewModel.currentPath, targetPath: viewModel.scanTargetPath,
+                             startedAt: viewModel.scanStartedAt, isStopping: viewModel.isStoppingScan,
+                             onCancel: viewModel.stopScan)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Color(nsColor: .windowBackgroundColor))
         } else if let focused = viewModel.focusedNode, !showingHome {
             GeometryReader { area in
               let inspectorWidth = min(460, max(340, area.size.width * 0.43))
+              let hasDetails = showingDetails && !viewModel.selectedNodes.isEmpty
+              // At compact heights the inspector needs the map's space. Closing
+              // details restores the map, without squeezing its center to zero.
+              let showsDiskMap = !hasDetails || area.size.height >= 850
               HStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 0) {
                     VStack(alignment: .leading, spacing: 8) {
-                        HStack(alignment: .center, spacing: 12) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(focused.name).font(.title2.weight(.semibold)).lineLimit(1)
-                                PathBar(chain: ancestorChain(from: focused)) { viewModel.focus(on: $0) }
-                            }
-                            Spacer(minLength: 0)
-                            if area.size.width > 1_000 {
-                                HStack(spacing: 18) {
-                                    StatView(title: String(localized: "Allocated"),
-                                             value: ByteCountFormatter.string(fromByteCount: focused.allocatedSizeBytes, countStyle: .file))
-                                    StatView(title: String(localized: "Items"),
-                                             value: (focused.isAggregate ? focused.aggregatedChildren.count : focused.children.count).formatted())
-                                    if focused.measurementAccuracy == .incomplete {
-                                        Pill(title: String(localized: "Partial"), systemImage: "exclamationmark.triangle", color: .orange)
-                                    }
-                                }
-                            }
-                        }
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), alignment: .leading)], alignment: .leading, spacing: 6) {
-                            Button { viewModel.zoomOut() } label: {
-                                Label("Parent Folder", systemImage: "chevron.left")
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                            }
-                            .buttonStyle(.bordered).controlSize(.small)
-                            .disabled(focused.parent == nil)
-                            .help("Back to parent folder")
-                            .keyboardShortcut(.leftArrow, modifiers: .command)
-                            if let breakdown = viewModel.spaceBreakdown {
-                                Button { showingSpaceBreakdown = true } label: {
-                                    Label(spaceButtonTitle(breakdown), systemImage: "chart.bar.doc.horizontal")
-                                        .font(.caption.weight(.semibold))
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                                .buttonStyle(.bordered).controlSize(.small)
-                                .tint(breakdown.outsideScanBytes > breakdown.usedBytes / 20 ? .orange : Theme.accent)
-                                .help("See where this disk's used space goes, including what a scan cannot see")
-                                .accessibilityIdentifier("space-breakdown")
-                            }
-                        }
+                        Text(focused.name).font(.title2.weight(.semibold)).lineLimit(1)
+                        PathBar(chain: ancestorChain(from: focused)) { viewModel.focus(on: $0) }
+                        ScanMeasurementSummary(measurement: ScanMeasurementPresentation(
+                            focused: focused, root: viewModel.rootNode ?? focused,
+                            wasStopped: viewModel.lastScanResult?.wasStopped ?? false,
+                            savedAt: viewModel.snapshotDate))
+                        ScanNavigationActions(
+                            canGoToParent: focused.parent != nil,
+                            diskSpace: viewModel.spaceBreakdown.map {
+                                DiskSpacePresentation(breakdown: $0, scanRootPath: viewModel.rootNode?.path ?? focused.path)
+                            },
+                            onParent: { viewModel.zoomOut() },
+                            onBreakdown: { showingSpaceBreakdown = true })
                     }
                     .padding(.horizontal, 20).padding(.top, 18).padding(.bottom, 6)
-                    SunburstView(
-                        focusedNode: focused,
-                        wedges: wedges,
-                        selectedNode: viewModel.selectedNode,
-                        selectedIDs: Set(viewModel.selectedNodes.map(\.id)),
-                        onZoomOut: { viewModel.zoomOut() },
-                        onSelect: { node in viewModel.select(node.map { [$0] } ?? [], primary: node) },
-                        onFocus: { node in viewModel.focus(on: node) },
-                        onToggleSelection: { node in viewModel.toggleSelection(node) }
-                    )
-                    .padding(.horizontal, 20).padding(.vertical, 12)
-                    Text("Select an item, then choose View Details. Double-click a folder to open it. ⌘-click to select several.")
-                        .font(.caption).foregroundStyle(.tertiary)
-                        .frame(maxWidth: .infinity).padding(.bottom, 14)
-                    if showingDetails, !viewModel.selectedNodes.isEmpty {
+                    if showsDiskMap {
+                        SunburstView(
+                            focusedNode: focused,
+                            wedges: wedges,
+                            selectedNode: viewModel.selectedNode,
+                            selectedIDs: Set(viewModel.selectedNodes.map(\.id)),
+                            onZoomOut: { viewModel.zoomOut() },
+                            onSelect: { node in viewModel.select(node.map { [$0] } ?? [], primary: node) },
+                            onFocus: { node in viewModel.focus(on: node) },
+                            onToggleSelection: { node in viewModel.toggleSelection(node) }
+                        )
+                        .padding(.horizontal, 20).padding(.vertical, 12)
+                        Text("Select an item, then choose View Details. Double-click a folder to open it. ⌘-click to select several.")
+                            .font(.caption).foregroundStyle(.tertiary)
+                            .frame(maxWidth: .infinity).padding(.bottom, 14)
+                    }
+                    if hasDetails {
                         Divider()
                         HStack {
                             Text("Details").font(.headline)
@@ -464,7 +465,8 @@ struct ContentView: View {
                                     .id("\(selected.id)-\(viewModel.treeRevision)")
                             }
                         }
-                        .frame(height: min(300, area.size.height * 0.44))
+                        .frame(height: showsDiskMap ? min(300, area.size.height * 0.44) : nil)
+                        .frame(maxHeight: showsDiskMap ? nil : .infinity)
                     }
                 }
                 .frame(width: max(0, area.size.width - inspectorWidth - 1), height: area.size.height)
@@ -476,9 +478,12 @@ struct ContentView: View {
                         focusedNode: focused,
                         searchRoot: viewModel.rootNode ?? focused,
                         selectedIDs: Set(viewModel.selectedNodes.map(\.id)),
+                        primaryID: viewModel.selectedNode?.id,
                         onSelect: { nodes, primary in viewModel.select(nodes, primary: primary) },
                         onFocus: { node in viewModel.focus(on: node) },
                         onPreview: { node in quickLookItem = QuickLookItem(url: URL(fileURLWithPath: node.path)) },
+                        onCopyMetadata: copyMetadata,
+                        copiedMetadataID: copiedMetadataID,
                         treeRevision: viewModel.treeRevision,
                         snapshotDate: viewModel.snapshotDate,
                         wasStopped: viewModel.lastScanResult?.wasStopped ?? false
@@ -539,6 +544,14 @@ struct ContentView: View {
                 }
                 .accessibilityIdentifier("view-details")
                 if viewModel.selectedNodes.count == 1, !node.isAggregate {
+                    Button { copyMetadata(node) } label: {
+                        Label(copiedMetadataID == node.id ? String(localized: "Copied") : String(localized: "Copy Metadata"),
+                              systemImage: copiedMetadataID == node.id ? "checkmark" : "doc.on.doc")
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .help("Copy this item's path and scan metadata for Codex or Claude. No file contents are copied.")
+                    .accessibilityLabel("Copy Metadata")
+                    .accessibilityIdentifier("copy-selected-metadata")
                     Button { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: node.path)]) } label: {
                         Label("Show in Finder", systemImage: "folder")
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -580,9 +593,51 @@ struct ContentView: View {
         .disabled(viewModel.isMovingToTrash || viewModel.isScanning)
     }
 
+    private func copyMetadata(_ requestedNode: FileNode) {
+        // A previous table revision can briefly remain visible during a refresh.
+        // Resolve against the current selection before pairing it with scan context.
+        guard let node = viewModel.selectedNodes.first(where: { $0.id == requestedNode.id }),
+              let root = viewModel.rootNode,
+              let metadata = SelectedItemMetadata(node: node, rootPath: root.path,
+                    rootAccuracy: root.measurementAccuracy, savedAt: viewModel.snapshotDate,
+                    wasStopped: viewModel.lastScanResult?.wasStopped ?? false) else { return }
+        do {
+            let text = try SelectedMetadataClipboard.text(for: metadata)
+            guard SelectedMetadataClipboard.copy(text, to: .general) else { throw CocoaError(.fileWriteUnknown) }
+            copiedMetadataID = node.id
+        } catch {
+            copiedMetadataID = nil
+            metadataCopyFailed = true
+        }
+    }
+
+    private func previewSelectedItem() -> KeyPress.Result {
+        guard !showingHome, !viewModel.isScanning,
+              let node = viewModel.selectedNode, !node.isAggregate else { return .ignored }
+        quickLookItem = QuickLookItem(url: URL(fileURLWithPath: node.path))
+        return .handled
+    }
+
     private var statusBar: some View {
         VStack(spacing: 0) {
             Divider()
+            if viewModel.saveState == .failed, !viewModel.isScanning {
+                HStack(spacing: 10) {
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Scan could not be saved.").fontWeight(.medium)
+                        Text("Results are still available. Check free disk space and folder permissions, then retry.")
+                            .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 0)
+                    Button("Retry Save") { viewModel.retrySave() }
+                        .disabled(viewModel.isScanning || viewModel.isMovingToTrash || viewModel.isOpeningSavedScan)
+                        .accessibilityIdentifier("retry-save-scan")
+                }
+                .font(.caption).padding(.horizontal, 16).padding(.vertical, 9)
+                .accessibilityIdentifier("scan-save-failure")
+                Divider()
+            }
             HStack(spacing: 10) {
                 if viewModel.isMovingToTrash {
                     ProgressView().controlSize(.mini)
@@ -613,6 +668,13 @@ struct ContentView: View {
                         .foregroundStyle(viewModel.scanWarnings.isEmpty ? Theme.accent : .orange)
                     Text("\(result.statistics.scannedFileCount) files · \(String(format: "%.2f", result.duration)) s")
                         .monospacedDigit()
+                    if viewModel.saveState == .saving {
+                        Label("Saving scan…", systemImage: "arrow.triangle.2.circlepath")
+                            .accessibilityIdentifier("scan-save-status")
+                    } else if viewModel.saveState == .saved {
+                        Label("Scan saved", systemImage: "checkmark.circle")
+                            .accessibilityIdentifier("scan-save-status")
+                    }
                     if result.wasStopped {
                         Text("Scan stopped. Only items measured so far are shown.").foregroundStyle(.orange).lineLimit(1)
                     } else if !viewModel.scanWarnings.isEmpty {
@@ -638,11 +700,6 @@ struct ContentView: View {
         return "\(pending.assessment.risk.title)\n\n\(pending.node.name) • \(size)\n\(pending.node.path)\n\n\(pending.assessment.summary)\n\(pending.assessment.recommendation)"
     }
 
-    private func spaceButtonTitle(_ breakdown: SpaceBreakdown) -> String {
-        let outside = breakdown.outsideScanBytes
-        guard outside > 0 else { return String(localized: "Space breakdown") }
-        return String(localized: "\(ByteCountFormatter.string(fromByteCount: outside, countStyle: .file)) outside the scan")
-    }
 
     private var batchDialogTitle: String {
         guard let pending = viewModel.pendingBatchDeletion else { return "" }
@@ -690,13 +747,6 @@ struct ContentView: View {
 
 }
 
-private extension ScanVolume {
-    var usedFraction: Double? {
-        guard let totalBytes, let availableBytes, totalBytes > 0 else { return nil }
-        return min(1, max(0, Double(totalBytes - availableBytes) / Double(totalBytes)))
-    }
-}
-
 private struct VolumeRow: View {
     let volume: ScanVolume
     let isCurrent: Bool
@@ -716,11 +766,17 @@ private struct VolumeRow: View {
                 }
                 if let usedFraction = volume.usedFraction {
                     CapacityBar(fraction: usedFraction, height: 4)
-                        .accessibilityLabel("Used storage")
+                        .accessibilityLabel("Current used storage")
                 }
-                if let available = volume.availableBytes {
-                    Text("\(ByteCountFormatter.string(fromByteCount: available, countStyle: .file)) available")
+                if let free = volume.freeBytes {
+                    Text("\(ByteCountFormatter.string(fromByteCount: free, countStyle: .file)) free now")
                         .font(.caption2).foregroundStyle(.secondary).monospacedDigit()
+                        .help(Text("Physical free space updated \(volume.measuredAt.formatted(date: .abbreviated, time: .shortened)). Reclaimable space is still included in used storage."))
+                }
+                if let reclaimable = volume.estimatedReclaimableBytes, reclaimable > 0 {
+                    Text("Up to \(ByteCountFormatter.string(fromByteCount: reclaimable, countStyle: .file)) more reclaimable")
+                        .font(.caption2).foregroundStyle(.secondary).monospacedDigit()
+                        .help("Reclaimable space is an estimate of what macOS may free automatically. It is still included in used storage.")
                 }
                 if let total = volume.totalBytes {
                     Text("\(ByteCountFormatter.string(fromByteCount: total, countStyle: .file)) total")

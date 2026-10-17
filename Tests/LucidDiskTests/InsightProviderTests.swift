@@ -204,6 +204,51 @@ final class InsightProviderTests: XCTestCase {
         XCTAssertEqual(settings.ollamaBaseURL?.host, "192.168.1.20")
     }
 
+    @MainActor
+    func testInvalidOllamaSettingsNeverSendToTheDefaultServer() async throws {
+        let suite = "lucid-tests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = InsightSettings(defaults: defaults, secrets: InMemorySecretStore())
+        settings.provider = .ollama
+        settings.ollamaModel = "llama3.2"
+        for invalid in ["", " \n", "localhost:11434", "file:///etc/passwd", "http://", "https:///api"] {
+            settings.ollamaURLString = invalid
+            let configuration = settings.configuration()
+            XCTAssertNil(configuration.ollamaBaseURL, invalid)
+            let counter = RequestCounter()
+            let result = await LocalFileInsightService(configuration: configuration,
+                transport: counter.transport(status: 200, body: "{}"))
+                .insight(for: node, assessment: assessment)
+            XCTAssertEqual(counter.count, 0, invalid)
+            XCTAssertEqual(result.source, .localRules, invalid)
+            XCTAssertEqual(result.providerNote, InsightProviderError.invalidOllamaURL.errorDescription, invalid)
+            XCTAssertEqual(result.verificationSteps.first, assessment.recommendation)
+        }
+    }
+
+    @MainActor
+    func testDefaultAndCustomOllamaSettingsUseOnlyTheChosenServer() async throws {
+        let suite = "lucid-tests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = InsightSettings(defaults: defaults, secrets: InMemorySecretStore())
+        settings.provider = .ollama
+        settings.ollamaModel = "llama3.2"
+        XCTAssertEqual(settings.ollamaBaseURL?.absoluteString, "http://127.0.0.1:11434")
+        for address in [settings.ollamaURLString, "http://192.168.1.20:11434", "https://ollama.example.test"] {
+            settings.ollamaURLString = address
+            let counter = RequestCounter()
+            let result = await LocalFileInsightService(configuration: settings.configuration(),
+                transport: counter.transport(status: 200, body: #"{"message":{"content":"A downloaded archive."}}"#))
+                .insight(for: node, assessment: assessment)
+            XCTAssertEqual(counter.count, 1)
+            XCTAssertEqual(counter.lastURL, URL(string: address)?.appendingPathComponent("api/chat"))
+            XCTAssertEqual(result.source, .ollama)
+            XCTAssertNil(result.providerNote)
+        }
+    }
+
     func testOpenAIRequestUsesResponsesWithoutStorageOrTools() throws {
         let request = try OpenAIClient(apiKey: "sk-test", model: OpenAIClient.defaultModel)
             .responsesRequest(system: "rules", prompt: "metadata")

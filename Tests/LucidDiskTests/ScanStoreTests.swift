@@ -128,7 +128,7 @@ final class ScanStoreTests: XCTestCase {
     func testSavedScanOpensAsBrowsableSnapshotAndBlocksTrash() async throws {
         let store = ScanStore(directory: directory)
         let info = try store.save(sampleResult())
-        let vm = ScanViewModel(scanStore: store)
+        let vm = ScanViewModel(scanStore: store, savingEnabled: { true })
         XCTAssertEqual(vm.savedScans.map(\.id), [info.id])
 
         vm.openSavedScan(info)
@@ -154,7 +154,7 @@ final class ScanStoreTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: folder) }
         try Data("x".utf8).write(to: folder.appendingPathComponent("a.txt"))
 
-        let vm = ScanViewModel(scanStore: store)
+        let vm = ScanViewModel(scanStore: store, savingEnabled: { true })
         vm.snapshotDate = Date(timeIntervalSince1970: 0)
         vm.startScan(path: folder.path)
         for _ in 0..<200 where vm.isScanning { try await Task.sleep(for: .milliseconds(5)) }
@@ -169,6 +169,7 @@ final class ScanStoreTests: XCTestCase {
         store.deleteAll()
         XCTAssertThrowsError(try store.save(sampleResult(), generation: generation))
         XCTAssertTrue(store.list().isEmpty)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path), "A canceled save must not recreate the store directory")
         XCTAssertNoThrow(try store.save(sampleResult(), generation: store.generation))
         XCTAssertEqual(store.list().count, 1)
     }
@@ -182,7 +183,7 @@ final class ScanStoreTests: XCTestCase {
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: folder) }
 
-        let vm = ScanViewModel(scanStore: store)
+        let vm = ScanViewModel(scanStore: store, savingEnabled: { true })
         vm.openSavedScan(info)
         XCTAssertTrue(vm.isOpeningSavedScan)
         vm.startScan(path: folder.path)

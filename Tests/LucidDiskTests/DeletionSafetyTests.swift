@@ -157,7 +157,7 @@ final class DeletionSafetyTests: XCTestCase {
         )
         node.parent = parent
 
-        XCTAssertThrowsError(try DeletionSafety.validateBeforeTrash(node: node)) {
+        XCTAssertThrowsError(try DeletionSafety.validateBeforeTrash(node: node, confirmedPolicy: .standardConfirmation)) {
             guard case DeletionValidationError.identityChanged = $0 else {
                 return XCTFail("Expected identityChanged, got \($0)")
             }
@@ -181,11 +181,42 @@ final class DeletionSafetyTests: XCTestCase {
         node.parent = parent
         try FileManager.default.removeItem(at: file)
 
-        XCTAssertThrowsError(try DeletionSafety.validateBeforeTrash(node: node)) {
+        XCTAssertThrowsError(try DeletionSafety.validateBeforeTrash(node: node, confirmedPolicy: .standardConfirmation)) {
             guard case DeletionValidationError.itemMissing = $0 else {
                 return XCTFail("Expected itemMissing, got \($0)")
             }
         }
+    }
+
+    func testFinalValidationRequiresTheApprovedConfirmationAfterAncestorRetargeting() throws {
+        let directory = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".lucid-consent-" + UUID().uuidString, isDirectory: true)
+        let source = directory.appendingPathComponent("ordinary")
+        let documents = directory.appendingPathComponent("Documents")
+        try FileManager.default.createDirectory(at: source, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: documents, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = source.appendingPathComponent("item.txt")
+        try Data("fixture".utf8).write(to: file)
+        let parent = FileNode(name: "ordinary", path: source.path, isDirectory: true)
+        let node = FileNode(name: "item.txt", path: file.path, isDirectory: false,
+                            fileIdentity: try XCTUnwrap(FileIdentity.read(atPath: file.path)))
+        node.parent = parent
+        defer { withExtendedLifetime(parent) {} }
+        XCTAssertNoThrow(try DeletionSafety.validateBeforeTrash(node: node, confirmedPolicy: .standardConfirmation, homePath: directory.path))
+        let moved = documents.appendingPathComponent("moved")
+        try FileManager.default.moveItem(at: source, to: moved)
+        try FileManager.default.createSymbolicLink(at: source, withDestinationURL: moved)
+        XCTAssertEqual(FileIdentity.read(atPath: file.path), node.fileIdentity)
+        XCTAssertEqual(DeletionSafety.assess(node: node, homePath: directory.path).actionPolicy, .strongConfirmation)
+        XCTAssertThrowsError(try DeletionSafety.validateBeforeTrash(node: node, confirmedPolicy: .standardConfirmation, homePath: directory.path)) {
+            guard case DeletionValidationError.confirmationChanged = $0 else { return XCTFail("Expected stronger confirmation, got \($0)") }
+        }
+        XCTAssertNoThrow(try DeletionSafety.validateBeforeTrash(node: node, confirmedPolicy: .strongConfirmation, homePath: directory.path))
+        XCTAssertThrowsError(try DeletionSafety.validateBeforeTrash(node: node, confirmedPolicy: .blocked, homePath: directory.path))
+        try FileManager.default.removeItem(at: source)
+        try FileManager.default.moveItem(at: moved, to: source)
+        XCTAssertNoThrow(try DeletionSafety.validateBeforeTrash(node: node, confirmedPolicy: .strongConfirmation, homePath: directory.path), "A lower current requirement remains authorized")
     }
 
     func testSharedGoldenFixture() throws {
